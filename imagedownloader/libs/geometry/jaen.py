@@ -157,7 +157,7 @@ def getsolarelevationmatrix(dt, sub_lon, lat, lon):
 	timeequation = gettimeequation(gamma)
 	tst_hour = gettsthour(getdecimalhour(dt), sub_lon, lon, timeequation)
 	omega = gethourlyangle(tst_hour,lat/abs(lat))
-	solarangle = getzenitangle(declination,lat,omega)
+	solarangle = getzenithangle(declination,lat,omega)
 	return getelevation(solarangle)
 
 
