@@ -23,7 +23,7 @@ class Compact(Process):
 		# create compact file and initialize basic settings
 		root, is_new = nc.open(filename + self.extension) # The filename does not contain the extension
 		if is_new:
-			sample, n = nc.open(data[data[0].completepath())
+			sample, n = nc.open(data[0].completepath())
 			shape = sample.variables['data'].shape
 			nc.getdim(root,'northing', shape[1])
 			nc.getdim(root,'easting', shape[2])
