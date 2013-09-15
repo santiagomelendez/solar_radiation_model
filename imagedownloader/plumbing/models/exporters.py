@@ -22,6 +22,7 @@ class Compact(Process):
 		print "Creating ", filename
 		# create compact file and initialize basic settings
 		localname = 'pkg.'+filename + self.extension # The filename does not contain the extension
+		begin_time = datetime.now()
 		root, is_new = nc.open(localname)
 		if is_new:
 			sample, n = nc.open(data[0].completepath())
@@ -50,7 +51,6 @@ class Compact(Process):
 		max_count = len(files)
 		print "Compacting ", var_name
 		shape = nc.getvar(root,'lat').shape
-		begin_time = datetime.now()
 		for f in files:
 			# join the distributed content
 			ch = f.channel()
