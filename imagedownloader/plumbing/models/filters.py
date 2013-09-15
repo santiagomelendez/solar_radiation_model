@@ -85,7 +85,6 @@ class TransformCountsToRadiation(Process):
 				if f.channel() == '01':
 					root, is_new = nc.open(f.completepath())
 					var = nc.getvar(root, 'data')
-					data = np.zeros(var.shape)
 					for i in range(var.shape[0]):
 						data = var[i]
 						data = self.calibrated_coefficient * ((data / self.counts_shift) - self.space_measurement)
