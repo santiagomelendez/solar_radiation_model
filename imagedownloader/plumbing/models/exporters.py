@@ -59,7 +59,9 @@ class Compact(Process):
 				rootimg, n = nc.open(f.completepath())
 				data = (nc.getvar(rootimg, 'data'))[:]
 				# Force all the channels to the same shape
-				data = matrix.adapt(data, shape)
+				if not (data.shape == shape):
+					print data.shape, shape
+					data = matrix.adapt(data, shape)
 				if v_ch.shape[1] == data.shape[1] and v_ch.shape[2] == data.shape[2]:
 					index = v_ch.shape[0]
 					v_ch[index,:] = data
