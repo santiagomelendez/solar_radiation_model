@@ -21,7 +21,7 @@ class Compact(Process):
 	def do_file(self, filename, data):
 		print "Creating ", filename
 		# create compact file and initialize basic settings
-		root, is_new = nc.open(filename + self.extension) # The filename does not contain the extension
+		root, is_new = nc.open('pkg.'+filename + self.extension) # The filename does not contain the extension
 		if is_new:
 			sample, n = nc.open(data[0].completepath())
 			shape = sample.variables['data'].shape
