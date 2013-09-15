@@ -37,7 +37,7 @@ class Compact(Process):
 			for d in data:
 				self.do_var(root, d, data[d])
 		else:
-			self.create_var(root, 'data', data)
+			self.do_var(root, 'data', data)
 		# save the content inside the compact file
 		if not root is None: nc.close(root)
 		f = File(localname=localname, downloaded=True, begin_download=begin_time, end_download=datetime.now())
@@ -45,7 +45,7 @@ class Compact(Process):
 		return f
 	def do_var(self, root, var_name, files):
 		count = 0
-		max_count = len(files[c])
+		max_count = len(files)
 		print "Compacting ", var_name
 		shape = nc.getvar(root,'lat').shape
 		begin_time = datetime.now()
@@ -53,7 +53,7 @@ class Compact(Process):
 			# join the distributed content
 			ch = f.channel()
 			v_ch   = nc.getvar(root,var_name, 'f4', ('timing','northing','easting',), 4)
-			v_ch_t = nc.getvar(root,var_name + 'time', 'f4', ('timing',))
+			v_ch_t = nc.getvar(root,var_name + '_time', 'f4', ('timing',))
 			try:
 				rootimg, n = nc.open(f.completepath())
 				data = (nc.getvar(rootimg, 'data'))[:]
