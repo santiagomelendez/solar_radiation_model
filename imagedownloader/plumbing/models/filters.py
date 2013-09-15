@@ -86,8 +86,8 @@ class TransformCountsToRadiation(Process):
 					root, is_new = nc.open(f.completepath())
 					var = nc.getvar(root, 'data')
 					for i in range(var.shape[0]):
-						data = var[i]
+						data = var[i,:]
 						data = np.float32(self.calibrated_coefficient) * ((data / np.float32(self.counts_shift)) - np.float32(self.space_measurement))
-						var[i] = data
+						var[i,:] = data[:]
 					nc.close(root)
 		return files
