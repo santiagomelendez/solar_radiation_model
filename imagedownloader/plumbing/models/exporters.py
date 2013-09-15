@@ -33,6 +33,7 @@ class Compact(Process):
 			v_lon[:] = nc.getvar(sample, 'lon')[:]
 			v_lat[:] = nc.getvar(sample, 'lat')[:]
 			nc.close(sample)
+			nc.sync(root)
 		if isinstance(data,collections.Mapping):
 			for d in data:
 				self.do_var(root, d, data[d])
