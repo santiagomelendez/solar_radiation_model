@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import utc
 from requester.models import *
 from process import Process
 from libs.file import netcdf as nc
@@ -18,11 +19,13 @@ class Compact(Process):
 			f = self.do_file(filename,data[filename])
 			results[filename] = [ f ]
 		return results
+	def getdatetimenow(self):
+		return datetime.utcnow().replace(tzinfo=utc)
 	def do_file(self, filename, data):
 		print "Creating ", filename
 		# create compact file and initialize basic settings
 		localname = 'pkg.'+filename + self.extension # The filename does not contain the extension
-		begin_time = datetime.now()
+		begin_time = self.getdatetimenow()
 		root, is_new = nc.open(localname)
 		if is_new:
 			sample, n = nc.open(data[0].completepath())
@@ -43,7 +46,7 @@ class Compact(Process):
 			self.do_var(root, 'data', data)
 		# save the content inside the compact file
 		if not root is None: nc.close(root)
-		f = File(localname=localname, downloaded=True, begin_download=begin_time, end_download=datetime.now())
+		f = File(localname=localname, downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
 		f.save()
 		return f
 	def do_var(self, root, var_name, files):
