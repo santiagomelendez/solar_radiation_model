@@ -19,7 +19,7 @@ def cut_month(x, y, month):
 def cut_projected(root):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
-	time = nc.getvar(root, 'time')
+	time = nc.getvar(root, 'data_time')
 	months = list(set([ (datetime.fromtimestamp(int(t))).month for t in time ]))
 	months_d = nc.getdim(root, 'monthing')
 	months_cut = nc.getvar(root, 'months', 'i2', ('monthing',))
