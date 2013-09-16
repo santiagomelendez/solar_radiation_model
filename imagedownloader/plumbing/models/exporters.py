@@ -47,7 +47,7 @@ class Compact(Process):
 			self.do_var(root, 'data', data)
 		# save the content inside the compact file
 		if not root is None: nc.close(root)
-		f = File(localname=localname, remotename='', size=(os.stat(completepath)).st_size, failures='', downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
+		f = File(localname=localname, remotename='', size=(os.stat(localname)).st_size, failures='', downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
 		f.save()
 		return f
 	def do_var(self, root, var_name, files):
