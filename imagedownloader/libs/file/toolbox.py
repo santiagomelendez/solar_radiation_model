@@ -15,7 +15,7 @@ def cut(filename, i_from, i_to):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	time = nc.getvar(root, 'time')
+	time = nc.getvar(root, 'data_time')
 	root_cut, is_new = nc.open('cut.' + filename)
 	timing_d = nc.getdim(root_cut, 'timing', img_range)
 	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
@@ -25,7 +25,7 @@ def cut(filename, i_from, i_to):
 	lat_cut[:] = lat[:]
 	lon_cut[:] = lon[:]
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
-	time_cut = nc.getvar(root_cut, 'time', 'f4', ('timing',),4)
+	time_cut = nc.getvar(root_cut, 'data_time', 'f4', ('timing',),4)
 	for i in range(img_range):
 		data_cut[i] = data[img_from + i]
 		time_cut[i] = time[img_from + i]
@@ -75,7 +75,7 @@ def cut_positions(filename, blurred, *positions):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	time = nc.getvar(root, 'time')
+	time = nc.getvar(root, 'data_time')
 	root_cut, is_new = nc.open('cut_positions.' + filename)
 	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
 	northing_d = nc.getdim(root_cut, 'northing', len(pos))
@@ -83,7 +83,7 @@ def cut_positions(filename, blurred, *positions):
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
-	time_cut = nc.getvar(root_cut, 'time', 'f4', ('timing',),4)
+	time_cut = nc.getvar(root_cut, 'data_time', 'f4', ('timing',),4)
 	time_cut[:] = time[:]
 	for i in range(len(pos)):
 		show("\rCutting data: processing position %d / %d " % (i+1, len(pos)))
@@ -100,7 +100,7 @@ def cut_projected_linke(filename):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	time = nc.getvar(root, 'time')
+	time = nc.getvar(root, 'data_time')
 	root_cut, is_new = nc.open('wlinke.' + filename)
 	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
 	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
@@ -108,7 +108,7 @@ def cut_projected_linke(filename):
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
-	time_cut = nc.getvar(root_cut, 'time', 'f4', ('timing',),4)
+	time_cut = nc.getvar(root_cut, 'data_time', 'f4', ('timing',),4)
 	lat_cut[:] = lat[:]
 	lon_cut[:] = lon[:]
 	data_cut[:] = data[:]
@@ -123,7 +123,7 @@ def cut_projected_terrain(filename):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	time = nc.getvar(root, 'time')
+	time = nc.getvar(root, 'data_time')
 	root_cut, is_new = nc.open('wterrain.' + filename)
 	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
 	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
@@ -131,7 +131,7 @@ def cut_projected_terrain(filename):
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
-	time_cut = nc.getvar(root_cut, 'time', 'f4', ('timing',),4)
+	time_cut = nc.getvar(root_cut, 'data_time', 'f4', ('timing',),4)
 	lat_cut[:] = lat[:]
 	lon_cut[:] = lon[:]
 	data_cut[:] = data[:]
