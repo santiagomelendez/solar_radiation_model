@@ -3,6 +3,7 @@ from django.utils.timezone import utc
 from requester.models import *
 from process import Process
 from libs.file import netcdf as nc
+import os
 import calendar
 import numpy as np
 import collections
@@ -46,7 +47,7 @@ class Compact(Process):
 			self.do_var(root, 'data', data)
 		# save the content inside the compact file
 		if not root is None: nc.close(root)
-		f = File(localname=localname, downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
+		f = File(localname=localname, remotename='', size=(os.stat(completepath)).st_size, failures='', downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
 		f.save()
 		return f
 	def do_var(self, root, var_name, files):
