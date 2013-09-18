@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 
 import sys
+sys.path.append('.')
 import numpy as np
 import netcdf as nc
 from libs.console import *

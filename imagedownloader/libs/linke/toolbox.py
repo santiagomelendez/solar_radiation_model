@@ -1,5 +1,5 @@
 import numpy as np
-from osgeo import gdal
+from django.contrib.gis import gdal
 from libs.file import netcdf as nc
 from libs.geometry import project as p
 from datetime import datetime
