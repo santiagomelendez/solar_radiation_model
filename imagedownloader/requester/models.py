@@ -255,7 +255,7 @@ class File(models.Model):
 		return chs[0] if len(chs) > 0 else None
 	def image_latlon(self):
 		if self.channel() == 'meta':
-			return None
+			return None, None
 		root = Dataset(self.completepath(),'r')
 		lat = root.variables['lat'][:]
 		lon = root.variables['lon'][:]
