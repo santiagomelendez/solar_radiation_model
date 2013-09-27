@@ -51,7 +51,7 @@ def save_temporal_data(root,index,gamma,tst_hour,declination,solarangle,solarele
 	nc.sync(root)
 
 def process_temporal_data(lat, lon, root):
-	times = [ datetime.fromtimestamp(int(t)) for t in nc.getvar(root, 'data_time') ]
+	times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
 	indexes = range(len(times))
 	for i in indexes:
 		show("\rTemporal data: preprocessing image %d / %d " % (i, len(indexes)-1))
