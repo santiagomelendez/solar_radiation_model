@@ -1,20 +1,48 @@
 import numpy as np
-from osgeo import gdal
 from libs.file import netcdf as nc
 from libs.geometry import project as p
 from datetime import datetime
+from libs.console import *
 import os
-path = os.path.dirname(__file__)
+localpath = os.path.dirname(__file__)
+gdal_supported = False
+try:
+	from osgeo import gdal
+	gdal_supported = True
+except Exception:
+	pass
+
+source = "http://limie.com.ar/gersolar_collab/linketurbidity.nc"
+filename = source.split("/")[-1]
+destiny = localpath + "/" + filename
+
+def initial_configuration():
+	from libs.file.toolbox import download, unzip
+	say("Downloading "+filename+" package... ")
+	download(source,destiny)
+
+if not os.path.exists(destiny):
+	initial_configuration()
+
+def get_month(month):
+	if gdal_supported:
+		ds = gdal.Open(localpath + "/tifs/"+str(month).zfill(2)+"_longlat_wgs84.tif")
+		linke = ds.ReadAsArray()
+	else:
+		root, n = nc.open(destiny)
+		data = nc.getvar(root, "linketurbidity")
+		linke = data[month -1]
+	# The linke turbidity is obtained when the image pixel value is divied by 20.
+	return linke/20.
 
 def project_coordinates(lat, lon):
-	ds = gdal.Open(path + "/tifs/01_longlat_wgs84.tif")
-	return p.pixels_from_coordinates(lat, lon, ds.RasterYSize, ds.RasterXSize)
+	shape = get_month(1).shape
+	return p.pixels_from_coordinates(lat, lon, shape[0], shape[1])
 
 def cut_month(x, y, month):
-	ds = gdal.Open(path + "/tifs/"+str(month).zfill(2)+"_longlat_wgs84.tif")
-	linke = ds.ReadAsArray()
+	linke = get_month(month)
 	result = p.transform_data(linke,x,y)
-	return np.float32(result)/20.
+	return np.float32(result)
 
 def cut_projected(root):
 	lat = nc.getvar(root, 'lat')
