@@ -5,6 +5,7 @@ from xlrd import open_workbook
 import csv
 from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
+from libs.console import *
 import numpy as np
 
 def rows2csv(rows, filename):
@@ -41,13 +42,18 @@ def rows2netcdf(rows, filename, index):
 	root, is_new = nc.open(filename)
 	if not is_new:
 		measurements = nc.getvar(root, 'measurements', 'f4', ('timing','northing','easting'), 4)
+		estimated = nc.getvar(root, 'globalradiation')
+		measurements[:] = np.zeros(estimated.shape)
 		slots = nc.getvar(root, 'slots')
-		times = [ datetime.fromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
+		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
+		days = [ t.date() for t in times ]
+		days.sort()
+		days_index = [d.day for d in set(days)]
+		days_amount = len(days_index)
 		instant_radiation = rows2slots(rows,2)
 		i_e = 0
 		i_m = 0
 		while i_e < len(times) and i_m < len(instant_radiation):
-			#print i_e,"/", len(times) -1, " | ", i_m, "/", len(instant_radiation) - 1
 			# When date estimated before date measured
 			if times[i_e].date() < instant_radiation[i_m][1][0].date():
 				i_e += 1
@@ -56,7 +62,9 @@ def rows2netcdf(rows, filename, index):
 				i_m += 1
 			else:
 				if slots[i_e] < instant_radiation[i_m][0]:
-					measurements[i_e, index,:] = np.array([-1, -1])
+					# TODO: This should be completed with a 0 error from the estimation.
+					measurements[i_e, index,:] = np.array([0, 0])
+					show("Detected estimated time without earth measure.")
 					i_e += 1
 				elif slots[i_e] > instant_radiation[i_m][0]:
 					i_m += 1
@@ -66,22 +74,32 @@ def rows2netcdf(rows, filename, index):
 					measurements[i_e, index,:] = np.array([value, value])
 					i_e += 1
 					i_m += 1
-	days = [ t.date() for t in times ]
-	nc.getdim(root, 'diarying')
-	diary_error = nc.getvar(root, 'diaryerror', 'f4', ('diarying', 'northing', 'easting'))
-	estimated = nc.getvar(root, 'globalradiation')[:]
-	error_diff = nc.getvar(root, 'errordiff', 'f4', ('timing','northing','easting'), 4)
-	error = nc.getvar(root, 'error', 'f4', ('timing','northing','easting'), 4)
-	error_diff[:, index, :] = measurements[:,index,:] - estimated[:,index,:]
-	error[:, index, :] = np.sqrt((error_diff[:, index, :])**2)
-	print error_diff.shape
-	nc.sync(root)
-	for	i in range(len(days)):
-		d = days[i].day
-		print index, i, d, error_diff[i,index], diary_error[d, index]
-		diary_error[d, index,:] += error_diff[i,index,:]
-	diary_error[:, index,:] = np.sqrt((diary_error[:, index,:])**2)
-	nc.close(root)
+		d_dim = nc.getdim(root, 'diarying', days_amount)
+		nc.sync(root)
+		# Error estimation
+		error_diff = nc.getvar(root, 'errordiff', 'f4', ('timing','northing','easting',), 4)
+		error = nc.getvar(root, 'error', 'f4', ('timing','northing','easting',), 4)
+		diary_error = nc.getvar(root, 'diaryerror', 'f4', ('diarying', 'northing', 'easting',), 4)
+		error_diff[:] = np.zeros(estimated.shape)
+		error[:] = np.zeros(estimated.shape)
+		diary_error[:] = np.zeros((days_amount, estimated.shape[1], estimated.shape[2]))
+		nc.sync(root)
+		the_max = measurements[:].max()
+		error_diff[:, index, :] = measurements[:,index,:] - estimated[:,index,:]
+		error[:, index, :] = np.abs(error_diff[:, index, :])
+		error[:, index, 1] = error[:, index, 1] / the_max * 100
+		show("Half-hour relative error: %.2f" % (error[:, index, 1]).mean())
+		nc.sync(root)
+		for	i in range(len(days)):
+			d_i = days_index.index(days[i].day)
+			diary_error[d_i, index,:] += np.array([error_diff[i,index,0],1])
+		count = diary_error[:, index, 1]
+		count[count == 0] = 1
+		diary_error[:, index,0] = np.abs(diary_error[:, index, 0]) / count
+		diary_error[:, index,1] = diary_error[:, index,0] / the_max * 100
+		show("Diary relative error: %.2f" % (diary_error[:, index, 1]).mean())
+		#diary_error[:, index,1] = diary_error[:, index,0]
+		nc.close(root)
 
 def get_val(sh,x,y):
 	return sh.cell(y,x).value
