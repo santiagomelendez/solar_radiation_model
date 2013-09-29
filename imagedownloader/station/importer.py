@@ -97,7 +97,7 @@ def rows2netcdf(rows, filename, index):
 		count[count == 0] = 1
 		diary_error[:, index,0] = np.abs(diary_error[:, index, 0]) / count
 		diary_error[:, index,1] = diary_error[:, index,0] / the_max * 100
-		show("Diary relative error: %.2f" % (diary_error[:, index, 1]).mean())
+		show("Diary relative error: %.2f \n" % (diary_error[:, index, 1]).mean())
 		#diary_error[:, index,1] = diary_error[:, index,0]
 		nc.close(root)
 
