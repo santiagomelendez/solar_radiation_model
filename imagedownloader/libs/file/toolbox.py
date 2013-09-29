@@ -5,7 +5,6 @@ sys.path.append('.')
 import numpy as np
 import netcdf as nc
 from libs.console import *
-from libs.linke import toolbox as linke
 from datetime import datetime
 
 def cut(filename, i_from, i_to):
@@ -97,6 +96,7 @@ def cut_positions(filename, blurred, *positions):
 	nc.close(root_cut)
 
 def cut_projected_linke(filename):
+	from libs.linke import toolbox as linke
 	root, is_new = nc.open(filename)
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
@@ -142,15 +142,21 @@ def cut_projected_terrain(filename):
 	nc.close(root_cut)
 
 def chunk_report(bytes_so_far, chunk_size, total_size):
-	percent = float(bytes_so_far) / total_size
-	percent = round(percent*100, 2)
-	replace = ("Downloaded %d of %d bytes (%0.2f%%)" % (bytes_so_far, total_size, percent)).ljust(80)
+	if total_size > 0:
+		percent = float(bytes_so_far) / total_size
+		percent = round(percent*100, 2)
+		replace = ("Downloaded %d of %d bytes (%0.2f%%)" % (bytes_so_far, total_size, percent)).ljust(80)
+	else:
+		replace = ("Downloading %d of unknown bytes" % (bytes_so_far)).ljust(80)
 	say("\r"+replace)
 	if bytes_so_far >= total_size:
 		sys.stdout.write('\n')
 
 def chunk_download(response, destiny, chunk_size=8192, report_hook=None):
-	total_size = response.info().getheader('Content-Length').strip()
+	if response.info().getheader('Content-Length') is None:
+		total_size = -1
+	else:
+		total_size = response.info().getheader('Content-Length').strip()
 	total_size = int(total_size)
 	bytes_so_far = 0
 	with open(destiny, 'w') as local:
