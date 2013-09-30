@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.append("../")
+sys.path.append(".")
 import gc
 
 import numpy as np
@@ -9,7 +9,7 @@ from datetime import datetime
 import calendar
 from scipy import stats
 import os
-import pylab as pl
+#import pylab as pl
 #from osgeo import gdal
 import sys
 import time
@@ -19,7 +19,7 @@ from libs.geometry import jaen as geo
 from libs.linke import toolbox as linke
 from libs.dem import dem
 #from libs.paint import jaen as draw
-import processgroundstations as pgs
+#import processgroundstations as pgs
 from libs.console import *
 
 SAT_LON = -60.0 # -75.3305 # longitude of sub-satellite point in degrees
@@ -49,6 +49,7 @@ def save_temporal_data(root,index,gamma,tst_hour,declination,solarangle,solarele
 	v_slots = nc.getvar(root,'slots', 'u1', ('timing',))
 	v_slots[index] = slots
 	nc.sync(root)
+	v_gamma, v_tst_hour, v_declination, v_solarangle, v_solarelevation, v_excentricity, v_slots = None, None, None, None, None, None, None
 
 def process_temporal_data(lat, lon, root):
 	times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
@@ -75,6 +76,7 @@ def process_temporal_data(lat, lon, root):
 	v_satellitalzenithangle = nc.getvar(root,'satellitalzenithangle', 'f4', ('northing','easting',),4)
 	v_satellitalzenithangle[:] = satellitalzenithangle
 	nc.sync(root)
+	v_satellitalzenithangle = None
 
 def process_irradiance(lat, lon, data, root):
 	excentricity = nc.getvar(root,'excentricity')[:]
@@ -94,6 +96,7 @@ def process_irradiance(lat, lon, data, root):
 	v_gc = nc.getvar(root, 'gc', 'f4', ('timing','northing','easting',),4)
 	v_gc[:] = gc
 	nc.sync(root)
+	v_gc, v_dc, v_bc = None, None, None
 
 def process_atmospheric_irradiance(lat, lon, data, root):
 	i0met = geti0met()
@@ -109,6 +112,7 @@ def process_atmospheric_irradiance(lat, lon, data, root):
 	v_satellitalelevation = nc.getvar(root, 'satellitalelevation', 'f4', ('northing','easting',),4)
 	v_satellitalelevation[:] = satellitalelevation
 	nc.sync(root)
+	v_atmosphericalbedo, v_satellitalelevation = None, None
 
 def process_optical_fading(lat, lon, data, root):
 	solarelevation = nc.getvar(root,'solarelevation')[:]
@@ -129,6 +133,7 @@ def process_optical_fading(lat, lon, data, root):
 	v_sat = nc.getvar(root, 't_sat', 'f4', ('northing','easting',),4)
 	v_sat[:] = t_sat
 	nc.sync(root)
+	v_earth, v_sat = None, None
 
 def process_albedos(lat, lon, data, root):
 	i0met = geti0met()
@@ -139,18 +144,22 @@ def process_albedos(lat, lon, data, root):
 	t_sat = nc.getvar(root,'t_sat')[:]
 	say("Calculating observed albedo, apparent albedo, effective albedo and cloud albedo... ")
 	observedalbedo = geo.getalbedo(data, i0met , excentricity, solarangle)
-	apparentalbedo = geo.getapparentalbedo(observedalbedo,atmosphericalbedo, t_earth, t_sat)
-	effectivealbedo = geo.geteffectivealbedo(solarangle)
-	cloudalbedo = geo.getcloudalbedo(effectivealbedo,atmosphericalbedo,t_earth,t_sat)
-	v_observedalbedo = nc.getvar(root, 'observedalbedo', 'f4', ('timing','northing','easting',),4)
-	v_observedalbedo[:] = observedalbedo
-	v_apparentalbedo = nc.getvar(root, 'apparentalbedo', 'f4', ('timing','northing','easting',),4)
-	v_apparentalbedo[:] = apparentalbedo
-	v_effectivealbedo = nc.getvar(root, 'effectivealbedo', 'f4', ('timing','northing','easting',),4)
-	v_effectivealbedo[:] = effectivealbedo
-	v_cloudalbedo = nc.getvar(root, 'cloudalbedo', 'f4', ('timing','northing','easting',),4)
-	v_cloudalbedo[:] = cloudalbedo
+	v_albedo = nc.getvar(root, 'observedalbedo', 'f4', ('timing','northing','easting',),4)
+	v_albedo[:] = observedalbedo
 	nc.sync(root)
+	apparentalbedo = geo.getapparentalbedo(observedalbedo,atmosphericalbedo, t_earth, t_sat)
+	v_albedo = nc.getvar(root, 'apparentalbedo', 'f4', ('timing','northing','easting',),4)
+	v_albedo[:] = apparentalbedo
+	nc.sync(root)
+	effectivealbedo = geo.geteffectivealbedo(solarangle)
+	v_albedo = nc.getvar(root, 'effectivealbedo', 'f4', ('timing','northing','easting',),4)
+	v_albedo[:] = effectivealbedo
+	nc.sync(root)
+	cloudalbedo = geo.getcloudalbedo(effectivealbedo,atmosphericalbedo,t_earth,t_sat)
+	v_albedo = nc.getvar(root, 'cloudalbedo', 'f4', ('timing','northing','easting',),4)
+	v_albedo[:] = cloudalbedo
+	nc.sync(root)
+	v_albedo = None
 
 def process_atmospheric_data(lat, lon, data, root):	
 	process_irradiance(lat, lon, data, root)
@@ -200,6 +209,7 @@ def process_ground_albedo(lat, lon, data, root):
 	f_groundalbedo = nc.getvar(root, 'groundalbedo', 'f4', ('northing','easting',),4)
 	f_groundalbedo[:] = groundminimumalbedo
 	nc.sync(root)
+	f_groundalbedo = None
 
 def process_radiation(lat, lon, data, root):
 	apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
@@ -207,17 +217,26 @@ def process_radiation(lat, lon, data, root):
 	cloudalbedo = nc.getvar(root, "cloudalbedo")[:]
 	say("Calculating the cloud index... ")
 	cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo, cloudalbedo)
-	f_cloudindex = nc.getvar(root, 'cloudinessindex', 'f4', ('timing','northing','easting',),4)
-	f_cloudindex[:] = cloudindex
+	apparentalbedo = None
+	groundalbedo = None
+	cloudalbedo = None
+	f_var = nc.getvar(root, 'cloudinessindex', 'f4', ('timing','northing','easting',),4)
+	f_var[:] = cloudindex
+	nc.sync(root)
 	say("Calculating the clear sky... ")
 	clearsky = geo.getclearsky(cloudindex)
-	f_clearsky = nc.getvar(root, 'clearskyindex', 'f4', ('timing','northing','easting',),4)
-	f_clearsky[:] = clearsky
+	cloudindex = None
+	f_var = nc.getvar(root, 'clearskyindex', 'f4', ('timing','northing','easting',),4)
+	f_var[:] = clearsky
+	nc.sync(root)
 	say("Calculating the global radiation... ")
 	clearskyglobalradiation = nc.getvar(root, 'gc')[:]
 	globalradiation = clearsky * clearskyglobalradiation
-	f_globalradiation = nc.getvar(root, 'globalradiation', 'f4', ('timing','northing','easting',),4)
-	f_globalradiation[:] = globalradiation
+	f_var = nc.getvar(root, 'globalradiation', 'f4', ('timing','northing','easting',),4)
+	say("Saving the global radiation... ")
+	f_var[:] = globalradiation
+	nc.sync(root)
+	f_var = None
 
 
 def process_validate(year, month, times, root):
@@ -227,7 +246,7 @@ def process_validate(year, month, times, root):
 	timestamp = np.array([date2num(dt) for dt in times])
 	tst_hour = nc.getvar(root, 'tst_hour')
 
-	stations = pgs.getmeasuresinstations(year, month)
+	stations = [] #pgs.getmeasuresinstations(year, month)
 	for s in stations:
 		l,c = dp.getpos(float(s['latitude']), float(s['longitude']))
 		globalradiationinposition = globalradiation[:,l,c]
