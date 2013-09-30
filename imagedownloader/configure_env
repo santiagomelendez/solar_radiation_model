@@ -71,12 +71,13 @@ EOF
 
 # autoinstall all python requirements
 
-sudo yum install -y firefox libXfont xorg-x11-fonts-* xorg-x11-server-Xvfb mesa-dri-drivers dbus-x11 hdf5-devel netcdf4-python netcdf-devel lapack lapack-devel blas blas-devel libxslt-devel libxslt espeak-devel espeak screen libxslt libxslt-devel
+sudo yum install -y firefox libXfont xorg-x11-fonts-* xorg-x11-server-Xvfb mesa-dri-drivers dbus-x11 hdf5-devel netcdf4-python netcdf-devel lapack lapack-devel blas blas-devel libxslt-devel libxslt espeak-devel espeak screen libxslt libxslt-devel python-devel
 dbus-uuidgen --ensure
 sudo useradd xvfb
 sudo chkconfig --add xvfb
 sudo chkconfig xvfb on
-sudo $pip install numpy
+sudo rpm -Uvh http://elgis.argeo.org/repos/6/elgis-release-6-6_0.noarch.rpm
+sudo $pip install numpy xlrd
 sudo $pip install -r requirements.txt
 
 # createdb
