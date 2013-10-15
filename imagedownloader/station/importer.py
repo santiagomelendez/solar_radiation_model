@@ -87,17 +87,23 @@ def rows2netcdf(rows, filename, index):
 		the_max = measurements[:].max()
 		error_diff[:, index, :] = measurements[:,index,:] - estimated[:,index,:]
 		error[:, index, :] = np.abs(error_diff[:, index, :])
-		error[:, index, 1] = error[:, index, 1] / the_max * 100
-		show("Half-hour relative error: %.2f" % (error[:, index, 1]).mean())
 		nc.sync(root)
-		for	i in range(len(days)):
+		max_value_in_day = np.zeros([days_amount]) + 1
+		for i in range(len(days)):
 			d_i = days_index.index(days[i].day)
-			diary_error[d_i, index,:] += np.array([error_diff[i,index,0],1])
+			max_value_in_day[d_i] = measurements[i,index,0] if max_value_in_day[d_i] < measurements[i,index,0] else max_value_in_day[d_i]
+			diary_error[d_i, index,:] += np.array([ error_diff[i,index,0] ** 2,1])
 		count = diary_error[:, index, 1]
 		count[count == 0] = 1
-		diary_error[:, index,0] = np.abs(diary_error[:, index, 0]) / count
-		diary_error[:, index,1] = diary_error[:, index,0] / the_max * 100
-		show("Diary relative error: %.2f \n" % (diary_error[:, index, 1]).mean())
+		diary_error[:, index,0] = np.sqrt(diary_error[:, index, 0] / count)
+		diary_error[:, index,1] = diary_error[:, index,0] / max_value_in_day * 100
+		show("Diary RMS error: %.2f \n" % (diary_error[:, index, 1]).mean())
+		for i in range(len(days)):
+			d_i = days_index.index(days[i].day)
+			error[i,index,1] = error[i,index,1] / max_value_in_day[d_i] * 100
+		result = np.sum(error[:, index, 1] ** 2)
+		result = np.sqrt(result / error.shape[0])
+		show("Half-hour RMS error: %.2f" % result)
 		#diary_error[:, index,1] = diary_error[:, index,0]
 		nc.close(root)
 
