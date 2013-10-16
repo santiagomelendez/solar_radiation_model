@@ -7,6 +7,7 @@ from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
 from libs.console import *
 import numpy as np
+import error
 
 def rows2csv(rows, filename):
 	with open(filename, 'wb') as csvfile:
@@ -46,10 +47,6 @@ def rows2netcdf(rows, filename, index):
 		measurements[:] = np.zeros(estimated.shape)
 		slots = nc.getvar(root, 'slots')
 		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
-		days = [ t.date() for t in times ]
-		days.sort()
-		days_index = [d.day for d in set(days)]
-		days_amount = len(days_index)
 		instant_radiation = rows2slots(rows,2)
 		i_e = 0
 		i_m = 0
@@ -74,37 +71,7 @@ def rows2netcdf(rows, filename, index):
 					measurements[i_e, index,:] = np.array([value, value])
 					i_e += 1
 					i_m += 1
-		d_dim = nc.getdim(root, 'diarying', days_amount)
-		nc.sync(root)
-		# Error estimation
-		error_diff = nc.getvar(root, 'errordiff', 'f4', ('timing','northing','easting',), 4)
-		error = nc.getvar(root, 'error', 'f4', ('timing','northing','easting',), 4)
-		diary_error = nc.getvar(root, 'diaryerror', 'f4', ('diarying', 'northing', 'easting',), 4)
-		error_diff[:] = np.zeros(estimated.shape)
-		error[:] = np.zeros(estimated.shape)
-		diary_error[:] = np.zeros((days_amount, estimated.shape[1], estimated.shape[2]))
-		nc.sync(root)
-		the_max = measurements[:].max()
-		error_diff[:, index, :] = measurements[:,index,:] - estimated[:,index,:]
-		error[:, index, :] = np.abs(error_diff[:, index, :])
-		nc.sync(root)
-		max_value_in_day = np.zeros([days_amount]) + 1
-		for i in range(len(days)):
-			d_i = days_index.index(days[i].day)
-			max_value_in_day[d_i] = measurements[i,index,0] if max_value_in_day[d_i] < measurements[i,index,0] else max_value_in_day[d_i]
-			diary_error[d_i, index,:] += np.array([ error_diff[i,index,0] ** 2,1])
-		count = diary_error[:, index, 1]
-		count[count == 0] = 1
-		diary_error[:, index,0] = np.sqrt(diary_error[:, index, 0] / count)
-		diary_error[:, index,1] = diary_error[:, index,0] / max_value_in_day * 100
-		show("Diary RMS error: %.2f \n" % (diary_error[:, index, 1]).mean())
-		for i in range(len(days)):
-			d_i = days_index.index(days[i].day)
-			error[i,index,1] = error[i,index,1] / max_value_in_day[d_i] * 100
-		result = np.sum(error[:, index, 1] ** 2)
-		result = np.sqrt(result / error.shape[0])
-		show("Half-hour RMS error: %.2f" % result)
-		#diary_error[:, index,1] = diary_error[:, index,0]
+		error.rmse(root, index)
 		nc.close(root)
 
 def get_val(sh,x,y):
