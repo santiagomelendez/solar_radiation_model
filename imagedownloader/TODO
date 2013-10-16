@@ -1,4 +1,3 @@
-- Verificar que las funciones geométricas de Jaén funcionen adecuadamente.
 - Verificar excepción cuando se realiza self._ftp.quit().
 - Solucionar "Worker X has captured an exception:  'NoneType' object has no attribute 'sendall'" luego de detectar un stalled (verificar la detección de un stalled y el cancelamiento de la descarga).
 
