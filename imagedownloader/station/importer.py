@@ -14,7 +14,7 @@ def rows2csv(rows, filename):
 		spamwriter = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL)
 		for i in range(len(rows)):
 			spamwriter.writerow(rows[i])
-			
+
 def mvolt_to_watt(mvolt):
 	mvolt_per_kwatts_m2 = 8.48
 	return (mvolt / mvolt_per_kwatts_m2) * 1000
@@ -77,36 +77,57 @@ def rows2netcdf(rows, filename, index):
 def get_val(sh,x,y):
 	return sh.cell(y,x).value
 
-filename = sys.argv[1]
-i_sheet = int(sys.argv[2])
-x_year = int(sys.argv[3])
-x_julian = int(sys.argv[4])
-x_timestamp = int(sys.argv[5])
-utc_diff = int(sys.argv[6])
-x_value = int(sys.argv[7])
-y_from = int(sys.argv[8])
-outputfilename = sys.argv[9]
-output_index = int(sys.argv[10]) if len(sys.argv) > 10 else None
-
-wb = open_workbook(filename)
-sh = wb.sheets()[i_sheet]
-rows = []
-y = y_from
-year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
-while not(year == '' and julian == '' and time == ''):
-	timestamp = datetime(int(year),1, 1) + timedelta(int(julian))
-	time = str(int(time)).zfill(4)
-	timestamp += timedelta(hours=int(time[0:2]), minutes = int(time[2:4]))
-	delta =  timedelta(hours = abs(utc_diff))
-	timestamp = (timestamp + delta if utc_diff < 0 else timestamp - delta)
-	try:
-		value = float(get_val(sh,x_value,y))
-	except:
-		value = 0
-	rows.append([timestamp, value])
-	y += 1
+def from_xls(input_filename, utc_diff):
+	i_sheet = int(sys.argv[5])
+	x_year = int(sys.argv[6])
+	x_julian = int(sys.argv[7])
+	x_timestamp = int(sys.argv[8])
+	x_value = int(sys.argv[9])
+	y_from = int(sys.argv[10])
+	wb = open_workbook(input_filename)
+	sh = wb.sheets()[i_sheet]
+	rows = []
+	y = y_from
 	year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
+	while not(year == '' and julian == '' and time == ''):
+		timestamp = datetime(int(year),1, 1) + timedelta(int(julian))
+		time = str(int(time)).zfill(4)
+		timestamp += timedelta(hours=int(time[0:2]), minutes = int(time[2:4]))
+		delta =  timedelta(hours = abs(utc_diff))
+		timestamp = (timestamp + delta if utc_diff < 0 else timestamp - delta)
+		try:
+			value = float(get_val(sh,x_value,y))
+		except:
+			value = 0
+		rows.append((timestamp, value))
+		y += 1
+		year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
+	return rows
+
+def from_csv(input_filename, utc_diff):
+	timestamp_col = int(sys.argv[5])
+	channel = int(sys.argv[6])
+	skip_rows = int(sys.argv[7])
+	rows = np.genfromtxt(input_filename,
+		delimiter = ',',
+		skiprows= skip_rows,
+		usecols=[0, channel],
+		converters = {0: lambda s: datetime.strptime(s[1:20],"%Y-%m-%d %H:%M:%S"), channel: lambda s: float(s)})
+	return rows
+
+importer = {}
+importer["xls"] = from_xls
+importer["csv"] = from_csv
+
+output_filename = sys.argv[1]
+output_index = int(sys.argv[2]) if output_filename.split(".")[-1] == "nc" else None
+input_filename = sys.argv[3]
+utc_diff = int(sys.argv[4])
+rows = importer[input_filename.split(".")[-1]](input_filename, utc_diff)
 if output_index is None:
-	rows2csv(rows, outputfilename)
+	rows2csv(rows, output_filename)
 else:
-	rows2netcdf(rows,outputfilename,output_index)
+	rows2netcdf(rows,output_filename,output_index)
+
+#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
+#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv -3 0 1 3
