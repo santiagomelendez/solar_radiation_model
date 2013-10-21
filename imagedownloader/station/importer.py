@@ -90,7 +90,7 @@ def from_xls(input_filename, utc_diff):
 	y = y_from
 	year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
 	while not(year == '' and julian == '' and time == ''):
-		timestamp = datetime(int(year),1, 1) + timedelta(int(julian))
+		timestamp = datetime(int(year),1, 1) + timedelta(int(julian) - 1)
 		time = str(int(time)).zfill(4)
 		timestamp += timedelta(hours=int(time[0:2]), minutes = int(time[2:4]))
 		delta =  timedelta(hours = abs(utc_diff))
