@@ -50,8 +50,8 @@ class Configuration(models.Model):
 	frequency_save = models.TimeField()
 	calibration_value = models.DecimalField(max_digits=7,decimal_places=4)
 	sensor = models.ForeignKey(Sensor)
-    position = models.ForeignKey(Position)
-    multiplier = models.DecimalField(max_digits=5,decimal_places=2)
+	position = models.ForeignKey(Position)
+	multiplier = models.DecimalField(max_digits=5,decimal_places=2)
 
 class Measure(models.Model):
 	value = models.DecimalField(max_digits=5,decimal_places=2)
