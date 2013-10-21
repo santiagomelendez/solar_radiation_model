@@ -45,11 +45,12 @@ def rmse(root, index):
 	#diary_error[:, index,1] = diary_error[:, index,0]
 	nc.sync(root)
 
-filename = sys.argv[1]
-try:
-	index = int(sys.argv[2])
-	root,n = nc.open(filename)
-	rmse(root, index)
-	nc.close(root)
-except Exception, e:
-	show(e)
+filename = sys.argv[1] if len(sys.argv) == 2 else None
+if not filename == None:
+	try:
+		index = int(sys.argv[2])
+		root,n = nc.open(filename)
+		rmse(root, index)
+		nc.close(root)
+	except Exception, e:
+		show(e)
