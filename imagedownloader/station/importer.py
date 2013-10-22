@@ -81,7 +81,8 @@ def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="
 	if year_or_timestamp.__class__ is str and julian is None:
 		tzsplit = year_or_timestamp.split("+")
 		timestamp = datetime.strptime(tzsplit[0],"%Y-%m-%d %H:%M:%S")
-		utc_hour, utc_minute = int(tzsplit[1][:2]), int(tzsplit[1][4:])
+		if len(tzsplit) > 1:
+			utc_hour, utc_minute = int(tzsplit[1][:2]) if utc_hour is 0 else utc_hour, int(tzsplit[1][4:])
 	else:
 		# This is for Julian days
 		s = "%i-%i %s:%s:%s" % (int(year_or_timestamp),int(julian),hour,minute,second)
@@ -122,7 +123,7 @@ def from_csv(input_filename, utc_diff):
 		delimiter = ',',
 		skiprows= skip_rows,
 		usecols=[0, channel],
-		converters = {0: lambda s: to_datetime(s[1:-1]), channel: lambda s: float(s)})
+		converters = {0: lambda s: to_datetime(s[1:-1], utc_hour=int(utc_diff)), channel: lambda s: float(s)})
 	return rows
 
 importer = {}
@@ -140,4 +141,4 @@ else:
 	rows2netcdf(rows,output_filename,output_index)
 
 #python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
-#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv -3 0 1 3
+#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv 0 0 1 3
