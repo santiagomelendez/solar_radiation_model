@@ -77,6 +77,19 @@ def rows2netcdf(rows, filename, index):
 def get_val(sh,x,y):
 	return sh.cell(y,x).value
 
+def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="00", utc_hour=0, utc_minute=0):
+	if year_or_timestamp.__class__ is str and julian is None:
+		tzsplit = year_or_timestamp.split("+")
+		timestamp = datetime.strptime(tzsplit[0],"%Y-%m-%d %H:%M:%S")
+		utc_hour, utc_minute = int(tzsplit[1][:2]), int(tzsplit[1][4:])
+	else:
+		# This is for Julian days
+		s = "%i-%i %s:%s:%s" % (int(year_or_timestamp),int(julian),hour,minute,second)
+		timestamp = datetime.strptime(s,"%Y-%j %H:%M:%S")
+	delta =  timedelta(hours = abs(utc_hour), minutes=abs(utc_minute))
+	timestamp = (timestamp + delta if utc_hour < 0 else timestamp - delta)
+	return timestamp
+
 def from_xls(input_filename, utc_diff):
 	i_sheet = int(sys.argv[5])
 	x_year = int(sys.argv[6])
@@ -91,10 +104,7 @@ def from_xls(input_filename, utc_diff):
 	year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
 	while not(year == '' and julian == '' and time == ''):
 		time = str(int(time)).zfill(4)
-		s = "%i-%i %s:%s:00" % (int(year),int(julian),time[0:2],time[2:4])
-		timestamp = datetime.strptime(s,"%Y-%j %H:%M:%S")
-		delta =  timedelta(hours = abs(utc_diff))
-		timestamp = (timestamp + delta if utc_diff < 0 else timestamp - delta)
+		timestamp = to_datetime(year, julian, time[0:2],time[2:4], utc_hour=utc_diff, utc_minute=0)
 		try:
 			value = float(get_val(sh,x_value,y))
 		except:
@@ -112,7 +122,7 @@ def from_csv(input_filename, utc_diff):
 		delimiter = ',',
 		skiprows= skip_rows,
 		usecols=[0, channel],
-		converters = {0: lambda s: datetime.strptime(s[1:20],"%Y-%m-%d %H:%M:%S"), channel: lambda s: float(s)})
+		converters = {0: lambda s: to_datetime(s[1:-1]), channel: lambda s: float(s)})
 	return rows
 
 importer = {}
