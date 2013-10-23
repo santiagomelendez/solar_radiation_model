@@ -9,85 +9,99 @@ class FilterSolarElevation(Process):
 	class Meta:
         	app_label = 'plumbing'
 	minimum = models.DecimalField(max_digits=4,decimal_places=2)
-	def do(self,files):
-		result = {}
-		for k in files:
-			sub_lon = float(files[k][0].order.request.automatic_download.area.getlongitude())
-			lat,lon = files[k][0].image_latlon()
-			result[k] = [ f	for f in files[k] if self.solar_elevation(f, sub_lon, lat, lon) >= self.minimum ]
-		return result
+	hourly_longitude = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
+	def do(self,stream):
+		resultant_stream = stream.clone()
+		for fs in stream.files.all():
+			sub_lon = float(self.hourly_longitude)
+			lat,lon = fs.file.latlon()
+			if self.solar_elevation(fs.file, sub_lon, lat, lon) >= self.minimum:
+				fs.clone_for(resultant_stream)
+			fs.processed=True
+			fs.save()
+		return resultant_stream
 	def solar_elevation(self, f, sub_lon, lat, lon):
-		dt = f.image_datetime()
 		solarelevation_min = -90.0
 		if not lon is None:
-			solarelevation = geo.getsolarelevationmatrix(dt, sub_lon, lat, lon)
+			solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
 			solarelevation_min = solarelevation.min()
 		return solarelevation_min
 
 class CollectTimed(Process):
 	class Meta:
         	app_label = 'plumbing'
-	# Should multiplex, if it has other collect applyied previously
-	monthly = models.BooleanField()
-	def do(self, files):
-		#compacted = {'goes13.2013.01.BAND_'+ch.in_file+'.nc': files}
-		#c = Compact()
-		#c.apply(compacted)
-		return files
+	def do(self, stream):
+		resultant_stream = {}
+		for m in range(1,13,1):
+			resultant_stream[m] = stream.clone()
+		for fs in stream.files.all():
+			fs.clone_for(resultant_stream[fs.file.datetime().month])
+			fs.processed=True
+			fs.save()
+		return [v for k,v in resultant_stream]
 
 class CollectChannel(Process):
 	class Meta:
         	app_label = 'plumbing'
-	# Should multiplex, if it has other collect applyied previously
-	#for ch in Channel.objects.all():
-	# f.channel() == ch.in_file ]
-	def do(self, files):
-		result = {}
-		for k in files:
-			for f in files[k]:
-				key = f.satellite() + '.' + k + '.BAND_' + f.channel()
-				if not key in result:
-					result[key] = []
-				result[key].append(f)
-		return result
+	channels = models.ManyToManyField(Channel,db_index=True)
+	def do(self, stream):
+		resultant_stream = {}
+		for ch in channels:
+			resultant_stream[ch.in_file] = stream.clone()
+		for fs in stream.files.all():
+			fs.clone_for(resultant_stream[fs.file.channel()])
+			fs.processed=True
+			fs.save()
+		return [v for k,v in resultant_stream]
 
 class FilterChannel(Process):
 	class Meta:
         	app_label = 'plumbing'
 	channels = models.ManyToManyField(Channel,db_index=True)
-	def do(self, files):
-		result = {}
+	def do(self, stream):
+		resultant_stream = stream.clone()
 		chs = [ str(ch.in_file) for ch in self.channels.all() ]
 		sat = self.channels.all()[0].satellite
-		for k in files:
-			result[k] = [ f for f in files[k] if f.channel() in chs and f.satellite() == sat.in_file ]
-		return result
+		for fs in stream.files.all():
+			if fs.file.channel() in chs and fs.file.satellite() == sat.in_file:
+				fs.clone_for(resultant_stream)
+			fs.processed=True
+			fs.save()
+		return resultant_stream
 
 class FilterTimed(Process):
 	class Meta:
         	app_label = 'plumbing'
 	time_range = models.ManyToManyField(UTCTimeRange,db_index=True)
-	def do(self, files):
-		result = {}
-		for k in files:
-			result[k] = [ f for f in files[k] if self.time_range.contains(f.image_datetime()) ]
-		return result
+	def do(self, srteam):
+		resultant_stream = stream.clone()
+		for fs in stream.files.all():
+			if self.time_range.contains(fs.file.datetime()):
+				fs.clone_for(resultant_stream)
+			fs.processed=True
+			fs.save()
+		return resultant_stream
 
-class TransformCountsToRadiation(Process):
+class AppendCountToRadiationCoefficient(Process):
 	class Meta:
 		app_label = 'plumbing'
 	counts_shift = models.IntegerField()
 	calibrated_coefficient = models.DecimalField(max_digits=5,decimal_places=3)
 	space_measurement = models.DecimalField(max_digits=5,decimal_places=3)
-	def do(self, files):
-		for c in files:
-			for f in files[c]:
-				if f.channel() == '01':
-					root, is_new = nc.open(f.completepath())
-					var = nc.getvar(root, 'data')
-					for i in range(var.shape[0]):
-						data = var[i,:]
-						data = np.float32(self.calibrated_coefficient) * ((data / np.float32(self.counts_shift)) - np.float32(self.space_measurement))
-						var[i,:] = data[:]
-					nc.close(root)
-		return files
+	def do(self, stream):
+		resultant_stream = stream.clone()
+		for fs in stream.files.all():
+			if f.channel() == '01':
+				root, is_new = nc.open(f.completepath())
+				nc.getdim(root,'coefficient',1)
+				var = nc.getvar(root, 'counts_shift', 'f4', ('coefficient',), 4)
+				var[0] = self.counts_shift
+				var = nc.getvar(root, 'calibrated_coefficient', 'f4', ('coefficient',), 4)
+				var[0] = self.calibrated_coefficient
+				var = nc.getvar(root, 'space_measurement', 'f4', ('coefficient',), 4)
+				var[0] = self.space_measurement
+				#data = np.float32(self.calibrated_coefficient) * ((data / np.float32(self.counts_shift)) - np.float32(self.space_measurement))
+				nc.close(root)
+			fs.processed=True
+			fs.save()
+		return stream

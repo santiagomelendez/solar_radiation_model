@@ -21,3 +21,13 @@ def execute(request, program_id):
 def status(request):
 	programs = Program.objects.all()
 	return render(request, 'plumbing/status.html', {'programs': programs})
+
+def update(request):
+	streams = Stream.objects.all()
+	for s in streams:
+		s.updated_files()
+	template = loader.get_template('plumbing/update.html')
+	context = Context({
+		'file_new_count': File.objects.count(),
+	})
+	return HttpResponse(template.render(context))

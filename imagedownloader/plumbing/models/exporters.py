@@ -13,6 +13,7 @@ class Compact(Process):
 	class Meta:
         	app_label = 'plumbing'
 	extension = models.TextField()
+	resultant_stream = models.ForeignKey(Stream)
 	def do(self, data):
 		results = {}
 		for filename in data:

@@ -5,8 +5,8 @@ from django.forms import ModelForm
 class StreamAdmin(admin.ModelAdmin):
 	list_display = ['root_path', 'created', 'modified']
 
-class ImageAdmin(admin.ModelAdmin):
-	list_display = ['localname', 'stream', 'created', 'modified']
+class FileAdmin(admin.ModelAdmin):
+	list_display = ['localname', 'created', 'modified']
 
 class ProcessInlineForm(ModelForm):
 	def __init__(self, *args, **kwargs):
@@ -26,7 +26,7 @@ class ComplexProcessAdmin(admin.ModelAdmin):
 	search_fields = ['name', 'description', ]
 
 class ProgramAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description', 'automatic_download']
+	list_display = [ 'name', 'description', 'stream']
 	inlines = [ProcessOrderInline]
 	search_fields = ['name', 'description', ]
 
@@ -49,7 +49,7 @@ class TransformCountsToRadiationAdmin(admin.ModelAdmin):
 	list_display = [ 'counts_shift', 'calibrated_coefficient', 'space_measurement']
 
 admin.site.register(Stream, StreamAdmin)
-admin.site.register(Image, ImageAdmin)
+admin.site.register(File, FileAdmin)
 admin.site.register(TransformCountsToRadiation, TransformCountsToRadiationAdmin)
 admin.site.register(ComplexProcess, ComplexProcessAdmin)
 admin.site.register(Compact, CompactAdmin)

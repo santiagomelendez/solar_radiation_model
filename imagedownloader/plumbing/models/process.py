@@ -3,7 +3,64 @@ from requester.models import *
 from model_utils.managers import *
 from decimal import Decimal
 
-# Create your models here.
+from django.db import models
+import glob
+
+class Stream(models.Model):
+	class Meta:
+		app_label = 'plumbing'
+	root_path = models.TextField(unique=True, db_index=True)
+	#files = models.ManyToManyField('FileStatus', through='FileStatus', related_name='streams')
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+	def __str__(self):
+		return self.root_path
+	@classmethod
+	def get_stream_from_file(cls, localfile):
+		return "/".join(localfile.split("/")[:-2]) + "/"
+	def get_all_files(self):
+		return glob.glob(self.root_path + "*/*.nc")
+	def updated_files(self):
+		files_tmp = []
+		for f in self.get_all_files():
+			f, n = File.objects.get_or_create(localname=str(f))
+			if n: f.save()
+			fs, n = FileStatus.objects.get_or_create(file=f,stream=self)
+			if n: fs.save()
+			self.files.add(fs)
+			files_tmp.append([fs, True]) 
+		return files_tmp
+	def clone(self):
+		s = Stream(root_path=self.root_path)
+		s.save()
+		return s
+
+class File(models.Model):
+	class Meta:
+		app_label = 'plumbing'
+	localname = models.TextField(unique = True, db_index=True, default="")
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+	def filename(self):
+		return self.localname
+	def __gt__(self, obj):
+		return self.datetime() > obj.datetime()
+	def __str__(self):
+		return self.localname.split("/")[-1]
+	def localsize(self):
+		path = self.completepath()
+		return os.stat(path).st_size if os.path.isfile(path) else 0
+
+class FileStatus(models.Model):
+	class Meta:
+        	app_label = 'plumbing'
+	file = models.ForeignKey('File', related_name='stream')
+	stream = models.ForeignKey(Stream, related_name='files')
+	processed = models.BooleanField()
+	def clone_for(self, stream):
+		fs = FileStatus(file=self.file,stream=stream)
+		fs.save()
+		return fs
 
 class ProcessManager(InheritanceManager):
 	def all(self, *argc, **argv):
@@ -26,21 +83,29 @@ class ComplexProcess(Process):
 	class Meta:
         	app_label = 'plumbing'
 	processes = models.ManyToManyField('Process', through='ProcessOrder', related_name='complex_process')
-	def do(self, data):
+	def encapsulate_in_array(self, stream_or_streams):
+		if not stream_or_streams.__class__ in [list, tuple]:
+			stream_or_streams = [ stream_or_streams ]
+		return stream_or_streams
+	def do(self, stream):
 		self.progress = 0
 		self.executing = True
 		self.save()
-		cache = data
 		ps = self.processes.all().order_by('used_by__position')
 		count = 0.0
 		for subprocess in ps:
-			cache = subprocess.do(cache)
+			stream = self.encapsulate_in_array(stream)
+			tmp_results = []
+			for s in stream:
+				result = subprocess.do(s)
+				tmp_results += self.encapsulate_in_array(result)
+			stream = tmp_results
 			count += 1
 			self.progress = (count / len(ps)) * 100
 			self.save()
 		self.executing = False
 		self.save()
-		return cache
+		return stream
 
 class ProcessOrder(models.Model):
 	class Meta:
@@ -48,16 +113,3 @@ class ProcessOrder(models.Model):
 	position = models.IntegerField()
 	process = models.ForeignKey('Process', related_name='used_by')
 	complex_process = models.ForeignKey(ComplexProcess)
-
-class Program(ComplexProcess):
-	class Meta:
-        	app_label = 'plumbing'
-	automatic_download = models.ForeignKey(AutomaticDownload)
-	def downloaded_files(self):
-		return [ f for request in self.automatic_download.request_set.all() for f in request.order.file_set.filter(downloaded=True).order_by('localname') ]
-	def source(self):
-		files = self.downloaded_files()
-		files.sort()
-		return { 'all': files }
-	def execute(self):
-		self.do(self.source())

@@ -1,3 +1,10 @@
+- model: plumbing.stream
+  pk: 1
+  fields:
+    root_path: "/home/eloy/data/GVAR_IMG/bsas/"
+    created: "2013-01-01T00:00+00:00"
+    modified: "2013-01-01T00:00+00:00"
+
 - model: plumbing.process
   pk: 1
   fields:
@@ -13,7 +20,7 @@
 - model: plumbing.program
   pk: 1
   fields:
-    automatic_download: 3
+    stream: 1
 
 - model: plumbing.process
   pk: 2
