@@ -22,7 +22,7 @@ class TagManager(models.Model):
 class Stream(models.Model):
 	class Meta:
 		app_label = 'plumbing'
-	root_path = models.TextField(unique=True, db_index=True)
+	root_path = models.TextField(db_index=True)
 	tags = models.ForeignKey(TagManager, related_name='stream', default=TagManager())
 	#files = models.ManyToManyField('FileStatus', through='FileStatus', related_name='streams')
 	#name = models.File
@@ -67,6 +67,29 @@ class File(models.Model):
 	def localsize(self):
 		path = self.completepath()
 		return os.stat(path).st_size if os.path.isfile(path) else 0
+	def channel(self):
+		res = re.search('BAND_([0-9]*)\.', self.completepath())
+		return str(res.groups(0)[0]) if res else None
+	def satellite(self):
+		res = self.filename().split(".")
+		return str(res[0])
+	def datetime(self):
+		t_info = self.filename().split(".")
+		year = int(t_info[1])
+		days = int(t_info[2])
+		time = t_info[3]
+		date = datetime(year, 1, 1) + timedelta(days - 1)
+		return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
+	def latlon(self):
+		if self.channel() is None:
+			return None, None
+		root = Dataset(self.completepath(),'r')
+		lat = root.variables['lat'][:]
+		lon = root.variables['lon'][:]
+		root.close()
+		return lat, lon
+	def completepath(self):
+		return os.path.expanduser(os.path.normpath(self.localname))
 
 class FileStatus(models.Model):
 	class Meta:

@@ -2,6 +2,9 @@ from django.contrib import admin
 from plumbing.models import *
 from django.forms import ModelForm
 
+class TagManagerAdmin(admin.ModelAdmin):
+	list_display = ['tag_string']
+
 class StreamAdmin(admin.ModelAdmin):
 	list_display = ['root_path', 'created', 'modified']
 
@@ -48,6 +51,7 @@ class FilterSolarElevationAdmin(admin.ModelAdmin):
 class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
 	list_display = [ 'counts_shift', 'calibrated_coefficient', 'space_measurement']
 
+admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)
 admin.site.register(File, FileAdmin)
 admin.site.register(AppendCountToRadiationCoefficient, AppendCountToRadiationCoefficientAdmin)
