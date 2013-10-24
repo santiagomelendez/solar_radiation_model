@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.timezone import utc
 from requester.models import *
-from process import Process
+from process import Process, Stream
 from libs.file import netcdf as nc
 import os
 import calendar
@@ -13,7 +13,7 @@ class Compact(Process):
 	class Meta:
         	app_label = 'plumbing'
 	extension = models.TextField()
-	resultant_stream = models.ForeignKey(Stream)
+	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
 	def do(self, stream):
 		filename = "%spkg.%s.nc" % (stream.root_path,stream.tags.make_filename())
 		file = self.do_file(filename,stream)

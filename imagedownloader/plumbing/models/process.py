@@ -7,7 +7,9 @@ from django.db import models
 import glob
 
 class TagManager(models.Model):
-	tag_string = models.TextField(db_index=True)
+	class Meta:
+		app_label = 'plumbing'
+	tag_string = models.TextField(db_index=True, default="")
 	def append(self,tag):
 		self.tag_string += ("," + tag) if len(self.tag_string) > 0 else tag
 	def clone(self):
@@ -21,7 +23,7 @@ class Stream(models.Model):
 	class Meta:
 		app_label = 'plumbing'
 	root_path = models.TextField(unique=True, db_index=True)
-	tags = models.ForeignKey(TagManager)
+	tags = models.ForeignKey(TagManager, related_name='stream', default=TagManager())
 	#files = models.ManyToManyField('FileStatus', through='FileStatus', related_name='streams')
 	#name = models.File
 	created = models.DateTimeField(auto_now_add=True)
