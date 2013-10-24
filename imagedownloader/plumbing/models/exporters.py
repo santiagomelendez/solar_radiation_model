@@ -14,23 +14,21 @@ class Compact(Process):
         	app_label = 'plumbing'
 	extension = models.TextField()
 	resultant_stream = models.ForeignKey(Stream)
-	def do(self, data):
-		results = {}
-		for filename in data:
-			print filename, len(data[filename])
-			f = self.do_file(filename,data[filename])
-			results[filename] = [ f ]
-		return results
+	def do(self, stream):
+		filename = "%spkg.%s.nc" % (stream.root_path,stream.tags.make_filename())
+		file = self.do_file(filename,stream)
+		fs = FileStatus(file=file,stream=self.resultant_stream)
+		fs.save()
+		return self.resultant_stream
 	def getdatetimenow(self):
 		return datetime.utcnow().replace(tzinfo=utc)
-	def do_file(self, filename, data):
+	def do_file(self, filename, stream):
 		print "Creating ", filename
 		# create compact file and initialize basic settings
-		localname = 'pkg.'+filename + self.extension # The filename does not contain the extension
 		begin_time = self.getdatetimenow()
-		root, is_new = nc.open(localname)
+		root, is_new = nc.open(filename)
 		if is_new:
-			sample, n = nc.open(data[0].completepath())
+			sample, n = nc.open(stream.files.all()[0].completepath())
 			shape = sample.variables['data'].shape
 			nc.getdim(root,'northing', shape[1])
 			nc.getdim(root,'easting', shape[2])
@@ -41,28 +39,25 @@ class Compact(Process):
 			v_lat[:] = nc.getvar(sample, 'lat')[:]
 			nc.close(sample)
 			nc.sync(root)
-		if isinstance(data,collections.Mapping):
-			for d in data:
-				self.do_var(root, d, data[d])
-		else:
-			self.do_var(root, 'data', data)
+		self.do_var(root, 'data', stream)
 		# save the content inside the compact file
 		if not root is None: nc.close(root)
-		f = File(localname=localname, remotename='', size=(os.stat(localname)).st_size, failures=0, downloaded=True, begin_download=begin_time, end_download=self.getdatetimenow())
+		f = File(localname=filename)
 		f.save()
 		return f
-	def do_var(self, root, var_name, files):
+	def do_var(self, root, var_name, stream):
 		count = 0
-		max_count = len(files)
+		file_statuses = stream.files.all()
+		max_count = len(file_statuses)
 		print "Compacting ", var_name
 		shape = nc.getvar(root,'lat').shape
-		for f in files:
+		for fs in file_statuses:
 			# join the distributed content
-			ch = f.channel()
+			ch = fs.file.channel()
 			v_ch   = nc.getvar(root,var_name, 'f4', ('timing','northing','easting',), 4)
 			v_ch_t = nc.getvar(root,var_name + '_time', 'f4', ('timing',))
 			try:
-				rootimg, n = nc.open(f.completepath())
+				rootimg, n = nc.open(fs.file.completepath())
 				data = (nc.getvar(rootimg, 'data'))[:]
 				# Force all the channels to the same shape
 				if not (data.shape[1:3] == shape):
@@ -71,9 +66,9 @@ class Compact(Process):
 				if v_ch.shape[1] == data.shape[1] and v_ch.shape[2] == data.shape[2]:
 					index = v_ch.shape[0]
 					v_ch[index,:] = data
-					v_ch_t[index] = calendar.timegm(f.image_datetime().utctimetuple())
+					v_ch_t[index] = calendar.timegm(fs.file.datetime().utctimetuple())
 				nc.close(rootimg)
 				nc.sync(root)
 				print "\r","\t" + str(count/max_count * 100).zfill(2) + "%",
 			except RuntimeError, e:
-				print f.completepath()
+				print fs.file.completepath()

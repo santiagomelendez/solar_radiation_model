@@ -6,11 +6,24 @@ from decimal import Decimal
 from django.db import models
 import glob
 
+class TagManager(models.Model):
+	tag_string = models.TextField(db_index=True)
+	def append(self,tag):
+		self.tag_string += ("," + tag) if len(self.tag_string) > 0 else tag
+	def clone(self):
+		t = TagManager(tag_string=self.tag_string)
+		t.save()
+		return t
+	def make_filename(self):
+		return self.tag_string.split(",").join(".")
+
 class Stream(models.Model):
 	class Meta:
 		app_label = 'plumbing'
 	root_path = models.TextField(unique=True, db_index=True)
+	tags = models.ForeignKey(TagManager)
 	#files = models.ManyToManyField('FileStatus', through='FileStatus', related_name='streams')
+	#name = models.File
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
 	def __str__(self):
@@ -27,11 +40,13 @@ class Stream(models.Model):
 			if n: f.save()
 			fs, n = FileStatus.objects.get_or_create(file=f,stream=self)
 			if n: fs.save()
-			self.files.add(fs)
+			#self.files.add(fs)
 			files_tmp.append([fs, True]) 
 		return files_tmp
 	def clone(self):
-		s = Stream(root_path=self.root_path)
+		t = self.tags.clone()
+		t.save()
+		s = Stream(root_path=self.root_path,tags=t)
 		s.save()
 		return s
 
@@ -98,6 +113,7 @@ class ComplexProcess(Process):
 			tmp_results = []
 			for s in stream:
 				result = subprocess.do(s)
+				subprocess.mark_with_tags(s)
 				tmp_results += self.encapsulate_in_array(result)
 			stream = tmp_results
 			count += 1

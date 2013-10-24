@@ -4,6 +4,7 @@ from process import *
 import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc
+import re
 
 class FilterSolarElevation(Process):
 	class Meta:
@@ -26,6 +27,8 @@ class FilterSolarElevation(Process):
 			solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
 			solarelevation_min = solarelevation.min()
 		return solarelevation_min
+	def mark_with_tags(self, stream):
+		stream.tags.append("SE"+str(self.minimum))
 
 class CollectTimed(Process):
 	class Meta:
@@ -38,7 +41,12 @@ class CollectTimed(Process):
 			fs.clone_for(resultant_stream[fs.file.datetime().month])
 			fs.processed=True
 			fs.save()
+		for m in range(1,13,1):
+			resultant_stream[m].tags.append("M"+str(m).zfill(2))
 		return [v for k,v in resultant_stream]
+	def mark_with_tags(self, stream):
+		# Don't used because these process always return multiple streams
+		pass
 
 class CollectChannel(Process):
 	class Meta:
@@ -52,7 +60,12 @@ class CollectChannel(Process):
 			fs.clone_for(resultant_stream[fs.file.channel()])
 			fs.processed=True
 			fs.save()
+		for ch in channels:
+			resultant_stream[ch].tags.append("BAND_"+str(m).zfill(2))
 		return [v for k,v in resultant_stream]
+	def mark_with_tags(self, stream):
+		# Don't used because these process always return multiple streams
+		pass
 
 class FilterChannel(Process):
 	class Meta:
@@ -68,6 +81,9 @@ class FilterChannel(Process):
 			fs.processed=True
 			fs.save()
 		return resultant_stream
+	def mark_with_tags(self, stream):
+		# Don't used because these process is transparent in the name
+		pass
 
 class FilterTimed(Process):
 	class Meta:
@@ -81,6 +97,10 @@ class FilterTimed(Process):
 			fs.processed=True
 			fs.save()
 		return resultant_stream
+	def mark_with_tags(self, stream):
+		# TODO: Correct self.time_range.all() = self.time_range.begin self.time_range.end
+		dates = [str(ch.in_file).zfill(2) for t in self.time_range.all()].join("_")
+		stream.tags.append("UTC_"+re.sub("[\-\:\.\ ]","", str(d)))
 
 class AppendCountToRadiationCoefficient(Process):
 	class Meta:
@@ -105,3 +125,5 @@ class AppendCountToRadiationCoefficient(Process):
 			fs.processed=True
 			fs.save()
 		return stream
+	def mark_with_tags(self, stream):
+		stream.tags.append("_calibrated")
