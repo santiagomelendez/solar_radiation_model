@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../")
 from datetime import datetime, timedelta
-from xlrd import open_workbook
+from xlrd import open_workbook, XL_CELL_EMPTY, XL_CELL_BLANK
 import csv
 from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
@@ -30,7 +30,7 @@ def rows2slots(rows, image_per_hour):
 		slot = geo.getslots(dt,image_per_hour)
 		if not old_slot is slot:
 			resumed_slots.append([slot, [dt, mvolt_to_watt((mvolt/rows_by_slot)/seconds_in_slot), rows_by_slot]])
-			old_slot, rows_by_slot, mvolt = slot, 0, 0
+			old_slot, rows_by_slot, mvolt = slot, 0, 0 
 		mvolt += r[1]
 		rows_by_slot += 1
 		dt = r[0]
@@ -71,11 +71,21 @@ def rows2netcdf(rows, filename, index):
 					measurements[i_e, index,:] = np.array([value, value])
 					i_e += 1
 					i_m += 1
+		while i_e < len(times):
+			# TODO: This should be completed with a 0 error from the estimation.
+			measurements[i_e, index,:] = np.array([0, 0])
+			show("Detected estimated time without earth measure.")
+			i_e += 1
 		error.rmse(root, index)
 		nc.close(root)
 
 def get_val(sh,x,y):
-	return sh.cell(y,x).value
+	try:
+		cell = sh.cell(y,x)
+		result = None if cell.ctype in [XL_CELL_EMPTY, XL_CELL_BLANK] else cell.value
+	except:
+		result = None
+	return result
 
 def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="00", utc_hour=0, utc_minute=0):
 	if year_or_timestamp.__class__ is str and julian is None:
@@ -103,14 +113,15 @@ def from_xls(input_filename, utc_diff):
 	rows = []
 	y = y_from
 	year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
-	while not(year == '' and julian == '' and time == ''):
+	while not(year is None and julian is None and time is None):
 		time = str(int(time)).zfill(4)
 		timestamp = to_datetime(year, julian, time[0:2],time[2:4], utc_hour=utc_diff, utc_minute=0)
-		try:
-			value = float(get_val(sh,x_value,y))
-		except:
-			value = 0
-		rows.append((timestamp, value))
+		data = get_val(sh,x_value,y)
+		if not data is None:
+			try:
+				rows.append((timestamp, float(data)))
+			except Exception, e:
+				print e
 		y += 1
 		year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
 	return rows
