@@ -1,6 +1,6 @@
 from django.db import models
 from requester.models import *
-from process import *
+from core import *
 import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc

@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.timezone import utc
 from requester.models import *
-from process import Process, Stream, FileStatus, File
+from core import Process, Stream, FileStatus, File
 from libs.file import netcdf as nc
 import os
 import calendar

@@ -1,6 +1,6 @@
 import sys
 sys.path.append(".")
-from process import *
+from core import *
 from libs.console import *
 
 class Image(File):
