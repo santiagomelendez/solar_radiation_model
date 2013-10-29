@@ -1,10 +1,8 @@
-#from django.db import models
+from django.db import models
 from requester.models import *
 from model_utils.managers import *
 from decimal import Decimal
 from polymodels.models import PolymorphicModel
-
-from django.db import models
 import glob
 
 class TagManager(models.Model):
