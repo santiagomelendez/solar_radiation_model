@@ -300,13 +300,6 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 	nc.close(root)
 	show("Process finished.\n")
 
-def show_times(*args):
-	begin = datetime.now()
-	result = yield aspects.proceed(*args)
-	end = datetime.now()
-	say("\t[time consumed: %.2f seconds]\n" % (end - begin).total_seconds())
-	yield aspects.return_stop(result)
-
 import aspects
 import re
 current_module = sys.modules[__name__]
