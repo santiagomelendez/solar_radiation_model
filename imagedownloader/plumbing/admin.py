@@ -11,6 +11,9 @@ class StreamAdmin(admin.ModelAdmin):
 class FileAdmin(admin.ModelAdmin):
 	list_display = ['localname', 'created', 'modified']
 
+class FileStatusAdmin(admin.ModelAdmin):
+	list_display = ['stream', 'file']
+
 class ProcessInlineForm(ModelForm):
 	def __init__(self, *args, **kwargs):
 		super(ProcessInlineForm, self).__init__(*args, **kwargs)
@@ -54,6 +57,7 @@ class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
 admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)
 admin.site.register(File, FileAdmin)
+admin.site.register(FileStatus, FileStatusAdmin)
 admin.site.register(AppendCountToRadiationCoefficient, AppendCountToRadiationCoefficientAdmin)
 admin.site.register(ComplexProcess, ComplexProcessAdmin)
 admin.site.register(Compact, CompactAdmin)

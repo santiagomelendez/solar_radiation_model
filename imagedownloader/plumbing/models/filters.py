@@ -16,65 +16,71 @@ class FilterSolarElevation(Process):
 		for fs in stream.files.all():
 			sub_lon = float(self.hourly_longitude)
 			lat,lon = fs.file.latlon()
-			if self.solar_elevation(fs.file, sub_lon, lat, lon) >= self.minimum:
+			lower_solar_elevation = float(self.minimum)
+			if self.solar_elevation(fs.file, sub_lon, lat, lon) >= lower_solar_elevation:
 				fs.clone_for(resultant_stream)
-			fs.processed=True
-			fs.save()
 		return resultant_stream
 	def solar_elevation(self, f, sub_lon, lat, lon):
-		solarelevation_min = -90.0
-		if not lon is None:
-			solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
-			solarelevation_min = solarelevation.min()
+		#solarelevation_min = -90.0
+		solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
+		solarelevation_min = solarelevation.min()
 		return solarelevation_min
 	def mark_with_tags(self, stream):
 		stream.tags.append("SE"+str(self.minimum))
 
-class CollectTimed(Process):
+class Collect(Process):
 	class Meta:
-        	app_label = 'plumbing'
-	def do(self, stream):
+		app_label = 'plumbing'
+	def get_keys(self, stream):
+		return set([ self.get_key(fs) for fs in stream.files.all() ])
+	def init_empty_streams(self, stream):
+		keys = self.get_keys(stream)
 		resultant_stream = {}
-		for m in range(1,13,1):
-			resultant_stream[m] = stream.clone()
+		for k in keys:
+			resultant_stream[k] = stream.clone()
+		return resultant_stream
+	def do(self, stream):
+		resultant_stream = self.init_empty_streams(stream)
 		for fs in stream.files.all():
-			fs.clone_for(resultant_stream[fs.file.datetime().month])
+			fs.clone_for(resultant_stream[self.get_key(fs)])
 			fs.processed=True
 			fs.save()
-		for m in range(1,13,1):
-			resultant_stream[m].tags.append("M"+str(m).zfill(2))
-		return [v for k,v in resultant_stream]
+		for k in resultant_stream.keys():
+			resultant_stream[k].tags.append(k)
+		return resultant_stream.values()
 	def mark_with_tags(self, stream):
 		# Don't used because these process always return multiple streams
 		pass
 
-class CollectChannel(Process):
+class CollectTimed(Collect):
 	class Meta:
-        	app_label = 'plumbing'
-	channels = models.ManyToManyField(Channel,db_index=True)
-	def do(self, stream):
-		resultant_stream = {}
-		for ch in channels:
-			resultant_stream[ch.in_file] = stream.clone()
-		for fs in stream.files.all():
-			fs.clone_for(resultant_stream[fs.file.channel()])
-			fs.processed=True
-			fs.save()
-		for ch in channels:
-			resultant_stream[ch].tags.append("BAND_"+str(m).zfill(2))
-		return [v for k,v in resultant_stream]
-	def mark_with_tags(self, stream):
-		# Don't used because these process always return multiple streams
-		pass
+		app_label = 'plumbing'
+	yearly = models.BooleanField()
+	monthly = models.BooleanField()
+	weekly = models.BooleanField()
+	def get_key(self, file_status):
+		r = ""
+		dt = file_status.file.datetime()
+		if self.yearly: r += str(dt.year)
+		if self.monthly: r += ("." + str(dt.month).zfill(2))
+		if self.weekly: r += ("." + str(dt.isocalendar()[1]).zfill)
+		return r
+
+class CollectChannel(Collect):
+	class Meta:
+		app_label = 'plumbing'
+	def get_key(self, file_status):
+		return "BAND_"+str(file_status.file.channel()).zfill(2)
 
 class FilterChannel(Process):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	channels = models.ManyToManyField(Channel,db_index=True)
 	def do(self, stream):
 		resultant_stream = stream.clone()
-		chs = [ str(ch.in_file) for ch in self.channels.all() ]
-		sat = self.channels.all()[0].satellite
+		channels = self.channels.all()
+		chs = [ str(ch.in_file) for ch in channels ]
+		sat = channels[0].satellite
 		for fs in stream.files.all():
 			if fs.file.channel() in chs and fs.file.satellite() == sat.in_file:
 				fs.clone_for(resultant_stream)
@@ -87,7 +93,7 @@ class FilterChannel(Process):
 
 class FilterTimed(Process):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	time_range = models.ManyToManyField(UTCTimeRange,db_index=True)
 	def do(self, srteam):
 		resultant_stream = stream.clone()

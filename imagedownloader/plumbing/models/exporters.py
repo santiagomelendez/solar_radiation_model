@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.timezone import utc
 from requester.models import *
-from process import Process, Stream
+from process import Process, Stream, FileStatus, File
 from libs.file import netcdf as nc
 import os
 import calendar
@@ -15,7 +15,7 @@ class Compact(Process):
 	extension = models.TextField()
 	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
 	def do(self, stream):
-		filename = "%spkg.%s.nc" % (stream.root_path,stream.tags.make_filename())
+		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
 		file = self.do_file(filename,stream)
 		fs = FileStatus(file=file,stream=self.resultant_stream)
 		fs.save()
@@ -28,7 +28,7 @@ class Compact(Process):
 		begin_time = self.getdatetimenow()
 		root, is_new = nc.open(filename)
 		if is_new:
-			sample, n = nc.open(stream.files.all()[0].completepath())
+			sample, n = nc.open(stream.files.all()[0].file.completepath())
 			shape = sample.variables['data'].shape
 			nc.getdim(root,'northing', shape[1])
 			nc.getdim(root,'easting', shape[2])
@@ -47,7 +47,7 @@ class Compact(Process):
 		return f
 	def do_var(self, root, var_name, stream):
 		count = 0
-		file_statuses = stream.files.all()
+		file_statuses = stream.sorted_files()
 		max_count = len(file_statuses)
 		print "Compacting ", var_name
 		shape = nc.getvar(root,'lat').shape

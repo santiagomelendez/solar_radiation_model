@@ -25,7 +25,7 @@ def status(request):
 def update(request):
 	streams = Stream.objects.all()
 	for s in streams:
-		s.updated_files()
+		s.sync_files()
 	template = loader.get_template('plumbing/update.html')
 	context = Context({
 		'file_new_count': File.objects.count(),

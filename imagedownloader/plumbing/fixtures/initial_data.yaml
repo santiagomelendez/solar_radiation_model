@@ -3,11 +3,24 @@
   fields:
     tag_string: ""
 
+- model: plumbing.tagmanager
+  pk: 2
+  fields:
+    tag_string: ""
+
 - model: plumbing.stream
   pk: 1
   fields:
-    root_path: "/home/eloy/data/GVAR_IMG/bsas/"
+    root_path: "/home/eloy/data/GVAR_IMG/bsas_test/"
     tags: 1
+    created: "2013-01-01T00:00+00:00"
+    modified: "2013-01-01T00:00+00:00"
+
+- model: plumbing.stream
+  pk: 2
+  fields:
+    root_path: "/home/eloy/data/GVAR_IMG/packages/bsas/"
+    tags: 2
     created: "2013-01-01T00:00+00:00"
     modified: "2013-01-01T00:00+00:00"
 
@@ -16,8 +29,6 @@
   fields:
     name: 'Filter nights and compact'
     description: 'Filter all images with solar elevation < 10 degrees.'
-    progress: '0.00'
-    executing: False
 
 - model: plumbing.complexprocess
   pk: 1
@@ -33,49 +44,63 @@
   fields:
     name: 'Save'
     description: 'Compile all in a NetCDF4 file.'
-    progress: '0.00'
-    executing: False
 
 - model: plumbing.compact
   pk: 2
   fields:
     extension: '.nc'
+    resultant_stream: 2
 
 - model: plumbing.process
   pk: 3
   fields:
-    name: 'All files'
-    description: 'Exclude .meta files from all files.'
-    progress: '0.00'
-    executing: False
+    name: 'G13C1'
+    description: 'Select GOES 13 Channel 1 (visible channel).'
 
 - model: plumbing.filterchannel
   pk: 3
   fields:
-    channels: [1,2,3,4,5]
+    channels: [1]
 
 - model: plumbing.process
   pk: 4
   fields:
-    name: 'Channel classify'
-    description: 'Aggregate images by channel number'
-    progress: '0.00'
-    executing: False
+    name: 'year.Mmonth'
+    description: 'Classify the files by year and by month.'
 
-- model: plumbing.collectchannel
+- model: plumbing.collect
   pk: 4
   fields: {}
 
+- model: plumbing.collecttimed
+  pk: 4
+  fields:
+    yearly: True
+    monthly: True
+    weekly: False
+
 - model: plumbing.process
   pk: 5
   fields:
+    name: 'Channel classify'
+    description: 'Aggregate images by channel number'
+
+- model: plumbing.collect
+  pk: 5
+  fields: {}
+
+- model: plumbing.collectchannel
+  pk: 5
+  fields: {}
+
+- model: plumbing.process
+  pk: 6
+  fields:
     name: 'Filter images from the night'
     description: 'Only pass the images with a solar elevation >= 10 degrees.'
-    progress: '0.00'
-    executing: False
 
 - model: plumbing.filtersolarelevation
-  pk: 5
+  pk: 6
   fields:
     minimum: '10.00'
 
@@ -104,5 +129,12 @@
   pk: 4
   fields:
     position: 4
+    process: 6
+    complex_process: 1
+
+- model: plumbing.processorder
+  pk: 5
+  fields:
+    position: 5
     process: 2
     complex_process: 1

@@ -1,4 +1,7 @@
+import sys
+sys.path.append(".")
 from process import *
+from libs.console import *
 
 class Image(File):
 	class Meta:
@@ -39,3 +42,10 @@ class Program(ComplexProcess):
 		return { 'all': files }
 	def execute(self):
 		self.do(self.stream)
+
+import aspects
+import re
+current_module = sys.modules[__name__]
+methods = current_module.__dict__
+fxs = [ Program.execute ]
+aspects.with_wrap(show_times, *fxs)

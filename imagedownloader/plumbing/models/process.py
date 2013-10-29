@@ -2,6 +2,7 @@
 from requester.models import *
 from model_utils.managers import *
 from decimal import Decimal
+from polymodels.models import PolymorphicModel
 
 from django.db import models
 import glob
@@ -17,7 +18,7 @@ class TagManager(models.Model):
 		t.save()
 		return t
 	def make_filename(self):
-		return self.tag_string.split(",").join(".")
+		return ".".join(self.tag_string.split(","))
 
 class Stream(models.Model):
 	class Meta:
@@ -33,11 +34,11 @@ class Stream(models.Model):
 	@classmethod
 	def get_stream_from_file(cls, localfile):
 		return "/".join(localfile.split("/")[:-2]) + "/"
-	def get_all_files(self):
+	def get_root_path_files(self):
 		return glob.glob(self.root_path + "*/*.nc")
-	def updated_files(self):
+	def sync_files(self):
 		files_tmp = []
-		for f in self.get_all_files():
+		for f in self.get_root_path_files():
 			f, n = File.objects.get_or_create(localname=str(f))
 			if n: f.save()
 			fs, n = FileStatus.objects.get_or_create(file=f,stream=self)
@@ -51,6 +52,13 @@ class Stream(models.Model):
 		s = Stream(root_path=self.root_path,tags=t)
 		s.save()
 		return s
+	def unprocessed(self):
+		return self.files.all() #filter(processed=False)
+	def sorted_files(self):
+		return sorted(self.unprocessed(), key=lambda fs: fs.file.datetime())
+	def empty(self):
+		pending = self.unprocessed()
+		return len(pending) == 0
 
 class File(models.Model):
 	class Meta:
@@ -62,6 +70,8 @@ class File(models.Model):
 		return self.localname
 	def __gt__(self, obj):
 		return self.datetime() > obj.datetime()
+	def __lt__(self, obj):
+		return self.datetime() < obj.datetime()
 	def __str__(self):
 		return self.localname.split("/")[-1]
 	def localsize(self):
@@ -71,8 +81,8 @@ class File(models.Model):
 		res = re.search('BAND_([0-9]*)\.', self.completepath())
 		return str(res.groups(0)[0]) if res else None
 	def satellite(self):
-		res = self.filename().split(".")
-		return str(res[0])
+		res = re.search('([a-z]*[0-9]*)\.', self.filename())
+		return str(res.groups(0)[0]) if res else None
 	def datetime(self):
 		t_info = self.filename().split(".")
 		year = int(t_info[1])
@@ -93,7 +103,7 @@ class File(models.Model):
 
 class FileStatus(models.Model):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	file = models.ForeignKey('File', related_name='stream')
 	stream = models.ForeignKey(Stream, related_name='files')
 	processed = models.BooleanField()
@@ -108,49 +118,42 @@ class ProcessManager(InheritanceManager):
 	def filter(self, *argc, **argv):
 		return super(ProcessManager,self).filter(*argc, **argv).select_subclasses()
 
-class Process(models.Model):
+class Process(PolymorphicModel):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	objects = ProcessManager()
 	name = models.TextField(db_index=True)
 	description = models.TextField(db_index=True)
-	progress = models.DecimalField(max_digits=5,decimal_places=2)
-	executing = models.BooleanField()
 	def __str__(self):
 		return self.__class__.__name__ + ' [' + self.name + ']'
+	def mark_with_tags(self, stream):
+		pass
 
 class ComplexProcess(Process):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	processes = models.ManyToManyField('Process', through='ProcessOrder', related_name='complex_process')
-	def encapsulate_in_array(self, stream_or_streams):
-		if not stream_or_streams.__class__ in [list, tuple]:
-			stream_or_streams = [ stream_or_streams ]
-		return stream_or_streams
+	def encapsulate_in_array(self, streams):
+		if not streams.__class__ in [list, tuple]:
+			streams = [ streams ]
+		return streams
 	def do(self, stream):
-		self.progress = 0
-		self.executing = True
-		self.save()
 		ps = self.processes.all().order_by('used_by__position')
-		count = 0.0
 		for subprocess in ps:
+			show("\rRunning " + str(subprocess))
 			stream = self.encapsulate_in_array(stream)
 			tmp_results = []
 			for s in stream:
-				result = subprocess.do(s)
-				subprocess.mark_with_tags(s)
-				tmp_results += self.encapsulate_in_array(result)
+				if not s.empty():
+					result = subprocess.type_cast().do(s)
+					subprocess.mark_with_tags(s)
+					tmp_results += self.encapsulate_in_array(result)
 			stream = tmp_results
-			count += 1
-			self.progress = (count / len(ps)) * 100
-			self.save()
-		self.executing = False
-		self.save()
 		return stream
 
 class ProcessOrder(models.Model):
 	class Meta:
-        	app_label = 'plumbing'
+		app_label = 'plumbing'
 	position = models.IntegerField()
 	process = models.ForeignKey('Process', related_name='used_by')
 	complex_process = models.ForeignKey(ComplexProcess)
