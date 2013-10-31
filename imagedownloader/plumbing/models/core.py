@@ -1,16 +1,25 @@
+import sys
+sys.path.append(".")
 from django.db import models
 from requester.models import *
 from model_utils.managers import *
 from decimal import Decimal
 from polymodels.models import PolymorphicModel
 import glob
+from libs.file import netcdf as nc
 
 class TagManager(models.Model):
 	class Meta:
 		app_label = 'plumbing'
 	tag_string = models.TextField(db_index=True, default="")
+	def exist(self, tag):
+		return tag in self.tag_string.split(",")
+	def insert_first(self, tag):
+		if not self.exist(tag):
+			self.tag_string = (tag + "," + self.tag_string)  if len(self.tag_string) > 0 else tag
 	def append(self,tag):
-		self.tag_string += ("," + tag) if len(self.tag_string) > 0 else tag
+		if not self.exist(tag):
+			self.tag_string += ("," + tag) if len(self.tag_string) > 0 else tag
 	def clone(self):
 		t = TagManager(tag_string=self.tag_string)
 		t.save()
@@ -79,22 +88,31 @@ class File(models.Model):
 		res = re.search('BAND_([0-9]*)\.', self.completepath())
 		return str(res.groups(0)[0]) if res else None
 	def satellite(self):
-		res = re.search('([a-z]*[0-9]*)\.', self.filename())
+		res = re.search('([a-z]*[0-9]*)\.', self.filename().replace("pkg.", ""))
 		return str(res.groups(0)[0]) if res else None
+	def deduce_year_fraction(self, year, rest):
+		if rest[0][0] == "M":
+			return datetime(year, int(rest[0][1:]), 1)
+		elif rest[0][0] == "W":
+			return datetime(year, 1 , 1) +  timedelta(week=int(rest[0][1:]), day=-1)
+		else:
+			days = int(rest[0])
+			time = rest[1]
+			date = datetime(year, 1, 1) + timedelta(days - 1)
+			return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
 	def datetime(self):
-		t_info = self.filename().split(".")
+		t_info = self.filename().replace("pkg.", "").split(".")
 		year = int(t_info[1])
-		days = int(t_info[2])
-		time = t_info[3]
-		date = datetime(year, 1, 1) + timedelta(days - 1)
-		return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
+		return self.deduce_year_fraction(year, t_info[2:])
 	def latlon(self):
-		if self.channel() is None:
-			return None, None
-		root = Dataset(self.completepath(),'r')
-		lat = root.variables['lat'][:]
-		lon = root.variables['lon'][:]
-		root.close()
+		try:
+			root, n = nc.open(self.completepath())
+			lat = nc.getvar(root,'lat')[:]
+			lon = nc.getvar(root, 'lon')[:]
+			nc.close(root)
+		except RuntimeError:
+			show(self.completepath())
+			lat, lon = None, None
 		return lat, lon
 	def completepath(self):
 		return os.path.expanduser(os.path.normpath(self.localname))
@@ -102,6 +120,7 @@ class File(models.Model):
 class FileStatus(models.Model):
 	class Meta:
 		app_label = 'plumbing'
+		unique_together = ("file", "stream")
 	file = models.ForeignKey('File', related_name='stream')
 	stream = models.ForeignKey(Stream, related_name='files')
 	processed = models.BooleanField()
@@ -138,7 +157,7 @@ class ComplexProcess(Process):
 	def do(self, stream):
 		ps = self.processes.all().order_by('used_by__position')
 		for subprocess in ps:
-			show("\rRunning " + str(subprocess))
+			show("Running " + str(subprocess))
 			stream = self.encapsulate_in_array(stream)
 			tmp_results = []
 			for s in stream:

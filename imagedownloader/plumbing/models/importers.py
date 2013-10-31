@@ -43,7 +43,6 @@ class Program(ComplexProcess):
 	def execute(self):
 		self.do(self.stream)
 
-import aspects
 import re
 current_module = sys.modules[__name__]
 methods = current_module.__dict__

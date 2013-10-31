@@ -23,7 +23,6 @@ class Compact(Process):
 	def getdatetimenow(self):
 		return datetime.utcnow().replace(tzinfo=utc)
 	def do_file(self, filename, stream):
-		print "Creating ", filename
 		# create compact file and initialize basic settings
 		begin_time = self.getdatetimenow()
 		root, is_new = nc.open(filename)
@@ -48,8 +47,6 @@ class Compact(Process):
 	def do_var(self, root, var_name, stream):
 		count = 0
 		file_statuses = stream.sorted_files()
-		max_count = len(file_statuses)
-		print "Compacting ", var_name
 		shape = nc.getvar(root,'lat').shape
 		for fs in file_statuses:
 			# join the distributed content
@@ -69,6 +66,5 @@ class Compact(Process):
 					v_ch_t[index] = calendar.timegm(fs.file.datetime().utctimetuple())
 				nc.close(rootimg)
 				nc.sync(root)
-				print "\r","\t" + str(count/max_count * 100).zfill(2) + "%",
 			except RuntimeError, e:
 				print fs.file.completepath()

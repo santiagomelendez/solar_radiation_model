@@ -5,6 +5,8 @@ import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc
 import re
+import sys
+sys.path.append(".")
 
 class FilterSolarElevation(Process):
 	class Meta:
@@ -14,16 +16,17 @@ class FilterSolarElevation(Process):
 	def do(self,stream):
 		resultant_stream = stream.clone()
 		for fs in stream.files.all():
-			sub_lon = float(self.hourly_longitude)
+			sub_lon = np.float(self.hourly_longitude)
 			lat,lon = fs.file.latlon()
-			lower_solar_elevation = float(self.minimum)
+			lower_solar_elevation = np.float(self.minimum)
 			if self.solar_elevation(fs.file, sub_lon, lat, lon) >= lower_solar_elevation:
 				fs.clone_for(resultant_stream)
 		return resultant_stream
 	def solar_elevation(self, f, sub_lon, lat, lon):
-		#solarelevation_min = -90.0
-		solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
-		solarelevation_min = solarelevation.min()
+		solarelevation_min = -90.0
+		if not lat is None:
+			solarelevation = geo.getsolarelevationmatrix(f.datetime(), sub_lon, lat, lon)
+			solarelevation_min = solarelevation.min()
 		return solarelevation_min
 	def mark_with_tags(self, stream):
 		stream.tags.append("SE"+str(self.minimum))
@@ -38,6 +41,7 @@ class Collect(Process):
 		resultant_stream = {}
 		for k in keys:
 			resultant_stream[k] = stream.clone()
+			resultant_stream[k].tags.insert_first(stream.files.all()[0].file.satellite())
 		return resultant_stream
 	def do(self, stream):
 		resultant_stream = self.init_empty_streams(stream)
@@ -62,8 +66,8 @@ class CollectTimed(Collect):
 		r = ""
 		dt = file_status.file.datetime()
 		if self.yearly: r += str(dt.year)
-		if self.monthly: r += ("." + str(dt.month).zfill(2))
-		if self.weekly: r += ("." + str(dt.isocalendar()[1]).zfill)
+		if self.monthly: r += (".M" + str(dt.month).zfill(2))
+		if self.weekly: r += (".W" + str(dt.isocalendar()[1]).zfill)
 		return r
 
 class CollectChannel(Collect):
@@ -111,25 +115,28 @@ class FilterTimed(Process):
 class AppendCountToRadiationCoefficient(Process):
 	class Meta:
 		app_label = 'plumbing'
-	counts_shift = models.IntegerField()
-	calibrated_coefficient = models.DecimalField(max_digits=5,decimal_places=3)
-	space_measurement = models.DecimalField(max_digits=5,decimal_places=3)
 	def do(self, stream):
+		from libs.sat.goes import calibration
 		resultant_stream = stream.clone()
 		for fs in stream.files.all():
+			f = fs.file
 			if f.channel() == '01':
+				sat = f.satellite()
 				root, is_new = nc.open(f.completepath())
 				nc.getdim(root,'coefficient',1)
 				var = nc.getvar(root, 'counts_shift', 'f4', ('coefficient',), 4)
-				var[0] = self.counts_shift
-				var = nc.getvar(root, 'calibrated_coefficient', 'f4', ('coefficient',), 4)
-				var[0] = self.calibrated_coefficient
+				var[0] = calibration.counts_shift.coefficient(sat)
 				var = nc.getvar(root, 'space_measurement', 'f4', ('coefficient',), 4)
-				var[0] = self.space_measurement
+				var[0] = calibration.space_measurement.coefficient(sat)
+				var = nc.getvar(root, 'prelaunch', 'f4', ('coefficient',), 4)
+				var[0] = calibration.prelaunch.coefficient(sat)
+				var = nc.getvar(root, 'postlaunch', 'f4', ('coefficient',), 4)
+				dt = f.datetime()
+				var[0] = calibration.postlaunch.coefficient(sat, dt.year, dt.month)
 				#data = np.float32(self.calibrated_coefficient) * ((data / np.float32(self.counts_shift)) - np.float32(self.space_measurement))
 				nc.close(root)
 			fs.processed=True
 			fs.save()
-		return stream
+		return resultant_stream
 	def mark_with_tags(self, stream):
-		stream.tags.append("_calibrated")
+		stream.tags.append("calibrated")

@@ -52,7 +52,7 @@ class FilterSolarElevationAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description', 'minimum']
 
 class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
-	list_display = [ 'counts_shift', 'calibrated_coefficient', 'space_measurement']
+	list_display = [ 'name', 'description']
 
 admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)
