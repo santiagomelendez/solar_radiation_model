@@ -96,7 +96,7 @@
 - model: plumbing.process
   pk: 6
   fields:
-    name: 'Filter images from the night'
+    name: 'Filter night''s images'
     description: 'Only pass the images with a solar elevation >= 10 degrees.'
 
 - model: plumbing.filtersolarelevation
