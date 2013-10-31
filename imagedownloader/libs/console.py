@@ -1,5 +1,7 @@
 import sys
 import pyttsx
+import aspects
+from datetime import datetime
 
 engine = pyttsx.init()
 
