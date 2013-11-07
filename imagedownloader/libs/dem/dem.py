@@ -53,7 +53,7 @@ if not os.path.exists(localpath+ "/dem.nc"):
 def cut(lat,lon):
 	import numpy as np
 	root, is_new = nc.open(localpath+"/dem.nc")
-	dem = nc.getvar(root, 'dem', 'i2', ('northing','easting',))
+	dem = nc.getvar(root, 'dem', 'i2', lat.dimensions)
 	x, y = p.pixels_from_coordinates(lat[:], lon[:], dem.shape[0], dem.shape[1])
 	# In the transformation the 'y' dimension is twisted because the map is inverted.
 	result = p.transform_data(dem,x,dem.shape[0] - y)
@@ -63,6 +63,6 @@ def cut(lat,lon):
 def cut_projected(root):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
-	dem = nc.getvar(root, 'dem', 'i2', ('northing','easting',))
+	dem = nc.getvar(root, 'dem', 'i2', lat.dimensions)
 	dem[:], dem_x, dem_y = cut(lat, lon)
 	return dem[:], dem_x, dem_y
