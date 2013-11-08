@@ -1,5 +1,6 @@
 import sys
 sys.path.append("../")
+sys.path.append(".")
 from datetime import datetime, timedelta
 from xlrd import open_workbook, XL_CELL_EMPTY, XL_CELL_BLANK
 import csv
@@ -30,7 +31,7 @@ def rows2slots(rows, image_per_hour):
 		slot = geo.getslots(dt,image_per_hour)
 		if not old_slot is slot:
 			resumed_slots.append([slot, [dt, mvolt_to_watt((mvolt/rows_by_slot)/seconds_in_slot), rows_by_slot]])
-			old_slot, rows_by_slot, mvolt = slot, 0, 0 
+			old_slot, rows_by_slot, mvolt = slot, 0, 0
 		mvolt += r[1]
 		rows_by_slot += 1
 		dt = r[0]
@@ -42,8 +43,8 @@ def rows2slots(rows, image_per_hour):
 def rows2netcdf(rows, filename, index):
 	root, is_new = nc.open(filename)
 	if not is_new:
-		measurements = nc.getvar(root, 'measurements', 'f4', ('timing','northing','easting'), 4)
 		estimated = nc.getvar(root, 'globalradiation')
+		measurements = nc.clonevar(root, estimated, 'measurements')
 		measurements[:] = np.zeros(estimated.shape)
 		slots = nc.getvar(root, 'slots')
 		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
@@ -153,3 +154,4 @@ else:
 
 #python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
 #python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv 0 0 1 3
+
