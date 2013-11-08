@@ -75,22 +75,18 @@ def cut_positions(filename, blurred, *positions):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	time = nc.getvar(root, 'data_time')
-	root_cut, is_new = nc.open('cut_positions.' + filename)
-	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
-	northing_d = nc.getdim(root_cut, 'northing', len(pos))
-	easting_d = nc.getdim(root_cut, 'easting', 2)
-	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
-	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
-	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
-	time_cut = nc.getvar(root_cut, 'data_time', 'f4', ('timing',),4)
-	time_cut[:] = time[:]
+	root_cut, is_new = nc.clonefile(root, 'cut_positions.' + filename, ['lat', 'lon', 'data'])
+	northing_d = nc.getdim(root_cut, 'northing_cut', len(pos))
+	easting_d = nc.getdim(root_cut, 'easting_cut', 2)
+	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing_cut','easting_cut',),4)
+	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing_cut','easting_cut',),4)
+	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing_cut','easting_cut',),4)
 	for i in range(len(pos)):
 		show("\rCutting data: processing position %d / %d " % (i+1, len(pos)))
 		x, y = search_position(pos[i], lat, lon)
 		lat_cut[i,0] = lat[x,y]
 		lon_cut[i,0] = lon[x,y]
-		data_cut[:,i,0] = np.apply_over_axes(np.mean, data[:,x-blurred:x+blurred,y-blurred:y+blurred], axes=[1,2])
+		data_cut[:,i,0] = np.apply_over_axes(np.mean, data[:,x-blurred:x+blurred,y-blurred:y+blurred], axes=[1,2]) if blurred > 0 else data[:,x,y]
 		lat_cut[i,1], lon_cut[i,1], data_cut[:,i,1] = lat_cut[i,0], lon_cut[i,0], data_cut[:,i,0]
 	nc.close(root)
 	nc.close(root_cut)
