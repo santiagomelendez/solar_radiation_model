@@ -129,7 +129,7 @@ class AppendCountToRadiationCoefficient(Process):
 				var = nc.getvar(root, 'space_measurement', 'f4', ('coefficient',), 4)
 				var[0] = calibration.space_measurement.coefficient(sat)
 				var = nc.getvar(root, 'prelaunch', 'f4', ('coefficient',), 4)
-				var[0] = calibration.prelaunch.coefficient(sat)
+				var[0] = calibration.prelaunch.coefficient(sat)[0]
 				var = nc.getvar(root, 'postlaunch', 'f4', ('coefficient',), 4)
 				dt = f.datetime()
 				var[0] = calibration.postlaunch.coefficient(sat, dt.year, dt.month)
@@ -140,3 +140,4 @@ class AppendCountToRadiationCoefficient(Process):
 		return resultant_stream
 	def mark_with_tags(self, stream):
 		stream.tags.append("calibrated")
+
