@@ -45,6 +45,28 @@ def rmse(root, index):
 	#diary_error[:, index,1] = diary_error[:, index,0]
 	nc.sync(root)
 
+
+def diff(estimated, measured, station):
+	return estimated[:,station,0] - measured[:,station,0]
+
+def ghi_mean(measured, station):
+	return measured[:,station,0].mean()
+
+def ghi_ratio(measured, station):
+	return 100 / ghi_mean(measured, station)
+
+def bias(estimated, measured, station):
+	t_diff = diff(estimated, measured, station)
+	return t_diff.mean()
+
+def rmse_es(estimated, measured, station):
+	t_diff = diff(estimated, measured, station)
+	return np.sqrt((t_diff**2).mean())
+
+def mae(estimated, measured, station):
+	t_diff = diff(estimated, measured, station)
+	return np.absolute(t_diff).mean()
+
 filename = sys.argv[1] if len(sys.argv) == 2 else None
 if not filename == None:
 	try:

@@ -247,20 +247,18 @@ def process_validate(root):
 	measured = nc.getvar(root, 'measurements')
 	stations = [0]
 	for s in stations:
-		say("Station %i" % s)
-		diff = estimated[:,s,0] - measured[:,s,0]
-		ghi_mean = measured[:,s,0].mean()
-		ghi_ratio = 100 / ghi_mean
+		show("==========\n")
+		say("Station %i (%i slots)" % (s,  measured[:,s,0].size))
 		show("----------")
-		show("Length:", measured[:,s,0].size)
-		show("mean(measured)", ghi_mean)
-		show("mean(estimated)", estimated[:,s,0].mean())
-		bias = diff.mean()
-		show("BIAS:", bias, "(", bias * ghi_ratio, "%)")
-		rmse = np.sqrt((diff**2).mean())
-		show("RMSE:", rmse, "(", rmse * ghi_ratio, "%)")
-		mae = np.absolute(diff).mean()
-		show("MAE:", mae, "(", mae * ghi_ratio, "%)")
+		show("mean (measured):\t", error.ghi_mean(measured, s))
+		show("mean (estimated):\t", estimated[:,s,0].mean())
+		ghi_ratio = error.ghi_ratio(measured, s)
+		bias = error.bias(estimated, measured, s)
+		show("BIAS:\t%.5f\t( %.5f %%)" % (bias, bias * ghi_ratio))
+		rmse = error.rmse_es(estimated, measured, s)
+		show("RMSE:\t%.5f\t( %.5f %%)" % (rmse, rmse * ghi_ratio))
+		mae = error.mae(estimated, measured, s)
+		show("MAE:\t%.5f\t( %.5f %%)" % (mae, mae * ghi_ratio))
 		show("----------\n")
 		error.rmse(root, s)
 
