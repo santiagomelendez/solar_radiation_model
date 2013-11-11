@@ -8,7 +8,7 @@ from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
 from libs.console import *
 import numpy as np
-import error
+from libs.statistics import error
 
 def rows2csv(rows, filename):
 	with open(filename, 'wb') as csvfile:

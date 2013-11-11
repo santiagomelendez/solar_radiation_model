@@ -241,7 +241,7 @@ def process_radiation(lat, lon, data, root):
 
 
 def process_validate(root):
-	from station import error
+	from libs.statistics import error
 	tst_hour_step = 1/24.
 	estimated = nc.getvar(root, 'globalradiation')
 	measured = nc.getvar(root, 'measurements')
