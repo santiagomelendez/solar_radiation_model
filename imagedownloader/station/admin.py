@@ -4,55 +4,54 @@ from django.forms import ModelForm
 
 
 class BrandAdmin(admin.ModelAdmin):
-    list_display = [ 'name' ]
+    list_display = [ 'name', ]
 
 class OpticFilterAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'description' ]
+    list_display = [ 'name', ]
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'brand', ]
+    list_display = [ 'brand', 'name' ]
+    list_display_links = list_display[1:]
 
-class SensorAdmin(admin.ModelAdmin):
-    list_display = [ 'serial_number', 'optic_filter', 'product' ]
+class DeviceAdmin(admin.ModelAdmin):
+    list_display = [ 'product', 'serial_number', 'description' ]
+    list_display_links = list_display[1:]
+
+class SensorAdmin(DeviceAdmin):
+	list_display = [ 'product', 'serial_number', 'description', 'optic_filter' ]
+	list_display_links = list_display[1:]
+
+class InclinedSupportAdmin(DeviceAdmin):
+	list_display = [ 'product', 'serial_number', 'description', 'angle', ]
+	list_display_links = list_display[1:]
+
+class SensorCalibrationAdmin(admin.ModelAdmin):
+	list_display = [ 'coefficient', 'shift' ]
+	list_display_links = list_display[:]
 
 class ConfigurationAdmin(admin.ModelAdmin):
-    list_display = [ 'datetime', 'frequency', 'frequency_save', 'calibration_value', 'sensor', 'position' ]
+    list_display = [ 'position', 'calibration', 'created', 'modified' ]
+    list_display_links = list_display[1:]
 
-class MeasureAdmin(admin.ModelAdmin):
-    list_display = [ 'value', 'date', 'configuration' ]
+class MeasurementAdmin(admin.ModelAdmin):
+    list_display = [ 'configuration', 'finish', 'mean', 'between', 'refresh_presision' ]
+    list_display_links = list_display[:3]
 
 class StationAdmin(admin.ModelAdmin):
     list_display = [ 'name', 'coordinates' ]
 
 class PositionAdmin(admin.ModelAdmin):
-    list_display = [ 'latitude', 'longitude' ]
+    list_display = [ 'station', 'latitude', 'longitude' ]
 
-class DataloggerAdmin(admin.ModelAdmin):
-    list_display = [ 'label' ]
-
-class ChannelAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'datalogger']
-
-class StaticConfigurationAdmin(admin.ModelAdmin):
-    list_display = [ 'datetime', 'frequency', 'frequency_save', 'calibration_value', 'sensor', 'position' ]
-
-class DirectAdmin(admin.ModelAdmin):
-    list_display = [ '' ]
-
-class GlobalAdmin(admin.ModelAdmin):
-    list_display = [ '' ]
-
-class DifuseAdmin(admin.ModelAdmin):
-    list_display = [ 'shadow_ball' ]
-
+admin.site.register(Position, PositionAdmin)
+admin.site.register(Station, StationAdmin)
 admin.site.register(Brand, BrandAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(OpticFilter, OpticFilterAdmin)
 admin.site.register(Sensor, SensorAdmin)
-admin.site.register(Position, PositionAdmin)
-admin.site.register(Station, StationAdmin)
-admin.site.register(Datalogger, DataloggerAdmin)
-admin.site.register(Channel, ChannelAdmin)
-admin.site.register(Diffuse, StaticConfigurationAdmin)
-admin.site.register(Global, StaticConfigurationAdmin)
-admin.site.register(Direct, ConfigurationAdmin)
+admin.site.register(Datalogger, DeviceAdmin)
+admin.site.register(ShadowBall, DeviceAdmin)
+admin.site.register(Tracker, DeviceAdmin)
+admin.site.register(SensorCalibration, SensorCalibrationAdmin)
+admin.site.register(Configuration, ConfigurationAdmin)
+admin.site.register(Measurement, MeasurementAdmin)

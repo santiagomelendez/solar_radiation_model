@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 class OpticFilter(models.Model):
 	name = models.TextField(db_index=True)
-	description = models.TextField(db_index=True)
 	def __str__(self):
 		return self.name
 
@@ -14,69 +13,82 @@ class Brand(models.Model):
 		return self.name
 
 class Product(models.Model):
-	name = models.TextField(db_index=True)
 	brand = models.ForeignKey(Brand)
+	name = models.TextField(db_index=True)
 	def __str__(self):
 		return self.name
 
-class Sensor(models.Model):
-	serial_number = models.IntegerField()
-	optic_filter = models.ForeignKey(OpticFilter)
+class Device(models.Model):
 	product = models.ForeignKey(Product)
-	def sensor_pretty_name(self):
-		return '%i %s %s' % (self.serial_number, self.optic_filter.name, self.product.name) 
+	serial_number = models.TextField(db_index=True,default="")
+	description = models.TextField(db_index=True,default="")
 	def __str__(self):
 		return str(self.serial_number)
 
-class Position(models.Model):
-	latitude = models.DecimalField(max_digits=10,decimal_places=7)
-	longitude = models.DecimalField(max_digits=10,decimal_places=7)
-	def coordinates(self):
-		return '(%2f, %2f)' %  (self.latitude, self.longitude)
+class Sensor(Device):
+	optic_filter = models.ForeignKey(OpticFilter,null=True)
+	def sensor_pretty_name(self):
+		return '%i %s %s' % (self.serial_number, self.optic_filter.name, self.product.name)
+
+class Datalogger(Device):
+	pass
+
+class Tracker(Device):
+	pass
+
+class ShadowBall(Device):
+	pass
+
+class InclinedSupport(Device):
+	angle = models.DecimalField(max_digits=7,decimal_places=4,default=Decimal(0.00))
+
+class SensorCalibration(models.Model):
+	coefficient = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+	shift = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
 	def __str__(self):
-		return self.coordinates()
+		return '%2f x + %2f' % (self.coefficient, self.shift)
+
+class Position(models.Model):
+	station = models.ForeignKey('Station',null=True,default=None)
+	""" A centimeter-presision point """
+	latitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+	longitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+	def coordinates(self):
+		return '(%4f, %4f)' % (self.latitude, self.longitude)
+	def __str__(self):
+		return str(self.__unicode__())
+	def __unicode__(self):
+		return u'%s %s' % (self.station.name, self.coordinates())
 
 class Station(models.Model):
 	name = models.TextField(db_index=True)
-	position = models.ForeignKey(Position)
 	def __str__(self):
+		return self.name
+	def __unicode__(self):
 		return self.name
 	def coordinates(self):
-		return self.position.coordinates()
+		return [p.coordinates() for p in self.position_set.all()]
 
 class Configuration(models.Model):
-	datetime = models.DateTimeField()
-	frequency = models.TimeField()          
-	frequency_save = models.TimeField()
-	calibration_value = models.DecimalField(max_digits=7,decimal_places=4)
-	sensor = models.ForeignKey(Sensor)
 	position = models.ForeignKey(Position)
-	multiplier = models.DecimalField(max_digits=5,decimal_places=2)
+	devices = models.ManyToManyField('Device', related_name='configurations')
+	calibration = models.ForeignKey(SensorCalibration)
+	created = models.DateTimeField(editable=False,default=datetime.now())
+	modified = models.DateTimeField(default=datetime.utcnow())
+	def save(self, *args, **kwargs):
+		""" On save, update timestamps """
+		if not self.id:
+			self.created = datetime.today()
+		self.modified = datetime.today()
+		return super(Configuration, self).save(*args, **kwargs)
+	def __str__(self):
+		return str(self.__unicode__())
+	def __unicode__(self):
+		return u'%s | %s | %s' % (self.position, str(self.modified), self.calibration )
 
-class Measure(models.Model):
-	value = models.DecimalField(max_digits=5,decimal_places=2)
-	date = models.DateTimeField()
+class Measurement(models.Model):
+	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal(0.00))
+	between = models.IntegerField(default=0)
+	finish = models.DateTimeField(default=datetime.utcnow())
+	refresh_presision = models.IntegerField(default=0)
 	configuration = models.ForeignKey(Configuration)
-
-class Datalogger(models.Model):
-	label = models.TextField(db_index=True)
-	def __str__(self):
-		return self.label
-
-class Channel(models.Model):
-	name = models.TextField(db_index=True)
-	datalogger = models.ForeignKey(Datalogger)
-	def __str__(self):
-		return self.name
-
-class StaticConfiguration(Configuration):
-	angle = models.DecimalField(max_digits=4,decimal_places=2)
-
-class Diffuse(StaticConfiguration):
-	shadow_ball = models.BooleanField()
-
-class Global(StaticConfiguration):
-	pass
-
-class Direct(Configuration):
-	pass
