@@ -1,0 +1,11 @@
+- model: stations.brand
+  pk: 1
+  fields:
+    name: "Kip&Zonen"
+
+- model: stations.product
+  pk: 1
+  fields:
+    brand: 1
+    name: "CMP 11"
+    specifications: "Spectral range	285 to 2800 nm\nSensitivity 7 to 14 µV/W/m²\nResponse time < 5 s \nZero offset A < 7 W/m²\nZero offset B < 2 W/m²\nDirectional error (up to 80° with 1000 W/m² beam) < 10 W/m²\nTemperature dependence of sensitivity (-10 ºC to +40 ºC) < 1 %\nOperational temperature range -40 °C to +80 °C\nMaximum solar irradiance 4000 W/m²\nField of view 180º"

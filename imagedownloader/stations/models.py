@@ -15,6 +15,7 @@ class Brand(models.Model):
 class Product(models.Model):
 	brand = models.ForeignKey(Brand)
 	name = models.TextField(db_index=True)
+	specifications = models.TextField(db_index=True)
 	def __str__(self):
 		return self.name
 
