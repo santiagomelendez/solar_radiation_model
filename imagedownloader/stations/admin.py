@@ -1,5 +1,5 @@
 from django.contrib import admin
-from station.models import *
+from stations.models import *
 from django.forms import ModelForm
 
 
