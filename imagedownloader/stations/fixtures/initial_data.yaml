@@ -3,9 +3,353 @@
   fields:
     name: "Kip&Zonen"
 
+- model: stations.brand
+  pk: 2
+  fields:
+    name: "Eppley"
+
+- model: stations.brand
+  pk: 3
+  fields:
+    name: "Novus"
+
+- model: stations.brand
+  pk: 4
+  fields:
+    name: "Campbell Scientific"
+
 - model: stations.product
   pk: 1
   fields:
     brand: 1
     name: "CMP 11"
     specifications: "Spectral range	285 to 2800 nm\nSensitivity 7 to 14 µV/W/m²\nResponse time < 5 s \nZero offset A < 7 W/m²\nZero offset B < 2 W/m²\nDirectional error (up to 80° with 1000 W/m² beam) < 10 W/m²\nTemperature dependence of sensitivity (-10 ºC to +40 ºC) < 1 %\nOperational temperature range -40 °C to +80 °C\nMaximum solar irradiance 4000 W/m²\nField of view 180º"
+
+- model: stations.product
+  pk: 2
+  fields:
+    brand: 1
+    name: "CM 5"
+    specifications: "No description found in the web. Exists a CM 4 and CMP 6 with description."
+
+- model: stations.product
+  pk: 3
+  fields:
+    brand: 1
+    name: "CM 3"
+    specifications: "No description found in the web. Exists a CMP 3 that has description."
+
+- model: stations.product
+  pk: 4
+  fields:
+    brand: 2
+    name: "Black and white"
+    specifications: "Response Time < 60 s\nZero Offset a)± 0.5 Wm-2\nZero Offset b) ± 0.5 Wm-2\nNon-Stability ± 1%\nNon-Linearity ± 1%\nDirectional Response ± 30 Wm-2\nTemperature Response ± 2%\nTilt Response ± 5%\nTraceability * World Radiation Reference (WRR)\n\nSensitivity approx. 8 μV / Wm-2  
+Impedanceapprox. 350 Ω\nUncertainty * Calibration < 2%\nMeasurement (Instant) < 5 Wm-2  (Diffuse)\nMeasurement (Instant) < 15 Wm-2  (Global)\nMeasurement (Hourly) approx. 3-5%\nMeasurement (Daily) approx. 3%\nApplication: Network Measurements (Diffuse)"
+
+- model: stations.product
+  pk: 5
+  fields:
+    brand: 3
+    name: "LogBox-AA IP65 32K"
+    specifications: "Power: internal 3.6V lithium battery\nTwo universal analogue inputs: thermocouple types J, K, T, E, N, R, S and B, Pt100 RTD (2- or 3-wire), 4-20 mA, 0-50 mVdc, 0-10Vdc\nCapacity: 32k readings (log frequency programmable from 10s to 18hrs)\nInternal resolution: 4096 counts (12-bit)\nAccuracy: thermocouples J, K, T and N: 0.25% of range ±1°C; thermocouples E, R, S and B: 0.25% of range±3°C. PT100: 0.15% of range. Linear voltage or current: 0.15% of maximum range\nStart logging options: Immediate, Preset date/time, Palm PDA command, Stop logging options, When full
+Preset date/time, After a number of readings, Wraparound (overwrites first readings)\nBuilt-in sensor PSU switch automatically switches on power to external sensors when taking a reading, then switches power off (extends external sensor battery life)\nIncludes LogChart-II Microsoft Windows configuration and analysis software and PalmOS software\nAmbient temperature: -40°C to 70°C\nMaterial: ABC + PC case; polycarbonate film\nDimensions: 60 x 70 x 35 mm"
+
+- model: stations.product
+  pk: 6
+  fields:
+    brand: 4
+    name: "CR1000"
+    specifications: 'Maximum Scan Rate: 100 Hz\nAnalog Inputs: 16 single-ended or 8 differential individually configured\nPulse Counters: 2\nSwitched Excitation Channels: 3 voltage\nDigital Ports1: 8 I/Os or 4 RS-232 COM2\nCommunications/Data Storage Ports: 1 CS I/O, 1 RS-232, 1 parallel peripheral\nSwitched 12 Volt: 1\nInput Voltage Range: ±5 Vdc\nAnalog Voltage Accuracy: ± (0.06% of reading + offset), 0° to 40°C\nAnalog Resolution: 0.33 µV\nA/D Bits: 13\nPower Requirements: 9.6 to 16 Vdc\nDimensions: 23.9 x 10.2 x 6.1 cm (9.4" x 4.0" x 2.4")\nDimensions with CFM100 or NL115 attached: 25.2 x 10.2 x 7.1 cm (9.9" x 4.0" x 2.8")\nWeight: 1.0 kg (2.1 lb)\nProtocols Supported: PakBus, Modbus, DNP3, FTP, HTTP, XML, POP3, SMTP, Telnet, NTCIP, NTP, SDI-12, SDM\nCE Compliance Standards to which Conformity is Declared: IEC61326:2002\nWarranty: 3 years\nTemperature Range Standard: -25° to +50°C\nExtended: -55° to +85°C\nMemory Operating System: 2 MB Flash\nCPU Usage, Program Storage, and Data Storage: 4 MB\nCurrent Drain Sleep Mode: 0.7 mA typical; 0.9 mA max.\nActive (w/o RS-232 communication): 1 to 16 mA typical\nActive (w/RS-232 communication): 17 to 28 mA typical'
+
+- model: stations.product
+  pk: 7
+  fields:
+    brand: 1
+    name: "SOLYS 2"
+    specifications: 'Pointing accuracy < 0.1° passive tracking / < 0.02° active tracking (with optional sun sensor)\nPayload 20 Kg\nPower supply 18 to 30 VDC and 90 to 264 VAC (50/60Hz)\nOperating temperature range, DC -20 to + 50 °C\nOperating temperature range, AC -40 to +50 °C\nMounting base Tripod stand\nDimensions 50x34x38 cm / 23 kg ( tracker) 5kg (tripod)\nCommunication interface Ethernet / Web interface\nTransmission type Inverted tooth belts\nPower consumption 21 W (reduces to 13 W at night) 100 W extra when heater is operating (AC only)'
+
+- model: stations.opticfilter
+  pk: 1
+  fields:
+    name: "No filtered"
+
+- model: stations.device
+  pk: 1
+  fields:
+    product: 1
+    serial_number: 90953
+    description: ""
+
+- model: stations.sensor
+  pk: 1
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 2
+  fields:
+    product: 2
+    serial_number: 690236
+    description: ""
+
+- model: stations.sensor
+  pk: 2
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 3
+  fields:
+    product: 2
+    serial_number: 700683
+    description: ""
+
+- model: stations.sensor
+  pk: 3
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 4
+  fields:
+    product: 2
+    serial_number: "287/3"
+    description: ""
+
+- model: stations.sensor
+  pk: 4
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 5
+  fields:
+    product: 2
+    serial_number: "690276"
+    description: ""
+
+- model: stations.sensor
+  pk: 5
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 6
+  fields:
+    product: 3
+    serial_number: "25484"
+    description: ""
+
+- model: stations.sensor
+  pk: 6
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 7
+  fields:
+    product: 3
+    serial_number: "25483"
+    description: ""
+
+- model: stations.sensor
+  pk: 7
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 8
+  fields:
+    product: 3
+    serial_number: 14272
+    description: ""
+
+- model: stations.sensor
+  pk: 8
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 9
+  fields:
+    product: 4
+    serial_number: "20566"
+    description: ""
+
+- model: stations.sensor
+  pk: 9
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 10
+  fields:
+    product: 4
+    serial_number: 23774
+    description: ""
+
+- model: stations.sensor
+  pk: 10
+  fields:
+    optic_filter: 1
+
+- model: stations.device
+  pk: 11
+  fields:
+    product: 5
+    serial_number: "9041651"
+    description: ""
+
+- model: stations.datalogger
+  pk: 11
+  fields: {}
+
+- model: stations.device
+  pk: 12
+  fields:
+    product: 5
+    serial_number: "9141555"
+    description: ""
+
+- model: stations.datalogger
+  pk: 12
+  fields: {}
+
+- model: stations.device
+  pk: 13
+  fields:
+    product: 5
+    serial_number: "1009010"
+    description: ""
+
+- model: stations.datalogger
+  pk: 13
+  fields: {}
+
+- model: stations.device
+  pk: 14
+  fields:
+    product: 5
+    serial_number: "9141555 - repetido"
+    description: "Esta con la clave 12 ¿se encuentra tanto en Marcos Juarez como en Azul?"
+
+- model: stations.datalogger
+  pk: 14
+  fields: {}
+
+- model: stations.device
+  pk: 15
+  fields:
+    product: 5
+    serial_number: "9056254"
+    description: ""
+
+- model: stations.datalogger
+  pk: 15
+  fields: {}
+
+- model: stations.device
+  pk: 16
+  fields:
+    product: 5
+    serial_number: "10068990"
+    description: ""
+
+- model: stations.datalogger
+  pk: 16
+  fields: {}
+
+- model: stations.device
+  pk: 17
+  fields:
+    product: 5
+    serial_number: "8158330"
+    description: ""
+
+- model: stations.datalogger
+  pk: 17
+  fields: {}
+
+- model: stations.device
+  pk: 18
+  fields:
+    product: 6
+    serial_number: "12433"
+    description: ""
+
+- model: stations.datalogger
+  pk: 18
+  fields: {}
+
+- model: stations.device
+  pk: 19
+  fields:
+    product: 6
+    serial_number: "unknown"
+    description: ""
+
+- model: stations.datalogger
+  pk: 19
+  fields: {}
+
+- model: stations.device
+  pk: 20
+  fields:
+    product: 7
+    serial_number: "unknown2"
+    description: ""
+
+- model: stations.tracker
+  pk: 20
+  fields: {}
+
+- model: stations.station
+  pk: 1
+  fields:
+    name: Anguil
+
+- model: stations.station
+  pk: 2
+  fields:
+    name: Azul
+
+- model: stations.station
+  pk: 3
+  fields:
+    name: Barrow
+
+- model: stations.station
+  pk: 4
+  fields:
+    name: Paraná
+
+- model: stations.station
+  pk: 5
+  fields:
+    name: Marcos Juarez
+
+- model: stations.station
+  pk: 6
+  fields:
+    name: Pergamino
+
+- model: stations.station
+  pk: 7
+  fields:
+    name: Balcarce
+
+- model: stations.station
+  pk: 8
+  fields:
+    name: Concepción del Uruguay
+
+- model: stations.station
+  pk: 9
+  fields:
+    name: Luján
+
+- model: stations.station
+  pk: 10
+  fields:
+    name: Villegas
