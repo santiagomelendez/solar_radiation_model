@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% block content %}
+{% if form.errors %}
+        <p style="color: red;">
+            Please correct the error{{ form.errors|pluralize }} below.
+        </p>
+{% endif %}
+<div data-role="content" style="padding: 15px">
+    <form action="" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.errors }}
+            {{ form.non_field_errors }}
+            {{ form.as_table }}
+        <input type="submit" value="Submit" id="Save">
+    </form>
+</div>
+{% endblock %}

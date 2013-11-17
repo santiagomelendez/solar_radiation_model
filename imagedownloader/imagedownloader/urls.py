@@ -17,7 +17,8 @@ urlpatterns = patterns('',
     url(r'^plumbing$', 'plumbing.views.index'),
     url(r'^plumbing/execute/(?P<program_id>\d+)/$', 'plumbing.views.execute'),
     url(r'^plumbing/status$', 'plumbing.views.status'),
-	url(r'^plumbing/update$', 'plumbing.views.update'),
+    url(r'^plumbing/update$', 'plumbing.views.update'),
+    url(r'^stations/upload', 'stations.views.upload'),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
