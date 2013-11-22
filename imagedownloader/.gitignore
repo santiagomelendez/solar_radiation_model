@@ -2,3 +2,5 @@
 *.zip
 *.py~
 libs/dem/all10/*
+*.xls
+*.csv
