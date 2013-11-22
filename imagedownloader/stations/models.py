@@ -1,8 +1,10 @@
 from django.db import models
 from decimal import Decimal
 from datetime import datetime, timedelta
+import pytz
 import hashlib
 import os
+from importer import from_csv, from_xls
 
 class OpticFilter(models.Model):
 	name = models.TextField(db_index=True)
@@ -74,7 +76,7 @@ class Station(models.Model):
 		return [p.coordinates() for p in self.position_set.all()]
 
 class Configuration(models.Model):
-	begin = models.DateTimeField(default=datetime.now())
+	begin = models.DateTimeField(default=datetime.utcnow())
 	end = models.DateTimeField(blank=True, null=True)
 	position = models.ForeignKey(Position)
 	devices = models.ManyToManyField('Device', related_name='configurations')
@@ -89,31 +91,56 @@ class Configuration(models.Model):
 		with open(f.name, 'wb+') as destination:
 			for chunk in f.chunks():
 				destination.write(chunk)
-	def added_measurements(self, f):
-		if f.name.split(".")[-1] in ["csv", "xls"]:
+	def transform_csv_measurements(self, filename):
+		utc_diff = -3
+		timestamp_col = 0
+		channel = 1
+		skip_rows = 3
+		return from_csv(filename, utc_diff, timestamp_col, channel, skip_rows)
+	def transform_xls_measurements(self, filename):
+		utc_diff = -3
+		i_sheet = 1
+		x_year = 1
+		x_julian = 2
+		x_timestamp = 3
+		x_value = 9
+		y_from = 10
+		return from_xls(filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)
+	def append_rows(self, rows, between, refresh_presision):
+		for r in rows:
+			m = Measurement(mean=r[1]/between, between=between, finish=r[0], refresh_presision=refresh_presision, configuration=self)
+			m.save()
+	def added_measurements(self, f, between, refresh_presision):
+		extension = f.name.split(".")[-1]
+		if extension in ["csv", "xls"]:
+			rows = getattr(self, "transform_%s_measurements" % extension)(f.name)
+			self.append_rows(rows, between, refresh_presision)
 			return True
 		return False
-	def backup_file(self, f, end):
+	def backup_file(self, f, end, between, refresh_presision):
 		self.receive_temporal_file(f)
-		if self.added_measurements(f):
+		if self.added_measurements(f, between, refresh_presision):
 			self.backup = self.get_backup_filename(f.name, hr=True)
 			os.rename(f.name, self.backup)
+			print end
 			self.end = end
+			print "after"
 			self.save()
 		else:
 			os.remove(f.name)
 	def get_backup_filename(self, path, block_size=256*128, hr=False):
-		md5 = hashlib.md5()
-		with open(path,'rb') as f:
-			for chunk in iter(lambda: f.read(block_size), b''):
-				md5.update(chunk)
-		head = md5.hexdigest() if hr else md5.digest()
-		return "stations/backup/"+ head[:6] + path
+		#md5 = hashlib.md5()
+		#with open(path,'rb') as f:
+		#	for chunk in iter(lambda: f.read(block_size), b''):
+		#		md5.update(chunk)
+		#head = md5.hexdigest() if hr else md5.digest()
+		head = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+		return "stations/backup/%s.%s" % (head, path)
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
 		if not self.id:
-			self.created = datetime.today()
-		self.modified = datetime.today()
+			self.created = datetime.utcnow()
+		self.modified = datetime.utcnow()
 		return super(Configuration, self).save(*args, **kwargs)
 	def __str__(self):
 		return str(self.__unicode__())
@@ -126,3 +153,5 @@ class Measurement(models.Model):
 	finish = models.DateTimeField(default=datetime.utcnow())
 	refresh_presision = models.IntegerField(default=0)
 	configuration = models.ForeignKey(Configuration)
+	class Meta:
+		unique_together = ('configuration', 'finish',)
