@@ -9,6 +9,7 @@ from libs.geometry import jaen as geo
 from libs.console import *
 import numpy as np
 from libs.statistics import error
+import pytz
 
 def rows2csv(rows, filename):
 	with open(filename, 'wb') as csvfile:
@@ -98,15 +99,18 @@ def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="
 		timestamp = datetime.strptime(s,"%Y-%j %H:%M:%S")
 	delta =  timedelta(hours = abs(utc_hour), minutes=abs(utc_minute))
 	timestamp = (timestamp + delta if utc_hour < 0 else timestamp - delta)
-	return timestamp
+	return timestamp.replace(tzinfo=pytz.UTC)
 
-def from_xls(input_filename, utc_diff):
+def from_xls_without_params(input_filename, utc_diff):
 	i_sheet = int(sys.argv[5])
 	x_year = int(sys.argv[6])
 	x_julian = int(sys.argv[7])
 	x_timestamp = int(sys.argv[8])
 	x_value = int(sys.argv[9])
 	y_from = int(sys.argv[10])
+	return from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)
+
+def from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from):
 	wb = open_workbook(input_filename)
 	sh = wb.sheets()[i_sheet]
 	rows = []
@@ -125,10 +129,13 @@ def from_xls(input_filename, utc_diff):
 		year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
 	return rows
 
-def from_csv(input_filename, utc_diff):
+def from_csv_without_params(input_filename, utc_diff):
 	timestamp_col = int(sys.argv[5])
 	channel = int(sys.argv[6])
 	skip_rows = int(sys.argv[7])
+	return from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows)
+
+def from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows):
 	rows = np.genfromtxt(input_filename,
 		delimiter = ',',
 		skiprows= skip_rows,
@@ -136,19 +143,19 @@ def from_csv(input_filename, utc_diff):
 		converters = {0: lambda s: to_datetime(s[1:-1], utc_hour=int(utc_diff)), channel: lambda s: float(s)})
 	return rows
 
-importer = {}
-importer["xls"] = from_xls
-importer["csv"] = from_csv
-
-output_filename = sys.argv[1]
-output_index = int(sys.argv[2]) if output_filename.split(".")[-1] == "nc" else None
-input_filename = sys.argv[3]
-utc_diff = int(sys.argv[4])
-rows = importer[input_filename.split(".")[-1]](input_filename, utc_diff)
-if output_index is None:
-	rows2csv(rows, output_filename)
-else:
-	rows2netcdf(rows,output_filename,output_index)
+if __name__ == "__main__":
+	importer = {}
+	importer["xls"] = from_xls_without_params
+	importer["csv"] = from_csv_without_params
+	output_filename = sys.argv[1]
+	output_index = int(sys.argv[2]) if output_filename.split(".")[-1] == "nc" else None
+	input_filename = sys.argv[3]
+	utc_diff = int(sys.argv[4])
+	rows = importer[input_filename.split(".")[-1]](input_filename, utc_diff)
+	if output_index is None:
+		rows2csv(rows, output_filename)
+	else:
+		rows2netcdf(rows,output_filename,output_index)
 
 #python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
 #python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv 0 0 1 3
