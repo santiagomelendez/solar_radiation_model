@@ -19,7 +19,7 @@ class Area(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 	def __str__(self):
 		return self.name
-	def getlongitude(self,datetime=datetime.now()):
+	def getlongitude(self,datetime=datetime.utcnow().replace(tzinfo=pytz.UTC)):
 		return self.hourly_longitude
 
 class UTCTimeRange(models.Model):
@@ -30,8 +30,8 @@ class UTCTimeRange(models.Model):
 	def __str__(self):
 		return str(self.begin) + ' -> ' + str(self.end)
 	def step(self):
-		begin = datetime.utcnow() if self.begin is None else self.begin
-		end = datetime.utcnow() if self.end is None else self.end
+		begin = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.begin is None else self.begin
+		end = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.end is None else self.end
 		diff = (end - begin).total_seconds()
 		return timedelta(days=(diff / abs(diff)))
 	def steps(self):
@@ -199,9 +199,9 @@ class Order(models.Model):
 	def total_time(self):
 		result = self.file_set.filter(downloaded=True).aggregate(Min('begin_download'), Max('end_download'))
 		if result['begin_download__min'] is None:
-			result['begin_download__min'] = datetime.utcnow()
+			result['begin_download__min'] = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		if result['end_download__max'] is None:
-			result['end_download__max'] = datetime.utcnow()
+			result['end_download__max'] = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		return result['end_download__max'] - result['begin_download__min']
 	def average_speed(self):
 		if not self.downloaded:
@@ -274,8 +274,7 @@ class File(models.Model):
 	def progress(self):
 		return str(self.localsize()) + '/' + str(self.size)
 	def download_speed(self):
-		now = datetime.utcnow()
-		now = now.replace(tzinfo=pytz.utc)
+		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		begin = now if self.begin_download is None else self.begin_download
 		last = now if self.end_download is None else self.end_download
 		speed_in_bytes = self.localsize() / (last - begin).total_seconds() if last != begin else 0

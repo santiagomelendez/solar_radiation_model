@@ -39,9 +39,9 @@ class Worker:
 				if hasattr(task, 'run'):
 					try:
 						task.ready = False
-						begin = datetime.now()
+						begin = datetime.utcnow().replace(tzinfo=pytz.UTC)
 						task.run(manager)
-						end = datetime.now()
+						end = datetime.utcnow().replace(tzinfo=pytz.UTC)
 						task.ready = True
 						self.inform("finish in " + str((end - begin).total_seconds()) + " seconds (" + task.__class__.__name__ + ").")
 					except Exception as e:

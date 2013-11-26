@@ -21,7 +21,7 @@ class Compact(Process):
 		fs.save()
 		return self.resultant_stream
 	def getdatetimenow(self):
-		return datetime.utcnow().replace(tzinfo=utc)
+		return datetime.utcnow().replace(tzinfo=pytz.UTC)
 	def do_file(self, filename, stream):
 		# create compact file and initialize basic settings
 		begin_time = self.getdatetimenow()
