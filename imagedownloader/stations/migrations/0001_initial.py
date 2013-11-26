@@ -3,7 +3,7 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
-
+import pytz
 
 class Migration(SchemaMigration):
 
@@ -100,8 +100,8 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('position', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['stations.Position'])),
             ('calibration', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['stations.SensorCalibration'])),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0))),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0))),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0).replace(tzinfo=pytz.UTC))),
+            ('modified', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0).replace(tzinfo=pytz.UTC))),
         ))
         db.send_create_signal('stations', ['Configuration'])
 
@@ -118,7 +118,7 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('mean', self.gf('django.db.models.fields.DecimalField')(default='0', max_digits=5, decimal_places=2)),
             ('between', self.gf('django.db.models.fields.IntegerField')(default=0)),
-            ('finish', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0))),
+            ('finish', self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 13, 0, 0).replace(tzinfo=pytz.UTC))),
             ('refresh_presision', self.gf('django.db.models.fields.IntegerField')(default=0)),
             ('configuration', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['stations.Configuration'])),
         ))

@@ -3,7 +3,7 @@ import datetime
 from south.db import db
 from south.v2 import SchemaMigration
 from django.db import models
-
+import pytz
 
 class Migration(SchemaMigration):
 
@@ -15,7 +15,7 @@ class Migration(SchemaMigration):
 
         # Adding field 'Configuration.begin'
         db.add_column('stations_configuration', 'begin',
-                      self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 14, 0, 0)),
+                      self.gf('django.db.models.fields.DateTimeField')(default=datetime.datetime(2013, 11, 14, 0, 0).replace(tzinfo=pytz.UTC)),
                       keep_default=False)
 
         # Adding field 'Configuration.end'
