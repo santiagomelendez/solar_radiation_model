@@ -23,8 +23,8 @@ def show_progress(i):
 	show('\b \b', progress[i % len(progress)])
 
 def show_times(*args):
-	begin = datetime.now()
+	begin = datetime.utcnow().replace(tzinfo=pytz.UTC)
 	result = yield aspects.proceed(*args)
-	end = datetime.now()
+	end = datetime.utcnow().replace(tzinfo=pytz.UTC)
 	say("\t[time consumed: %.2f seconds]\n" % (end - begin).total_seconds())
 	yield aspects.return_stop(result)
