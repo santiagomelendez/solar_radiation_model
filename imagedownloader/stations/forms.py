@@ -8,7 +8,7 @@ class DocumentForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(DocumentForm, self).__init__(*args, **kwargs)
         self.fields["configuration"] = forms.ChoiceField(label="Configuration", choices = [(c.id, c) for c in Configuration.actives()])
-        self.fields["end"] = forms.DateTimeField(label="End configuration", initial=datetime.utcnow())
+        self.fields["end"] = forms.DateTimeField(label="End configuration", initial=datetime.utcnow().replace(tzinfo=pytz.UTC))
         self.fields["backup"] = forms.FileField(label='Select the file with measurements', help_text='max. 42 megabytes')
         self.fields["between"] = forms.IntegerField(label='Between')
         self.fields["refresh_presision"] = forms.IntegerField(label='Refresh presision')

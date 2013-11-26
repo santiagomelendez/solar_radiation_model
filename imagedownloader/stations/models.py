@@ -76,13 +76,13 @@ class Station(models.Model):
 		return [p.coordinates() for p in self.position_set.all()]
 
 class Configuration(models.Model):
-	begin = models.DateTimeField(default=datetime.utcnow())
+	begin = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	end = models.DateTimeField(blank=True, null=True)
 	position = models.ForeignKey(Position)
 	devices = models.ManyToManyField('Device', related_name='configurations')
 	calibration = models.ForeignKey(SensorCalibration)
-	created = models.DateTimeField(editable=False,default=datetime.utcnow())
-	modified = models.DateTimeField(default=datetime.utcnow())
+	created = models.DateTimeField(editable=False,default=datetime.utcnow().replace(tzinfo=pytz.UTC))
+	modified = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	backup = models.TextField(default="")
 	@classmethod
 	def actives(klass):
@@ -117,14 +117,15 @@ class Configuration(models.Model):
 			self.append_rows(rows, between, refresh_presision)
 			return True
 		return False
+	def go_inactive(self, dt=datetime.utcnow().replace(tzinfo=pytz.UTC)):
+		self.end = dt
+		self.save()
 	def backup_file(self, f, end, between, refresh_presision):
 		self.receive_temporal_file(f)
 		if self.added_measurements(f, between, refresh_presision):
 			self.backup = self.get_backup_filename(f.name, hr=True)
 			os.rename(f.name, self.backup)
-			print end
-			self.end = end
-			print "after"
+			self.go_inactive(end)
 			self.save()
 		else:
 			os.remove(f.name)
@@ -134,13 +135,13 @@ class Configuration(models.Model):
 		#	for chunk in iter(lambda: f.read(block_size), b''):
 		#		md5.update(chunk)
 		#head = md5.hexdigest() if hr else md5.digest()
-		head = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+		head = datetime.utcnow().replace(tzinfo=pytz.UTC).strftime("%Y%m%d%H%M%S")
 		return "stations/backup/%s.%s" % (head, path)
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
 		if not self.id:
-			self.created = datetime.utcnow()
-		self.modified = datetime.utcnow()
+			self.created = datetime.utcnow().replace(tzinfo=pytz.UTC)
+		self.modified = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		return super(Configuration, self).save(*args, **kwargs)
 	def __str__(self):
 		return str(self.__unicode__())
@@ -150,7 +151,7 @@ class Configuration(models.Model):
 class Measurement(models.Model):
 	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal(0.00))
 	between = models.IntegerField(default=0)
-	finish = models.DateTimeField(default=datetime.utcnow())
+	finish = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	refresh_presision = models.IntegerField(default=0)
 	configuration = models.ForeignKey(Configuration)
 	class Meta:
