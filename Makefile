@@ -1,2 +1,2 @@
 deploy:
-	apt-get install libhdf5-dev* netcdf4-python
+	apt-get install libhdf5-dev* python-netcdf
