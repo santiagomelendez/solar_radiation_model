@@ -3,7 +3,7 @@ python:
   - "2.7"
 # command to install dependencies
 install:
-  - "sudo apt-get -q -y install libhdf5-serial-dev libhdf5-mpich-dev"
+  - "sudo apt-get -q -y install libhdf5*"
   - "pip install -r imagedownloader/requirements.txt"
 # # command to run tests
 script: "python imagedownloader/manage.py test stations"
