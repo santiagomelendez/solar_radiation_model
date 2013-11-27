@@ -5,7 +5,14 @@ import traceback
 import sys
 import os
 from splinter import Browser
-from pyvirtualdisplay import Display
+try:
+	from pyvirtualdisplay import Display
+except ImportError:
+	class Display:
+		def start(self):
+			pass
+		def stop(self):
+			pass
 
 def print_exception():
 	exc_type, exc_value, exc_traceback = sys.exc_info()
