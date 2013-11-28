@@ -1,9 +1,6 @@
-deploy:
-	#pip-requirements
-	cd imagedownloader && (python2.7 manage.py syncdb << EOD
-	yes
-	EOD)
-	python manage.py migrate
+deploy: pip-requirements
+	cd imagedownloader && python manage.py syncdb --noinput
+	cd imagedownloader && python manage.py migrate
 
 bin-sqlite3:
 	wget http://www.sqlite.org/2013/sqlite-autoconf-3080100.tar.gz > /dev/null
