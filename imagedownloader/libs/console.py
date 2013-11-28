@@ -1,6 +1,5 @@
 import sys
 import pyttsx
-import aspects
 from datetime import datetime
 
 engine = pyttsx.init()
@@ -23,6 +22,7 @@ def show_progress(i):
 	show('\b \b', progress[i % len(progress)])
 
 def show_times(*args):
+	import aspects
 	begin = datetime.utcnow().replace(tzinfo=pytz.UTC)
 	result = yield aspects.proceed(*args)
 	end = datetime.utcnow().replace(tzinfo=pytz.UTC)
