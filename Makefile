@@ -1,4 +1,4 @@
-deploy: pip-aspects lib-hdf5 lib-netcdf4
+deploy: lib-hdf5 lib-netcdf4 src-aspects
 	sudo ldconfig
 	#apt-get install libhdf5-serial-dev python-netcdf
 
@@ -16,7 +16,7 @@ lib-netcdf4:
 	cd netcdf-4.3.1-rc4 && make -j 2
 	cd netcdf-4.3.1-rc4 && sudo make install
 
-pip-aspects:
+src-aspects:
 	wget http://www.cs.tut.fi/~ask/aspects/python-aspects-1.3.tar.gz
 	tar xzvvf python-aspects-1.3.tar.gz
 	cd python-aspects-1.3 && sudo python setup.py install
