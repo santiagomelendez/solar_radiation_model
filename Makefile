@@ -1,5 +1,12 @@
-deploy: lib-hdf5 lib-netcdf4 src-aspects
+deploy: bin-sqlite3 lib-hdf5 lib-netcdf4 src-aspects
 	sudo ldconfig
+
+bin-sqlite3:
+	wget http://www.sqlite.org/2013/sqlite-autoconf-3080100.tar.gz
+	tar xvfz sqlite-autoconf-3080100.tar.gz
+	cd sqlite-autoconf-3080100 && ./configure
+	cd sqlite-autoconf-3080100 && make
+	cd sqlite-autoconf-3080100 && sudo make install
 
 lib-hdf5:
 	wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.12.tar.gz
@@ -20,3 +27,6 @@ src-aspects:
 	tar xzvvf python-aspects-1.3.tar.gz
 	cd python-aspects-1.3 && sudo make && sudo make install
 	cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
+
+src-postgres:
+	--without-readline --without-zlib
