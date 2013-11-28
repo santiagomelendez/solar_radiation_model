@@ -19,4 +19,4 @@ lib-netcdf4:
 pip-aspects:
 	wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
 	sudo python ez_setup.py
-	easy-install https://pypi.python.org/packages/2.5/p/python-aspects/python_aspects-1.1-py2.5.egg#md5=a99122b2294d12bac84f67e6029331b9
+	easy_install https://pypi.python.org/packages/2.5/p/python-aspects/python_aspects-1.1-py2.5.egg#md5=a99122b2294d12bac84f67e6029331b9
