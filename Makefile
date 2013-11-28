@@ -17,6 +17,6 @@ lib-netcdf4:
 	cd netcdf-4.3.1-rc4 && sudo make install
 
 pip-aspects:
-	wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py
-	sudo python ez_setup.py
-	sudo easy_install aspects
+	wget http://www.cs.tut.fi/~ask/aspects/python-aspects-1.3.tar.gz
+	tar xzvvf python-aspects-1.3.tar.gz
+	cd python-aspects-1.3 && sudo python setup.py install
