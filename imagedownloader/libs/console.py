@@ -2,7 +2,15 @@ import sys
 import pyttsx
 from datetime import datetime
 
-engine = pyttsx.init()
+try:
+	engine = pyttsx.init()
+except OSError:
+	class FakeTTSX:
+		def say(self, speech):
+			pass
+		def runAndWait(self):
+			pass
+	engine = FakeTTSX()
 
 def show(*objs):
 	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
