@@ -23,3 +23,4 @@ pyttsx==1.1
 django-polymodels==1.2.2
 pyquery==1.2.6
 #python-aspects
+xlrd==0.9.2
