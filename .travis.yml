@@ -4,6 +4,7 @@ python:
 # command to install dependencies
 install:
   - "sudo make deploy"
+  - "pip install -r imagedownloader/requirements.txt"
 # # command to run tests
 script: "python imagedownloader/manage.py test stations"
 #nosetests

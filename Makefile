@@ -34,5 +34,4 @@ src-postgres:
 
 pip-requirements: bin-sqlite3 lib-hdf5 lib-netcdf4 src-aspects
 	sudo ldconfig
-	sleep 1
-	sudo pip install -r imagedownloader/requirements.txt
+	#pip install -r imagedownloader/requirements.txt
