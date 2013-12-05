@@ -27,7 +27,7 @@ ifeq ($(OS), Darwin)
 endif
 
 test:
-	@ cd imagedownloader && $(PYTHON) manage.py test stations
+	@ cd imagedownloader && sudo $(PYTHON) manage.py test stations
 
 run:
 	@ cd imagedownloader && sudo $(PYTHON) manage.py runserver 8000
@@ -58,7 +58,7 @@ lib-netcdf4: lib-hdf5
 src-aspects:
 	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	$(call compile,python-aspects-1.3)
-	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
+	@ sudo cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
 src-postgres:
 	--without-readline --without-zlib
