@@ -3,8 +3,8 @@ python:
   - "2.7"
 # command to install dependencies
 install:
-  - "make deploy"
+  - "sudo make sqlite3 deploy"
 #  - "pip install -r imagedownloader/requirements.txt"
 # # command to run tests
-script: "python imagedownloader/manage.py test stations"
+script: "sudo make test"
 #nosetests

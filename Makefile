@@ -1,37 +1,88 @@
-deploy: pip-requirements
-	cd imagedownloader && python manage.py syncdb --noinput
-	cd imagedownloader && python manage.py migrate
+OS:=$(shell uname -s)
+download = [ ! -f $(1) ] && echo "[ downloading  ] $(1)" && curl -O $(2)/$(1) || echo "[ downloaded   ] $(1)"
+unpack = [ ! -d $(2) ] && echo "[ unpacking    ] $(1)" && tar xzf $(1) || echo "[ unpacked     ] $(1)"
+
+define get
+	@ $(call download,$(2),$(3))
+	@ $(call unpack,$(2),$(1))
+endef
+
+define compile
+	@ cd $(1) && \
+	([ -f ./configure ] && echo "[ configuring  ] $(1)" && $(2) sh ./configure $(3) >> tracking.log || echo "[ configured   ] $(1)") && \
+	echo "[ compiling    ] $(1)" && \
+	make -j 2 >> tracking.log && \
+	echo "[ installing   ] $(1)" && \
+	sudo make install >> tracking.log
+endef
+
+PIP=pip
+PYTHON=python
+update_shared_libs=sudo ldconfig
+
+ifeq ($(OS), Darwin)
+	update_shared_libs=
+	PIP=pip-2.7
+	PYTHON=python2.7
+endif
+
+test:
+	@ cd imagedownloader && $(PYTHON) manage.py test stations
+
+run:
+	@ cd imagedownloader && sudo $(PYTHON) manage.py runserver 8000
+
+defaultsuperuser:
+	@ echo "For the 'dev' user please select a password"
+	@ cd imagedownloader && sudo $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
+
+db-migrate:
+	@ echo "[ migrating    ]"
+	@ cd imagedownloader && sudo $(PYTHON) manage.py syncdb --noinput
+	@ cd imagedownloader && sudo $(PYTHON) manage.py migrate
+
+deploy: pip-requirements db-migrate
 
 bin-sqlite3:
-	wget http://www.sqlite.org/2013/sqlite-autoconf-3080100.tar.gz
-	tar xvfz sqlite-autoconf-3080100.tar.gz 
-	cd sqlite-autoconf-3080100 && ./configure
-	cd sqlite-autoconf-3080100 && make
-	cd sqlite-autoconf-3080100 && sudo make install
+	$(call get,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
+	$(call compile,sqlite-autoconf-3080100)
 
 lib-hdf5:
-	wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.12.tar.gz
-	tar xzvvf hdf5-1.8.12.tar.gz
-	cd hdf5-1.8.12 && ./configure --prefix=/usr/local --enable-shared --enable-hl
-	cd hdf5-1.8.12 && make -j 2
-	cd hdf5-1.8.12 && sudo make install
+	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
+	$(call compile hdf5-1.8.12,,--prefix=/usr/local\ --enable-shared\ --enable-hl)
 
-lib-netcdf4:
-	wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.1-rc4.tar.gz
-	tar xzvvf netcdf-4.3.1-rc4.tar.gz
-	cd netcdf-4.3.1-rc4 && LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include sh ./configure --enable-netcdf-4 --enable-dap --enable-shared --prefix=/usr/local
-	cd netcdf-4.3.1-rc4 && make -j 2
-	cd netcdf-4.3.1-rc4 && sudo make install
+lib-netcdf4: lib-hdf5
+	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
+	$(call compile netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib\ CPPFLAGS=-I/usr/local/include,--enable-netcdf-4\ --enable-dap\ --enable-shared\ --prefix=/usr/local)
 
 src-aspects:
-	wget http://www.cs.tut.fi/~ask/aspects/python-aspects-1.3.tar.gz
-	tar xzvvf python-aspects-1.3.tar.gz 
-	cd python-aspects-1.3 && sudo make && sudo make install
-	cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
+	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
+	$(call compile,python-aspects-1.3)
+	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
 src-postgres:
 	--without-readline --without-zlib
 
-pip-requirements: bin-sqlite3 lib-hdf5 lib-netcdf4 src-aspects
-	sudo ldconfig
-	pip install -r imagedownloader/requirements.txt
+bin-pip:
+	@ $(call download,ez_setup.py,https://bitbucket.org/pypa/setuptools/raw/bootstrap)
+	@ echo "[ installing   ] $(PYTHON) setuptools"
+	@ sudo $(PYTHON) ez_setup.py >> tracking.log
+	@ $(call download,get-pip.py,https://raw.github.com/pypa/pip/master/contrib)
+	@ echo "[ installing   ] $(PIP)"
+	@ sudo $(PYTHON) get-pip.py >> tracking.log
+
+postgres:
+	@ echo "[ setting up   ] postgres database"
+	@ cd imagedownloader && cp -f databsase.postgres.py database.py
+
+sqlite3: bin-sqlite3
+	@ echo "[ setting up   ] sqlite3 database"
+	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
+
+pip-requirements: lib-netcdf4 src-aspects bin-pip
+	@ $(update_shared_libs)
+	@ echo "[ installing   ] $(PIP) requirements"
+	@ $(PIP) install -r imagedownloader/requirements.txt --upgrade >> tracking.log
+
+clean:
+	rm -rf sqlite* hdf5* netcdf-4* python-aspects* ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3

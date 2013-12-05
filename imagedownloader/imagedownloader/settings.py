@@ -36,24 +36,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
-DATABASES = {
-    'default': {
-        #'ENGINE': 'django.db.backends.sqlite3',
-        #'NAME': 'filedb.sqlite3',
-	'ENGINE': 'django.db.backends.postgresql_psycopg2',
-	'NAME': 'imagedownloader',
-	'USER': 'postgres',
-	'PASSWORD': 'postgres',
-	'HOST': 'localhost',
-	'PORT': '5432',
-    }
-}
-
-#if 'test' in sys.argv:
-DATABASES['default'] = {
-    'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': 'imagedownloader.sqlite3'
-}
+from imagedownloader.database import DATABASES
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
