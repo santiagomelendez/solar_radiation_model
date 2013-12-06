@@ -79,10 +79,10 @@ src-postgres:
 bin-pip:
 	@ $(call download,ez_setup.py,https://bitbucket.org/pypa/setuptools/raw/bootstrap)
 	@ echo "[ installing   ] $(PYTHON) setuptools"
-	@ sudo $(PYTHON) ez_setup.py >> tracking.log
+	@ sudo $(PYTHON) ez_setup.py 
 	@ $(call download,get-pip.py,https://raw.github.com/pypa/pip/master/contrib)
 	@ echo "[ installing   ] $(PIP)"
-	@ sudo $(PYTHON) get-pip.py >> tracking.log
+	@ sudo $(PYTHON) get-pip.py
 
 postgres:
 	@ echo "[ setting up   ] postgres database"
