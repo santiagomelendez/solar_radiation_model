@@ -28,14 +28,8 @@ update_shared_libs=sudo ldconfig
 ifeq ($(OS), Darwin)
 	update_shared_libs=
 else
-	DISTRO=$(lsb_release -si)
-	ifeq ($(DISTRO), CentOS)
-		yum install python27 python-dev
-	endif
-	ifeq ($(DISTRO), Ubuntu)
-		PIP=pip
-		PYTHON=python
-	endif
+	PIP=pip
+	PYTHON=python
 endif
 
 test:
