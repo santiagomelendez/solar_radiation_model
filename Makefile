@@ -32,6 +32,10 @@ else
 	ifeq ($(DISTRO), CentOS)
 		yum install python27 python-dev
 	endif
+	ifeq ($(DISTRO), Ubuntu)
+		PIP=pip
+		PYTHON=python
+	endif
 endif
 
 test:
