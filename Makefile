@@ -16,14 +16,12 @@ define compile
 	sudo make install >> tracking.log
 endef
 
-PIP=pip
-PYTHON=python
+PIP=pip-2.7
+PYTHON=python2.7
 update_shared_libs=sudo ldconfig
 
 ifeq ($(OS), Darwin)
 	update_shared_libs=
-	PIP=pip-2.7
-	PYTHON=python2.7
 endif
 
 test:
