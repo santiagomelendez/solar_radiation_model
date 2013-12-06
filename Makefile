@@ -85,4 +85,4 @@ pip-requirements: lib-netcdf4 src-aspects bin-pip
 	@ $(PIP) install -r imagedownloader/requirements.txt --upgrade >> tracking.log
 
 clean:
-	rm -rf sqlite* hdf5* netcdf-4* python-aspects* ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3
+	sudo rm -rf sqlite* hdf5* netcdf-4* python-aspects* ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3
