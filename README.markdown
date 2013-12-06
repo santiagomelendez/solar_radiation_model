@@ -28,7 +28,7 @@ After that, when you are ready to start the *backend* (the download engine), you
 
 	# python2.7 manage.py runbackend
 
-ABOUT
+About
 -----
 
-One branch of this software is still being developed by GERSolar. If you have any questions or ideas email us to <gersolar.dev@gmail.com>.
+This software is developed by GERSolar. You can contact us to <gersolar.dev@gmail.com>.
