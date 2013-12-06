@@ -16,34 +16,46 @@ define compile
 	sudo make install >> tracking.log
 endef
 
+define install
+	@ $(call get,$(1),$(2),$(3))
+	@ $(call compile,$(1))
+endef
+
 PIP=pip-2.7
 PYTHON=python2.7
 update_shared_libs=sudo ldconfig
 
 ifeq ($(OS), Darwin)
 	update_shared_libs=
+else
+	DISTRO=$(lsb_release -si)
+	ifeq ($(DISTRO), CentOS)
+		yum install python27 python-dev
+	endif
 endif
 
 test:
-	@ cd imagedownloader && sudo $(PYTHON) manage.py test stations
+	@ cd imagedownloader && $(PYTHON) manage.py test stations
 
 run:
-	@ cd imagedownloader && sudo $(PYTHON) manage.py runserver 8000
+	@ cd imagedownloader && $(PYTHON) manage.py runserver 8000
 
 defaultsuperuser:
 	@ echo "For the 'dev' user please select a password"
-	@ cd imagedownloader && sudo $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
+	@ cd imagedownloader && $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
 
 db-migrate:
 	@ echo "[ migrating    ]"
-	@ cd imagedownloader && sudo $(PYTHON) manage.py syncdb --noinput
-	@ cd imagedownloader && sudo $(PYTHON) manage.py migrate
+	@ cd imagedownloader && $(PYTHON) manage.py syncdb --noinput
+	@ cd imagedownloader && $(PYTHON) manage.py migrate
 
 deploy: pip-requirements db-migrate
 
 bin-sqlite3:
-	$(call get,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
-	$(call compile,sqlite-autoconf-3080100)
+	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
+
+src-python27:
+	$(call install,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
 
 lib-hdf5:
 	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
@@ -54,8 +66,7 @@ lib-netcdf4: lib-hdf5
 	$(call compile netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib\ CPPFLAGS=-I/usr/local/include,--enable-netcdf-4\ --enable-dap\ --enable-shared\ --prefix=/usr/local)
 
 src-aspects:
-	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
-	$(call compile,python-aspects-1.3)
+	$(call install,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ sudo cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
 src-postgres:
