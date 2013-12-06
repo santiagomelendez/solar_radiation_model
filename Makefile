@@ -47,7 +47,9 @@ db-migrate:
 	@ cd imagedownloader && $(PYTHON) manage.py syncdb --noinput
 	@ cd imagedownloader && $(PYTHON) manage.py migrate
 
-deploy: pip-requirements db-migrate
+deploy-travis: pip-requirements db-migrate
+
+deploy: bin-pip deploy-travis
 
 bin-sqlite3:
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
@@ -86,7 +88,7 @@ sqlite3: bin-sqlite3
 	@ echo "[ setting up   ] sqlite3 database"
 	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
 
-pip-requirements: lib-netcdf4 src-aspects bin-pip
+pip-requirements: lib-netcdf4 src-aspects
 	@ $(update_shared_libs)
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ sudo $(PIP) install -r imagedownloader/requirements.txt --upgrade
