@@ -11,9 +11,9 @@ define compile
 	@ cd $(1) && \
 	([ -f ./configure ] && echo "[ configuring  ] $(1)" && $(2) sh ./configure $(3) >> tracking.log || echo "[ configured   ] $(1)") && \
 	echo "[ compiling    ] $(1)" && \
-	make -j 2 >> tracking.log && \
+	make -j 2 && \
 	echo "[ installing   ] $(1)" && \
-	sudo make install >> tracking.log
+	sudo make install
 endef
 
 define install
