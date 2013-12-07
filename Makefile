@@ -58,7 +58,7 @@ src-python27:
 
 lib-hdf5:
 	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
-	$(call compile hdf5-1.8.12,,--prefix=/usr/local\ --enable-shared\ --enable-hl)
+	$(call compile,hdf5-1.8.12,,--prefix=/usr/local\ --enable-shared\ --enable-hl)
 
 lib-netcdf4: lib-hdf5
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
