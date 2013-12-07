@@ -8,7 +8,7 @@ define get
 endef
 
 define compile
-	@ cd $(1) && \
+	cd $(1) && \
 	([ -f ./configure ] && echo "[ configuring  ] $(1)" && $(2) sh ./configure $(3) >> tracking.log || echo "[ configured   ] $(1)") && \
 	echo "[ compiling    ] $(1)" && \
 	make -j 2 && \
