@@ -24,13 +24,13 @@ At last you should configure a superuser access to the fron end. To do so, you s
 Running
 -------
 
-There are 2 things to run: the **frontend** and the **backend**. First we recommend you to run the **frontend** using the command:
+There are 2 services, the **frontend** and the **backend**. First we recommend you to bootup the **frontend** using the command:
 
-	# make run
+	$ make run
 
 Now you can go to a browser on the same machine and use the address <http://localhost:8000/admin> to login to the service. You should complete the username field with "dev" and for the password field you should use your previously selected password.
 
-Once you have set all the preferences, it's time to run the **backend** (the processing engine), you should use the next line:
+Once you have set all the preferences, it's time to start the **backend** (the processing engine), you should use the next line:
 
 	# python2.7 manage.py runbackend
 
