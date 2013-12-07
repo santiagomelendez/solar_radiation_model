@@ -349,7 +349,28 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
   fields:
     name: Luján
 
+- model: stations.position
+  pk: 1
+  fields:
+    station: 9
+    latitude: -34.588163320193296
+    longitude: -59.06299340809084
+
 - model: stations.station
   pk: 10
   fields:
     name: Villegas
+
+- model: stations.sensorcalibration
+  pk: 1
+  fields:
+    sensor: 1
+    coefficient: 1.0
+    shift: 0.0
+
+- model: stations.configuration
+  pk: 1
+  fields:
+    position: 1
+    calibration: 1
+    devices: [1]
