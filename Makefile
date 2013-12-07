@@ -21,15 +21,14 @@ define install
 	@ $(call compile,$(1))
 endef
 
-PIP=pip-2.7
-PYTHON=python2.7
+PIP=pip
+PYTHON=python
 update_shared_libs=sudo ldconfig
 
 ifeq ($(OS), Darwin)
 	update_shared_libs=
-else
-	PIP=pip
-	PYTHON=python
+	PIP=pip-2.7
+	PYTHON=python2.7
 endif
 
 test:
