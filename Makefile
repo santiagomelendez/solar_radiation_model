@@ -62,7 +62,7 @@ lib-hdf5:
 
 lib-netcdf4: lib-hdf5
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
-	$(call compile netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib\ CPPFLAGS=-I/usr/local/include,--enable-netcdf-4\ --enable-dap\ --enable-shared\ --prefix=/usr/local)
+	$(call compile,netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib\ CPPFLAGS=-I/usr/local/include,--enable-netcdf-4\ --enable-dap\ --enable-shared\ --prefix=/usr/local)
 
 src-aspects:
 	$(call install,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
