@@ -26,7 +26,7 @@ Running
 
 There are 2 things to run: the **frontend** and the **backend**. First we recommend you to run the **frontend** using the command:
 
-	# make run
+	$ make run
 
 Now you can go to a browser on the same machine and use the address <http://localhost:8000/admin> to login to the service. You should complete the username field with "dev" and for the password field you should use your previously selected password.
 
