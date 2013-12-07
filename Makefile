@@ -90,7 +90,7 @@ sqlite3: bin-sqlite3
 pip-requirements: lib-netcdf4 src-aspects
 	@ $(update_shared_libs)
 	@ echo "[ installing   ] $(PIP) requirements"
-	@ sudo $(PIP) install -r imagedownloader/requirements.txt --upgrade
+	@ $(PIP) install -r imagedownloader/requirements.txt --upgrade
 
 clean:
 	sudo rm -rf sqlite* hdf5* netcdf-4* python-aspects* ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3
