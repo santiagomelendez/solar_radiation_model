@@ -8,12 +8,12 @@ define get
 endef
 
 define compile
-	cd $(1) && \
+	@ cd $(1) && \
 	([ -f ./configure ] && echo "[ configuring  ] $(1)" && $(2) sh ./configure $(3) >> tracking.log || echo "[ configured   ] $(1)") && \
 	echo "[ compiling    ] $(1)" && \
-	make -j 2 && \
+	make -j 2 >> tracking.log && \
 	echo "[ installing   ] $(1)" && \
-	sudo make install
+	sudo make install >> tracking.log
 endef
 
 define install
@@ -29,6 +29,12 @@ ifeq ($(OS), Darwin)
 	update_shared_libs=
 	PIP=pip-2.7
 	PYTHON=python2.7
+else
+	DISTRO=$(shell lsb_release -si)
+	ifeq ($(DISTRO), CentOS)
+		PIP=pip-2.7
+		PYTHON=python2.7
+	endif
 endif
 
 test:
