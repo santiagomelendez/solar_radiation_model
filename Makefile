@@ -46,9 +46,9 @@ db-migrate:
 	@ cd imagedownloader && $(PYTHON) manage.py syncdb --noinput
 	@ cd imagedownloader && $(PYTHON) manage.py migrate
 
-deploy-travis: pip-requirements db-migrate
+deploy-withoutpip: pip-requirements db-migrate
 
-deploy: bin-pip deploy-travis
+deploy: bin-pip deploy-withoutpip
 
 bin-sqlite3:
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
