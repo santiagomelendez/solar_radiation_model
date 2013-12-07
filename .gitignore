@@ -3,3 +3,11 @@
 *.csv
 *.xls
 *.sqlite3
+*.tar.gz
+*.tgz
+hdf5*/*
+imagedownloader/aspects.py
+imagedownloader/imagedownloader/database.py
+netcdf*/*
+python-aspects*/*
+sqlite-autoconf*/*
