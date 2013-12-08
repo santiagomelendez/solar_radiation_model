@@ -45,20 +45,36 @@ class TestConfigurations(TestCase):
 		# clock (and check that is between 2 datetime captures).
 		dt = datetime.strptime(parts[0][-14:],"%Y%m%d%H%M%S")
 		self.assertTrue(before <= dt <= after)
-		# finish, test if the original name is at the end of the generated
+		# to finish, test if the original name is at the end of the generated
 		# backup-filename. 
 		self.assertEqual(filename[-8:], "file.xls")
 
-	"""
-        # should raise an exception for an immutable sequence
-        self.assertRaises(TypeError, random.shuffle, (1,2,3))
-	
-    def test_choice(self):
-        element = random.choice(self.seq)
-        self.assertTrue(element in self.seq)
-
-    def test_sample(self):
-        with self.assertRaises(ValueError):
-            random.sample(self.seq, 20)
-        for element in random.sample(self.seq, 5):
-            self.assertTrue(element in self.seq)"""
+	def test_append_rows(self):
+		# check if the configuration return an empty queryset when don't have
+		# measurements.
+		measurements = self.configuration.measurement_set.all()
+		self.assertEqual(len(measurements), 0)
+		# check if the method append_rows add multiple measurements to
+		# the configuration.
+		rows = [
+			[datetime(2013,12,8,16,40,0).replace(tzinfo=pytz.UTC), 300.1],
+			[datetime(2013,12,8,16,50,0).replace(tzinfo=pytz.UTC), 200.1],
+			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), 100.1]
+			]
+		self.configuration.append_rows(rows, 600, 1)
+		measurements = self.configuration.measurement_set.all()
+		self.assertEqual(len(measurements), 3)
+		# check if the measurement_set raise an exception when the application
+		# try to remove from the queryset.
+		with self.assertRaises(AttributeError):
+			self.configuration.measurement_set.remove(measurements[0])
+		# check if the configuration is updated when a measure is removed.
+		measurements[0].delete()
+		measurements = self.configuration.measurement_set.all()
+		self.assertEqual(len(measurements), 2)
+		# to finish, remove all the measurements and check if it update the
+		# configuration.
+		for m in measurements:
+			m.delete()
+		measurements = self.configuration.measurement_set.all()
+		self.assertEqual(len(measurements), 0)
