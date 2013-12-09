@@ -4,9 +4,7 @@ python:
 # command to install dependencies
 install:
   - "make sqlite3 deploy-withoutpip"
-#  - "pip install -r imagedownloader/requirements.txt"
-# # command to run tests
-script: "make test"
-#nosetests
+# command to run tests
+script: "make test-coverage" #nosetests
 after_success:
   - "coveralls"
