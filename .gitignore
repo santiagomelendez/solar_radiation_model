@@ -11,3 +11,5 @@ imagedownloader/imagedownloader/database.py
 netcdf*/*
 python-aspects*/*
 sqlite-autoconf*/*
+.coveralls.yml
+.coverage

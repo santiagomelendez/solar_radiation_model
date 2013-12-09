@@ -40,6 +40,10 @@ endif
 test:
 	@ cd imagedownloader && $(PYTHON) manage.py test stations
 
+test-coverage: test
+	cd imagedownloader && coverage run --source=stations manage.py test
+	cd imagedownloader && coveralls
+
 run:
 	@ cd imagedownloader && $(PYTHON) manage.py runserver 8000
 
