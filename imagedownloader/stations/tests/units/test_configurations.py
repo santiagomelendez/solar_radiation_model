@@ -1,16 +1,35 @@
 # -*- coding: utf-8 -*- 
 from stations.models import *
 from django.test import TestCase
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 class TestConfigurations(TestCase):
 	fixtures = [ 'initial_data.yaml', '*']
-	
+
 	def setUp(self):
-		self.configuration = Configuration.objects.filter(position__station__name = 'Luján')[0]
-		#calibration = models.ForeignKey(SensorCalibration)
+		self.conf = Configuration.objects.filter(position__station__name = 'Luján')[0]
+		self.begin = datetime.utcnow().replace(tzinfo=pytz.UTC)
+		self.configuration = Configuration(position=self.conf.position, calibration=self.conf.calibration)
+		self.configuration.save()
+		self.end = datetime.utcnow().replace(tzinfo=pytz.UTC)
 	
+	def test_initialize(self):
+		# check if hte instance was created between the begining and the ending of the setup.
+		self.assertTrue(self.begin <= self.configuration.created <= self.end)
+		# check if the created and modified datetime are almost equals
+		self.assertTrue(self.configuration.modified - self.configuration.created < timedelta(microseconds=10))
+		# check if the modified datetime change when the objects is saved again
+		self.configuration.save()
+		self.assertTrue(self.configuration.modified - self.configuration.created > timedelta(microseconds=100))
+
+	def test_serialization(self):
+		# check if the __str__ method is defined to return the object position, when it was modified and the calibration parameters.
+		result = u'%s | %s | %s' % (str(self.configuration.position), str(self.configuration.modified), self.configuration.calibration )
+		self.assertEquals(str(self.configuration), result)
+		result = u'%s | %s | %s' % (self.configuration.position, str(self.configuration.modified), self.configuration.calibration )
+		self.assertEquals(unicode(self.configuration), result)
+
 	def test_go_inactive(self):
 		# put the end attribute to None to make the configuration
 		# active.

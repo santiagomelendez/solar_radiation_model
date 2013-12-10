@@ -33,7 +33,7 @@ class Device(models.Model):
 class Sensor(Device):
 	optic_filter = models.ForeignKey(OpticFilter,null=True)
 	def sensor_pretty_name(self):
-		return '%i %s %s' % (self.serial_number, self.optic_filter.name, self.product.name)
+		return '%s %s %s' % (self.serial_number, self.optic_filter, self.product.name)
 
 class Datalogger(Device):
 	pass
@@ -62,14 +62,14 @@ class Position(models.Model):
 	def coordinates(self):
 		return '(%4f, %4f)' % (self.latitude, self.longitude)
 	def __str__(self):
-		return self.__unicode__()
+		return self.__unicode__().encode('ascii', 'ignore')
 	def __unicode__(self):
 		return u'%s %s' % (self.station.name, self.coordinates())
 
 class Station(models.Model):
 	name = models.TextField(db_index=True)
 	def __str__(self):
-		return self.name
+		return self.name.encode('ascii', 'ignore')
 	def __unicode__(self):
 		return self.name
 	def coordinates(self):
@@ -86,8 +86,14 @@ class Configuration(models.Model):
 	backup = models.TextField(default="")
 	@classmethod
 	def actives(klass):
+		"""Return the active configurations."""
 		return klass.objects.filter(end__isnull=True)
 	def receive_temporal_file(self, f):
+		"""Save an open memory file in a temporal disk file.
+
+		    Keyword arguments:
+		    f -- open memory file
+		    """
 		with open(f.name, 'wb+') as destination:
 			for chunk in f.chunks():
 				destination.write(chunk)
@@ -107,10 +113,24 @@ class Configuration(models.Model):
 		y_from = 10
 		return from_xls(filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)
 	def append_rows(self, rows, between, refresh_presision):
+		"""Transform the rows of data to Measurements.
+
+		    Keyword arguments:
+		    rows -- an array of arrays [datetime, integral_measurement]
+			between -- time between integral_measurements in seconds
+			refresh_presision -- time between sensor values that compose the integral_measurements
+		    """
 		for r in rows:
 			m = Measurement(mean=r[1]/between, between=between, finish=r[0], refresh_presision=refresh_presision, configuration=self)
 			m.save()
 	def added_measurements(self, f, between, refresh_presision):
+		"""	Transform the files (xls, csv) to measurements.
+
+		    Keyword arguments:
+		    f -- open memory file
+			between -- time between integral_measurements in seconds
+			refresh_presision -- time between sensor values that compose the integral_measurements
+		    """
 		extension = f.name.split(".")[-1]
 		if extension in ["csv", "xls"]:
 			rows = getattr(self, "transform_%s_measurements" % extension)(f.name)
@@ -118,23 +138,36 @@ class Configuration(models.Model):
 			return True
 		return False
 	def go_inactive(self, dt=datetime.utcnow().replace(tzinfo=pytz.UTC)):
+		"""Make the configuration object inactive.
+
+		    Keyword arguments:
+		    dt -- datetime of the moment when the configuration go inactive
+		    """
 		self.end = dt
 		self.save()
 	def backup_file(self, f, end, between, refresh_presision):
+		"""Backup the file if it has measurements and clise the configuration, if clean the temporal file on disk.
+
+		    Keyword arguments:
+		    f -- open memory file
+			end -- datetime of the moment when the configuration go inactive
+			between -- time between integral_measurements in seconds
+			refresh_presision -- time between sensor values that compose the integral_measurements
+		    """
 		self.receive_temporal_file(f)
 		if self.added_measurements(f, between, refresh_presision):
-			self.backup = self.get_backup_filename(f.name, hr=True)
+			self.backup = self.get_backup_filename(f.name)
 			os.rename(f.name, self.backup)
 			self.go_inactive(end)
 			self.save()
 		else:
 			os.remove(f.name)
-	def get_backup_filename(self, path, block_size=256*128, hr=False):
-		#md5 = hashlib.md5()
-		#with open(path,'rb') as f:
-		#	for chunk in iter(lambda: f.read(block_size), b''):
-		#		md5.update(chunk)
-		#head = md5.hexdigest() if hr else md5.digest()
+	def get_backup_filename(self, path):
+		"""Proposes a name for the backup file.
+
+		    Keyword arguments:
+		    path -- temporal filename
+		    """
 		head = datetime.utcnow().replace(tzinfo=pytz.UTC).strftime("%Y%m%d%H%M%S")
 		return "stations/backup/%s.%s" % (head, path)
 	def save(self, *args, **kwargs):
@@ -144,7 +177,7 @@ class Configuration(models.Model):
 		self.modified = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		return super(Configuration, self).save(*args, **kwargs)
 	def __str__(self):
-		return str(self.__unicode__())
+		return self.__unicode__().encode('ascii', 'ignore')
 	def __unicode__(self):
 		return u'%s | %s | %s' % (self.position, str(self.modified), self.calibration )
 
