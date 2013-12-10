@@ -41,7 +41,7 @@ test:
 	@ cd imagedownloader && $(PYTHON) manage.py test stations
 
 test-coverage: test
-	cd imagedownloader && coverage run --source=stations manage.py test && coveralls
+	cd imagedownloader && coverage run --source=stations/models.py manage.py test && coveralls
 
 run:
 	@ cd imagedownloader && $(PYTHON) manage.py runserver 8000
@@ -78,7 +78,8 @@ src-aspects:
 	@ sudo cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
 src-postgres:
-	--without-readline --without-zlib
+	$(call get,postgresql-9.2.4,postgresql-9.2.4.tar.gz,ftp://ftp.postgresql.org/pub/source/v9.2.4)
+	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib -with-python)
 
 bin-pip:
 	@ $(call download,ez_setup.py,https://bitbucket.org/pypa/setuptools/raw/bootstrap)
@@ -90,7 +91,7 @@ bin-pip:
 
 postgres:
 	@ echo "[ setting up   ] postgres database"
-	@ cd imagedownloader && cp -f databsase.postgres.py database.py
+	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
 sqlite3: bin-sqlite3
 	@ echo "[ setting up   ] sqlite3 database"
