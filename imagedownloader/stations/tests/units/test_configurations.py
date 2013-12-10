@@ -18,7 +18,7 @@ class TestConfigurations(TestCase):
 		# check if hte instance was created between the begining and the ending of the setup.
 		self.assertTrue(self.begin <= self.configuration.created <= self.end)
 		# check if the created and modified datetime are almost equals
-		self.assertTrue(self.configuration.modified - self.configuration.created < timedelta(microseconds=10))
+		self.assertTrue(self.configuration.modified - self.configuration.created < timedelta(microseconds=100))
 		# check if the modified datetime change when the objects is saved again
 		self.configuration.save()
 		self.assertTrue(self.configuration.modified - self.configuration.created > timedelta(microseconds=100))
