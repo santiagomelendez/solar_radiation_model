@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import pytz
 import hashlib
 import os
-from importer import from_csv, from_xls
 
 class OpticFilter(models.Model):
 	name = models.TextField(db_index=True)
@@ -88,30 +87,6 @@ class Configuration(models.Model):
 	def actives(klass):
 		"""Return the active configurations."""
 		return klass.objects.filter(end__isnull=True)
-	def receive_temporal_file(self, f):
-		"""Save an open memory file in a temporal disk file.
-
-		    Keyword arguments:
-		    f -- open memory file
-		    """
-		with open(f.name, 'wb+') as destination:
-			for chunk in f.chunks():
-				destination.write(chunk)
-	def transform_csv_measurements(self, filename):
-		utc_diff = -3
-		timestamp_col = 0
-		channel = 1
-		skip_rows = 3
-		return from_csv(filename, utc_diff, timestamp_col, channel, skip_rows)
-	def transform_xls_measurements(self, filename):
-		utc_diff = -3
-		i_sheet = 1
-		x_year = 1
-		x_julian = 2
-		x_timestamp = 3
-		x_value = 9
-		y_from = 10
-		return from_xls(filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)
 	def append_rows(self, rows, between, refresh_presision):
 		"""Transform the rows of data to Measurements.
 
@@ -121,22 +96,7 @@ class Configuration(models.Model):
 			refresh_presision -- time between sensor values that compose the integral_measurements
 		    """
 		for r in rows:
-			m = Measurement(mean=r[1]/between, between=between, finish=r[0], refresh_presision=refresh_presision, configuration=self)
-			m.save()
-	def added_measurements(self, f, between, refresh_presision):
-		"""	Transform the files (xls, csv) to measurements.
-
-		    Keyword arguments:
-		    f -- open memory file
-			between -- time between integral_measurements in seconds
-			refresh_presision -- time between sensor values that compose the integral_measurements
-		    """
-		extension = f.name.split(".")[-1]
-		if extension in ["csv", "xls"]:
-			rows = getattr(self, "transform_%s_measurements" % extension)(f.name)
-			self.append_rows(rows, between, refresh_presision)
-			return True
-		return False
+			Measurement.register_or_check(finish=r[0], mean=r[1]/between, between=between, refresh_presision=refresh_presision, configuration=self)
 	def go_inactive(self, dt=datetime.utcnow().replace(tzinfo=pytz.UTC)):
 		"""Make the configuration object inactive.
 
@@ -145,8 +105,8 @@ class Configuration(models.Model):
 		    """
 		self.end = dt
 		self.save()
-	def backup_file(self, f, end, between, refresh_presision):
-		"""Backup the file if it has measurements and clise the configuration, if clean the temporal file on disk.
+	def register_measurements(self, end, rows, between, refresh_presision):
+		"""Register the measurements if it has measurements and close the configuration, if it hasen't got measurements clean the temporal file on disk.
 
 		    Keyword arguments:
 		    f -- open memory file
@@ -154,14 +114,10 @@ class Configuration(models.Model):
 			between -- time between integral_measurements in seconds
 			refresh_presision -- time between sensor values that compose the integral_measurements
 		    """
-		self.receive_temporal_file(f)
-		if self.added_measurements(f, between, refresh_presision):
-			self.backup = self.get_backup_filename(f.name)
-			os.rename(f.name, self.backup)
+		if not self.end and len(rows) > 0:
+			self.append_rows(rows, between, refresh_presision)
 			self.go_inactive(end)
 			self.save()
-		else:
-			os.remove(f.name)
 	def get_backup_filename(self, path):
 		"""Proposes a name for the backup file.
 
@@ -169,7 +125,8 @@ class Configuration(models.Model):
 		    path -- temporal filename
 		    """
 		head = datetime.utcnow().replace(tzinfo=pytz.UTC).strftime("%Y%m%d%H%M%S")
-		return "stations/backup/%s.%s" % (head, path)
+		self.backup = "stations/backup/%s.%s" % (head, path)
+		return self.backup
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
 		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
@@ -190,3 +147,18 @@ class Measurement(models.Model):
 	configuration = models.ForeignKey(Configuration)
 	class Meta:
 		unique_together = ('configuration', 'finish',)
+	@classmethod
+	def register_or_check(klass, finish, mean, between, refresh_presision, configuration):
+		"""Return the active configurations."""
+		m, created = klass.objects.get_or_create(finish=finish, configuration=configuration)
+		if created:
+			m.mean=mean
+			m.between=between
+			m.refresh_presision=refresh_presision
+			m.save()
+		else:
+			diff = abs(float(m.mean) - mean)
+			if not(diff < 0.006 and m.between == between and m.refresh_presision == refresh_presision):
+				print m.id, float(m.mean), mean, diff < 0.006, diff
+				raise RuntimeError("There are diferents values for the same measurement.")
+		return m
