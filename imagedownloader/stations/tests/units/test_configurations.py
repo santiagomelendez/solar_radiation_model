@@ -17,11 +17,11 @@ class TestConfigurations(TestCase):
 	def test_initialize(self):
 		# check if hte instance was created between the begining and the ending of the setup.
 		self.assertTrue(self.begin <= self.configuration.created <= self.end)
-		# check if the created and modified datetime are almost equals
-		self.assertTrue(self.configuration.modified - self.configuration.created < timedelta(microseconds=10))
+		# check if the created and modified datetime are equals
+		self.assertEquals(self.configuration.created, self.configuration.modified)
 		# check if the modified datetime change when the objects is saved again
 		self.configuration.save()
-		self.assertTrue(self.configuration.modified - self.configuration.created > timedelta(microseconds=100))
+		self.assertNotEquals(self.configuration.modified, self.configuration.created)
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return the object position, when it was modified and the calibration parameters.

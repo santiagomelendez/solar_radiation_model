@@ -172,9 +172,10 @@ class Configuration(models.Model):
 		return "stations/backup/%s.%s" % (head, path)
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
+		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		if not self.id:
-			self.created = datetime.utcnow().replace(tzinfo=pytz.UTC)
-		self.modified = datetime.utcnow().replace(tzinfo=pytz.UTC)
+			self.created = now
+		self.modified = now
 		return super(Configuration, self).save(*args, **kwargs)
 	def __str__(self):
 		return self.__unicode__().encode('ascii', 'ignore')
