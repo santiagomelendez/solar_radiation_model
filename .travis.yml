@@ -5,6 +5,6 @@ python:
 install:
   - "make sqlite3 deploy-withoutpip"
 # command to run tests
-script: "make test-coverage" #nosetests
+script: "make test-coverage-travis-ci" #nosetests
 after_success:
   - "coveralls"

@@ -40,8 +40,11 @@ endif
 test:
 	@ cd imagedownloader && $(PYTHON) manage.py test stations
 
-test-coverage: test
-	cd imagedownloader && coverage run --source=stations/models.py manage.py test && coveralls
+test-coverage-travis-ci: test
+	cd imagedownloader && coverage run --source=stations/models.py manage.py test
+
+test-coverage: test-coverage-travis-ci
+	cd imagedownloader && coveralls
 
 run:
 	@ cd imagedownloader && $(PYTHON) manage.py runserver 8000
