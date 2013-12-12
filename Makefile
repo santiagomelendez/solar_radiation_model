@@ -43,8 +43,10 @@ test:
 test-coverage-travis-ci: test
 	cd imagedownloader && coverage run --source=stations/models.py manage.py test
 
-test-coverage: test-coverage-travis-ci
+test-coveralls:
 	cd imagedownloader && coveralls
+
+test-coverage: test-coverage-travis-ci test-coveralls
 
 run:
 	@ cd imagedownloader && $(PYTHON) manage.py runserver 8000
