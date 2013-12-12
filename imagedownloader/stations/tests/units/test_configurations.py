@@ -76,27 +76,24 @@ class TestConfigurations(TestCase):
 	def test_append_rows(self):
 		# check if the configuration return an empty queryset when don't have
 		# measurements.
-		measurements = self.configuration.measurement_set.all()
-		self.assertEqual(len(measurements), 0)
+		self.assertEqual(self.configuration.measurement_set.count(), 0)
 		# check if the method append_rows add multiple measurements to
 		# the configuration.
 		self.configuration.append_rows(self.rows, 600, 1)
-		measurements = self.configuration.measurement_set.all()
-		self.assertEqual(len(measurements), 3)
+		self.assertEqual(self.configuration.measurement_set.count(), 3)
 		# check if the measurement_set raise an exception when the application
 		# try to remove from the queryset.
+		measurements = self.configuration.measurement_set.all()
 		with self.assertRaises(AttributeError):
 			self.configuration.measurement_set.remove(measurements[0])
 		# check if the configuration is updated when a measure is removed.
 		measurements[0].delete()
-		measurements = self.configuration.measurement_set.all()
-		self.assertEqual(len(measurements), 2)
+		self.assertEqual(self.configuration.measurement_set.count(), 2)
 		# to finish, remove all the measurements and check if it update the
 		# configuration.
-		for m in measurements:
+		for m in self.configuration.measurement_set.all():
 			m.delete()
-		measurements = self.configuration.measurement_set.all()
-		self.assertEqual(len(measurements), 0)
+		self.assertEqual(self.configuration.measurement_set.count(), 0)
 
 	def test_register_measurements(self):
 		# check if the configuration is active and hasn't got measurements registered
