@@ -38,10 +38,10 @@ else
 endif
 
 test:
-	@ cd imagedownloader && $(PYTHON) manage.py test stations
+	@ cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 
 test-coverage-travis-ci: test
-	cd imagedownloader && coverage run --source=stations/models.py manage.py test
+	cd imagedownloader && coverage run --source=stations/models.py,plumbing/models/*/*.py,requester/models.py manage.py test
 
 test-coveralls:
 	cd imagedownloader && coveralls
