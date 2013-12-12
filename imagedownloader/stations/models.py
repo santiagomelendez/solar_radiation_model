@@ -139,6 +139,9 @@ class Configuration(models.Model):
 	def __unicode__(self):
 		return u'%s | %s | %s' % (self.position, str(self.modified), self.calibration )
 
+class InvalidMeasurementError(RuntimeError):
+	pass
+
 class Measurement(models.Model):
 	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal(0.00))
 	between = models.IntegerField(default=0)
@@ -159,6 +162,5 @@ class Measurement(models.Model):
 		else:
 			diff = abs(float(m.mean) - mean)
 			if not(diff < 0.006 and m.between == between and m.refresh_presision == refresh_presision):
-				print m.id, float(m.mean), mean, diff < 0.006, diff
-				raise RuntimeError("There are diferents values for the same measurement.")
+				raise InvalidMeasurementError("There are diferents values for the same measurement.")
 		return m
