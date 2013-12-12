@@ -7,4 +7,4 @@ install:
 # command to run tests
 script: "make test-coverage-travis-ci" #nosetests
 after_success:
-  - "make coveralls"
+  - "make test-coveralls"
