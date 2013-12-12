@@ -13,7 +13,12 @@ class TestConfigurations(TestCase):
 		self.configuration = Configuration(position=self.conf.position, calibration=self.conf.calibration)
 		self.configuration.save()
 		self.end = datetime.utcnow().replace(tzinfo=pytz.UTC)
-	
+		self.rows = [
+			[datetime(2013,12,8,16,40,0).replace(tzinfo=pytz.UTC), 300.1],
+			[datetime(2013,12,8,16,50,0).replace(tzinfo=pytz.UTC), 200.1],
+			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), 100.1]
+			]
+
 	def test_initialize(self):
 		# check if hte instance was created between the begining and the ending of the setup.
 		self.assertTrue(self.begin <= self.configuration.created <= self.end)
@@ -75,12 +80,7 @@ class TestConfigurations(TestCase):
 		self.assertEqual(len(measurements), 0)
 		# check if the method append_rows add multiple measurements to
 		# the configuration.
-		rows = [
-			[datetime(2013,12,8,16,40,0).replace(tzinfo=pytz.UTC), 300.1],
-			[datetime(2013,12,8,16,50,0).replace(tzinfo=pytz.UTC), 200.1],
-			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), 100.1]
-			]
-		self.configuration.append_rows(rows, 600, 1)
+		self.configuration.append_rows(self.rows, 600, 1)
 		measurements = self.configuration.measurement_set.all()
 		self.assertEqual(len(measurements), 3)
 		# check if the measurement_set raise an exception when the application
@@ -97,3 +97,13 @@ class TestConfigurations(TestCase):
 			m.delete()
 		measurements = self.configuration.measurement_set.all()
 		self.assertEqual(len(measurements), 0)
+
+	def test_register_measurements(self):
+		# check if the configuration is active and hasn't got measurements registered
+		self.assertEquals(self.configuration.end, None)
+		self.assertEquals(self.configuration.measurement_set.count(),0)
+		# check if register the measurements and close the configuration
+		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
+		self.configuration.register_measurements(now, self.rows, 600, 1)
+		self.assertEquals(self.configuration.end, now)
+		self.assertEquals(self.configuration.measurement_set.count(),len(self.rows))
