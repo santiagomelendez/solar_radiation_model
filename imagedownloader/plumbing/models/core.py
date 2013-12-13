@@ -13,7 +13,11 @@ class TagManager(models.Model):
 		app_label = 'plumbing'
 	tag_string = models.TextField(db_index=True, default="")
 	def exist(self, tag):
-		return tag in self.tag_string.split(",")
+		return tag in self.list()
+	def list(self):
+		l = self.tag_string.split(",")
+		if u"" in l: l.remove(u"")
+		return l
 	def insert_first(self, tag):
 		if not self.exist(tag):
 			self.tag_string = (tag + "," + self.tag_string)  if len(self.tag_string) > 0 else tag
@@ -25,7 +29,7 @@ class TagManager(models.Model):
 		t.save()
 		return t
 	def make_filename(self):
-		return ".".join(self.tag_string.split(","))
+		return ".".join(self.list())
 
 class Stream(models.Model):
 	class Meta:
