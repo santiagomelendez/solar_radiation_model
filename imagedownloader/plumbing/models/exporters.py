@@ -9,19 +9,23 @@ import numpy as np
 import collections
 from libs import matrix
 
+
 class Compact(Process):
 	class Meta:
         	app_label = 'plumbing'
 	extension = models.TextField()
 	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
+
 	def do(self, stream):
 		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
 		file = self.do_file(filename,stream)
 		fs = FileStatus(file=file,stream=self.resultant_stream)
 		fs.save()
 		return self.resultant_stream
+
 	def getdatetimenow(self):
 		return datetime.utcnow().replace(tzinfo=pytz.UTC)
+
 	def do_file(self, filename, stream):
 		# create compact file and initialize basic settings
 		begin_time = self.getdatetimenow()
@@ -44,6 +48,7 @@ class Compact(Process):
 		f = File(localname=filename)
 		f.save()
 		return f
+
 	def do_var(self, root, var_name, stream):
 		count = 0
 		file_statuses = stream.sorted_files()

@@ -6,42 +6,53 @@ from django.forms import ModelForm
 class BrandAdmin(admin.ModelAdmin):
     list_display = [ 'name', ]
 
+
 class OpticFilterAdmin(admin.ModelAdmin):
     list_display = [ 'name', ]
+
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = [ 'brand', 'name' ]
     list_display_links = list_display[1:]
 
+
 class DeviceAdmin(admin.ModelAdmin):
     list_display = [ 'product', 'serial_number', 'description' ]
     list_display_links = list_display[1:]
+
 
 class SensorAdmin(DeviceAdmin):
 	list_display = [ 'product', 'serial_number', 'description', 'optic_filter' ]
 	list_display_links = list_display[1:]
 
+
 class InclinedSupportAdmin(DeviceAdmin):
 	list_display = [ 'product', 'serial_number', 'description', 'angle', ]
 	list_display_links = list_display[1:]
+
 
 class SensorCalibrationAdmin(admin.ModelAdmin):
 	list_display = [ 'coefficient', 'shift' ]
 	list_display_links = list_display[:]
 
+
 class ConfigurationAdmin(admin.ModelAdmin):
     list_display = [ 'position', 'calibration', 'created', 'modified' ]
     list_display_links = list_display[1:]
+
 
 class MeasurementAdmin(admin.ModelAdmin):
     list_display = [ 'configuration', 'finish', 'mean', 'between', 'refresh_presision' ]
     list_display_links = list_display[:3]
 
+
 class StationAdmin(admin.ModelAdmin):
     list_display = [ 'name', 'coordinates' ]
 
+
 class PositionAdmin(admin.ModelAdmin):
     list_display = [ 'station', 'latitude', 'longitude' ]
+
 
 admin.site.register(Position, PositionAdmin)
 admin.site.register(Station, StationAdmin)

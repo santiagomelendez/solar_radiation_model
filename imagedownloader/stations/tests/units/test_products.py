@@ -4,6 +4,7 @@ from django.test import TestCase
 from datetime import datetime
 import pytz
 
+
 class TestProducts(TestCase):
 	fixtures = [ 'initial_data.yaml', '*']
 	

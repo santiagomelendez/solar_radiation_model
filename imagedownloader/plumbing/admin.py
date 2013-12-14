@@ -2,22 +2,29 @@ from django.contrib import admin
 from plumbing.models import *
 from django.forms import ModelForm
 
+
 class TagManagerAdmin(admin.ModelAdmin):
 	list_display = ['tag_string']
+
 
 class StreamAdmin(admin.ModelAdmin):
 	list_display = ['root_path', 'created', 'modified']
 
+
 class FileAdmin(admin.ModelAdmin):
 	list_display = ['localname', 'created', 'modified']
+
 
 class FileStatusAdmin(admin.ModelAdmin):
 	list_display = ['stream', 'file']
 
+
 class ProcessInlineForm(ModelForm):
+
 	def __init__(self, *args, **kwargs):
 		super(ProcessInlineForm, self).__init__(*args, **kwargs)
 		self.fields['process'].queryset = Process.objects.all() 
+
 
 class ProcessOrderInline(admin.TabularInline):
 	form = ProcessInlineForm
@@ -26,33 +33,42 @@ class ProcessOrderInline(admin.TabularInline):
 	extra = 0 # how many rows to show
 	ordering = ["position",]
 
+
 class ComplexProcessAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description']
 	inlines = [ProcessOrderInline]
 	search_fields = ['name', 'description', ]
+
 
 class ProgramAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description', 'stream']
 	inlines = [ProcessOrderInline]
 	search_fields = ['name', 'description', ]
 
+
 class CompactAdmin(admin.ModelAdmin):
 	list_display= [ 'name', 'description', 'extension']
+
 
 class CollectTimedAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description']
 
+
 class CollectChannelAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description' ]
+
 
 class FilterAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description']
 
+
 class FilterSolarElevationAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description', 'minimum']
 
+
 class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
 	list_display = [ 'name', 'description']
+
 
 admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)

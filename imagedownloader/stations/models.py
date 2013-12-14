@@ -5,74 +5,99 @@ import pytz
 import hashlib
 import os
 
+
 class OpticFilter(models.Model):
 	name = models.TextField(db_index=True)
+
 	def __str__(self):
 		return self.name
 
+
 class Brand(models.Model):
 	name = models.TextField(db_index=True)
+
 	def __str__(self):
 		return self.name
+
 
 class Product(models.Model):
 	brand = models.ForeignKey(Brand)
 	name = models.TextField(db_index=True)
 	specifications = models.TextField(db_index=True)
+
 	def __str__(self):
 		return self.name
+
 
 class Device(models.Model):
 	product = models.ForeignKey(Product)
 	serial_number = models.TextField(db_index=True,default="")
 	description = models.TextField(db_index=True,default="")
+
 	def __str__(self):
 		return "%s (%s)" % (self.serial_number, self.product)
 
+
 class Sensor(Device):
 	optic_filter = models.ForeignKey(OpticFilter,null=True)
+
 	def sensor_pretty_name(self):
 		return '%s %s %s' % (self.serial_number, self.optic_filter, self.product.name)
+
 
 class Datalogger(Device):
 	pass
 
+
 class Tracker(Device):
 	pass
+
 
 class ShadowBall(Device):
 	pass
 
+
 class InclinedSupport(Device):
 	angle = models.DecimalField(max_digits=7,decimal_places=4,default=Decimal(0.00))
+
 
 class SensorCalibration(models.Model):
 	sensor = models.ForeignKey(Sensor)
 	coefficient = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
 	shift = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+
 	def __str__(self):
 		return '%2f x + %2f' % (self.coefficient, self.shift)
+
 
 class Position(models.Model):
 	station = models.ForeignKey('Station',null=True,default=None)
 	""" A centimeter-presision point """
 	latitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
 	longitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+
 	def coordinates(self):
 		return '(%4f, %4f)' % (self.latitude, self.longitude)
+
 	def __str__(self):
 		return self.__unicode__().encode('ascii', 'ignore')
+
 	def __unicode__(self):
 		return u'%s %s' % (self.station.name, self.coordinates())
 
+
 class Station(models.Model):
 	name = models.TextField(db_index=True)
+
 	def __str__(self):
 		return self.name.encode('ascii', 'ignore')
+
 	def __unicode__(self):
 		return self.name
+
 	def coordinates(self):
 		return [p.coordinates() for p in self.position_set.all()]
+
 
 class Configuration(models.Model):
 	begin = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
@@ -83,10 +108,12 @@ class Configuration(models.Model):
 	created = models.DateTimeField(editable=False,default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	modified = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	backup = models.TextField(default="")
+
 	@classmethod
 	def actives(klass):
 		"""Return the active configurations."""
 		return klass.objects.filter(end__isnull=True)
+
 	def append_rows(self, rows, between, refresh_presision):
 		"""Transform the rows of data to Measurements.
 
@@ -97,6 +124,7 @@ class Configuration(models.Model):
 		    """
 		for r in rows:
 			Measurement.register_or_check(finish=r[0], mean=r[1]/between, between=between, refresh_presision=refresh_presision, configuration=self)
+
 	def go_inactive(self, dt=datetime.utcnow().replace(tzinfo=pytz.UTC)):
 		"""Make the configuration object inactive.
 
@@ -105,6 +133,7 @@ class Configuration(models.Model):
 		    """
 		self.end = dt
 		self.save()
+
 	def register_measurements(self, end, rows, between, refresh_presision):
 		"""Register the measurements if it has measurements and close the configuration, if it hasen't got measurements clean the temporal file on disk.
 
@@ -118,6 +147,7 @@ class Configuration(models.Model):
 			self.append_rows(rows, between, refresh_presision)
 			self.go_inactive(end)
 			self.save()
+
 	def get_backup_filename(self, path):
 		"""Proposes a name for the backup file.
 
@@ -127,6 +157,7 @@ class Configuration(models.Model):
 		head = datetime.utcnow().replace(tzinfo=pytz.UTC).strftime("%Y%m%d%H%M%S")
 		self.backup = "stations/backup/%s.%s" % (head, path)
 		return self.backup
+
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
 		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
@@ -134,13 +165,16 @@ class Configuration(models.Model):
 			self.created = now
 		self.modified = now
 		return super(Configuration, self).save(*args, **kwargs)
+
 	def __str__(self):
 		return self.__unicode__().encode('ascii', 'ignore')
+
 	def __unicode__(self):
 		return u'%s | %s | %s' % (self.position, str(self.modified), self.calibration )
 
 class InvalidMeasurementError(RuntimeError):
 	pass
+
 
 class Measurement(models.Model):
 	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal(0.00))
@@ -151,6 +185,7 @@ class Measurement(models.Model):
 	class Meta:
 		unique_together = ('configuration', 'finish',)
 	@classmethod
+
 	def register_or_check(klass, finish, mean, between, refresh_presision, configuration):
 		"""Return the active configurations."""
 		m, created = klass.objects.get_or_create(finish=finish, configuration=configuration)

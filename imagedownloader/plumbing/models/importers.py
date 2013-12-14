@@ -3,15 +3,19 @@ sys.path.append(".")
 from core import *
 from libs.console import *
 
+
 class Image(File):
 	class Meta:
 		app_label = 'plumbing'
+
 	def channel(self):
 		res = re.search('BAND_([0-9]*)\.', self.completepath())
 		return str(res.groups(0)[0]) if res else None
+
 	def satellite(self):
 		res = self.filename().split(".")
 		return str(res[0])
+
 	def datetime(self):
 		t_info = self.filename().split(".")
 		year = int(t_info[1])
@@ -19,6 +23,7 @@ class Image(File):
 		time = t_info[3]
 		date = datetime(year, 1, 1) + timedelta(days - 1)
 		return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
+
 	def latlon(self):
 		if self.channel() is None:
 			return None, None
@@ -27,19 +32,24 @@ class Image(File):
 		lon = root.variables['lon'][:]
 		root.close()
 		return lat, lon
+
 	def completepath(self):
 		return os.path.expanduser(os.path.normpath(self.localname))
+
 
 class Program(ComplexProcess):
 	class Meta:
         	app_label = 'plumbing'
 	stream = models.ForeignKey(Stream)
+
 	def downloaded_files(self):
 		return [ f for request in self.automatic_download.request_set.all() for f in request.order.file_set.filter(downloaded=True).order_by('localname') ]
+
 	def source(self):
 		files = self.downloaded_files()
 		files.sort()
 		return { 'all': files }
+
 	def execute(self):
 		self.do(self.stream)
 
