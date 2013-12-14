@@ -20,14 +20,14 @@ class TestConfigurations(TestCase):
 			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), 100.1]
 			]
 
-	def test_initialize(self):
+	def test_save(self):
 		# check if hte instance was created between the begining and the ending of the setup.
 		self.assertTrue(self.begin <= self.configuration.created <= self.end)
 		# check if the created and modified datetime are equals
 		self.assertEquals(self.configuration.created, self.configuration.modified)
 		# check if the modified datetime change when the objects is saved again
 		self.configuration.save()
-		self.assertNotEquals(self.configuration.modified, self.configuration.created)
+		self.assertTrue(self.configuration.modified > self.configuration.created)
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return the object position, when it was modified and the calibration parameters.
