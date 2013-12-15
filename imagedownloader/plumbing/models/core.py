@@ -14,6 +14,12 @@ class TagManager(models.Model):
 		app_label = 'plumbing'
 	tag_string = models.TextField(db_index=True, default="")
 
+	@classmethod
+	def empty(klass):
+		tm = TagManager()
+		tm.save()
+		return tm
+
 	def exist(self, tag):
 		return tag in self.list()
 
@@ -25,10 +31,12 @@ class TagManager(models.Model):
 	def insert_first(self, tag):
 		if not self.exist(tag):
 			self.tag_string = (tag + "," + self.tag_string)  if len(self.tag_string) > 0 else tag
+			self.save()
 
 	def append(self,tag):
 		if not self.exist(tag):
 			self.tag_string += ("," + tag) if len(self.tag_string) > 0 else tag
+			self.save()
 
 	def clone(self):
 		t = TagManager(tag_string=self.tag_string)
@@ -43,17 +51,24 @@ class Stream(models.Model):
 	class Meta:
 		app_label = 'plumbing'
 	root_path = models.TextField(db_index=True)
-	tags = models.ForeignKey(TagManager, related_name='stream', default=TagManager())
-	#files = models.ManyToManyField('FileStatus', through='FileStatus', related_name='streams')
-	#name = models.File
-	created = models.DateTimeField(auto_now_add=True)
-	modified = models.DateTimeField(auto_now=True)
+	tags = models.ForeignKey(TagManager, related_name='stream', default=TagManager.empty)
+	created = models.DateTimeField(editable=False,default=datetime.utcnow().replace(tzinfo=pytz.UTC))
+	modified = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 
 	def __str__(self):
 		return self.root_path
 
+	def save(self, *args, **kwargs):
+		""" On save, update timestamps """
+		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
+		self.tags.save()
+		if not self.id:
+			self.created = now
+		self.modified = now
+		return super(Stream, self).save(*args, **kwargs)
+
 	@classmethod
-	def get_stream_from_file(cls, localfile):
+	def get_stream_from_file(klass, localfile):
 		return "/".join(localfile.split("/")[:-2]) + "/"
 
 	def get_root_path_files(self):
@@ -78,10 +93,10 @@ class Stream(models.Model):
 		return s
 
 	def unprocessed(self):
-		return self.files.all() #filter(processed=False)
+		return self.files.filter(processed=False)
 
 	def sorted_files(self):
-		return sorted(self.unprocessed(), key=lambda fs: fs.file.datetime())
+		return sorted(self.unprocessed(), key=lambda fs: fs.file.filename())
 
 	def empty(self):
 		pending = self.unprocessed()

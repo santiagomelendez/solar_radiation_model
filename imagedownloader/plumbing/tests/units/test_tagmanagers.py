@@ -9,8 +9,14 @@ class TestTagManagers(TestCase):
 	fixtures = [ 'initial_data.yaml', '*']
 
 	def setUp(self):
-		self.tag_manager = TagManager()
+		self.tag_manager = TagManager.empty()
 		self.loaded_tag_manager = TagManager(tag_string="vegetable,food,red,spice")
+
+	def test_empty(self):
+		# check if empty() class method create and save an empty TagManager.
+		self.assertNotEquals(self.tag_manager.id, None)
+		# check when you use the standar initializer don't auto-save.
+		self.assertEquals(self.loaded_tag_manager.id, None)
 
 	def test_list(self):
 		# check if the list is empty.
