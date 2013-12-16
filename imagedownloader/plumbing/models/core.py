@@ -7,6 +7,7 @@ from decimal import Decimal
 from polymodels.models import PolymorphicModel
 import glob
 from libs.file import netcdf as nc
+import calendar
 
 
 class TagManager(models.Model):
@@ -136,9 +137,10 @@ class File(models.Model):
 
 	def deduce_year_fraction(self, year, rest):
 		if rest[0][0] == "M":
-			return datetime(year, int(rest[0][1:]), 1)
+			month = int(rest[0][1:])
+			return datetime(year,month,calendar.monthrange(year,month)[1])
 		elif rest[0][0] == "W":
-			return datetime(year, 1 , 1) +  timedelta(week=int(rest[0][1:]), day=-1)
+			return datetime(year, 1 , 1) +  timedelta(weeks=int(rest[0][1:]), days=-1)
 		else:
 			days = int(rest[0])
 			time = rest[1]
