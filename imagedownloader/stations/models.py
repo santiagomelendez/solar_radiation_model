@@ -184,8 +184,8 @@ class Measurement(models.Model):
 	configuration = models.ForeignKey(Configuration)
 	class Meta:
 		unique_together = ('configuration', 'finish',)
-	@classmethod
 
+	@classmethod
 	def register_or_check(klass, finish, mean, between, refresh_presision, configuration):
 		"""Return the active configurations."""
 		m, created = klass.objects.get_or_create(finish=finish, configuration=configuration)
