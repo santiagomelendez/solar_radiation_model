@@ -9,7 +9,7 @@ class TestProcesses(TestCase):
 	fixtures = [ 'initial_data.yaml', '*']
 
 	def setUp(self):
-		self.process = Process.objects.get_or_create(name='year.Mmonth')[0]
+		self.process = Process.objects.get(name='year.Mmonth')
 		self.other_process = Process.objects.get(pk=6)
 		self.stream = Stream(root_path="/var/service/data/GVAR_IMG/argentina/")
 
