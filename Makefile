@@ -23,6 +23,7 @@ endef
 
 PIP=pip
 PYTHON=python
+VIRTUALENV=virtualenv-1.9/virtualenv.py
 update_shared_libs=sudo ldconfig
 
 ifeq ($(OS), Darwin)
@@ -40,8 +41,8 @@ endif
 test:
 	@ cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 
-test-coverage-travis-ci: test
-	cd imagedownloader && coverage run --source=stations/models.py,plumbing/models/,requester/models.py manage.py test
+test-coverage-travis-ci:
+	@ cd imagedownloader && coverage run --source='stations/,plumbing/,requester/' manage.py test stations plumbing requester
 
 test-coveralls:
 	cd imagedownloader && coveralls
@@ -78,6 +79,10 @@ lib-netcdf4: lib-hdf5
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
 	$(call compile,netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include,--enable-netcdf-4 --enable-dap --enable-shared --prefix=/usr/local)
 
+bin-virtualenv:
+	$(call get,virtualenv-1.9,virtualenv-1.9.tar.gz,https://pypi.python.org/packages/source/v/virtualenv)
+	cd .. && $(PYTHON) solar_radiation_model/$(VIRTUALENV) --no-site-packages solar_radiation_model
+
 src-aspects:
 	$(call install,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ sudo cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
@@ -108,4 +113,4 @@ pip-requirements: lib-netcdf4 src-aspects
 	@ $(PIP) install -r imagedownloader/requirements.txt --upgrade
 
 clean:
-	sudo rm -rf sqlite* hdf5* netcdf-4* python-aspects* ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3
+	sudo rm -rf sqlite* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3
