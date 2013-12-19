@@ -42,7 +42,7 @@ test:
 	@ cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 
 test-coverage-travis-ci:
-	@ cd imagedownloader && coverage run --source='stations/,plumbing/,requester/' manage.py test stations plumbing requester
+	@ cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/*.py,requester/models.py' manage.py test stations plumbing requester
 
 test-coveralls:
 	cd imagedownloader && coveralls
