@@ -219,6 +219,7 @@
     title: "BS: 2013->2014 G13"
     area: 2
     time_range: 3
+    paused: False
     email_server: 2
     root_path: "~/data/GVAR_IMG/bsas/"
     max_simultaneous_request: 5
