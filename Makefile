@@ -51,7 +51,7 @@ test-coverage-travis-ci:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/*.py,requester/models.py' manage.py test stations plumbing requester
 
 test-coveralls:
-	. $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
 
 test-coverage: test-coverage-travis-ci test-coveralls
 
@@ -70,9 +70,7 @@ db-migrate:
 libs-and-headers: lib-netcdf4 src-aspects
 	$(update_shared_libs)
 
-deploy-withoutpip: libs-and-headers bin/activate db-migrate
-
-deploy: deploy-withoutpip
+deploy: libs-and-headers bin/activate db-migrate
 
 bin-sqlite3:
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)

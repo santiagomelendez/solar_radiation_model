@@ -3,7 +3,7 @@ python:
   - "2.7"
 # command to install dependencies
 install:
-  - "make sqlite3 deploy-withoutpip"
+  - "make sqlite3 deploy"
 # command to run tests
 script: "make test-coverage-travis-ci" #nosetests
 after_success:
