@@ -41,9 +41,6 @@ VIRTUALENV=virtualenv$(PYCONCAT)$(PYVERSION)
 SOURCE_ACTIVATE=. bin/activate;
 
 
-show-versions:
-	@ $(shell $(PYTHON) --version)
-
 test:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 
@@ -102,7 +99,7 @@ sqlite3: bin-sqlite3
 	@ echo "[ setting up   ] sqlite3 database"
 	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
 
-bin/activate: show-versions imagedownloader/requirements.txt
+bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] $(VIRTUALENV)"
 	@ (sudo $(EASYINSTALL) virtualenv 2>&1) >> tracking.log
 	@ echo "[ creating     ] $(VIRTUALENV) with no site packages"
