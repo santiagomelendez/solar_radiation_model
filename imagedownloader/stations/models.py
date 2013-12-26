@@ -58,13 +58,13 @@ class ShadowBall(Device):
 
 
 class InclinedSupport(Device):
-	angle = models.DecimalField(max_digits=7,decimal_places=4,default=Decimal(0.00))
+	angle = models.DecimalField(max_digits=7,decimal_places=4,default=Decimal('0.00'))
 
 
 class SensorCalibration(models.Model):
 	sensor = models.ForeignKey(Sensor)
-	coefficient = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
-	shift = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+	coefficient = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal('0.00'))
+	shift = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal('0.00'))
 
 	def __str__(self):
 		return '%2f x + %2f' % (self.coefficient, self.shift)
@@ -73,8 +73,8 @@ class SensorCalibration(models.Model):
 class Position(models.Model):
 	station = models.ForeignKey('Station',null=True,default=None)
 	""" A centimeter-presision point """
-	latitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
-	longitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal(0.00))
+	latitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal('0.00'))
+	longitude = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal('0.00'))
 
 	def coordinates(self):
 		return '(%4f, %4f)' % (self.latitude, self.longitude)
@@ -177,7 +177,7 @@ class InvalidMeasurementError(RuntimeError):
 
 
 class Measurement(models.Model):
-	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal(0.00))
+	mean = models.DecimalField(max_digits=5,decimal_places=2,default=Decimal('0.00'))
 	between = models.IntegerField(default=0)
 	finish = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	refresh_presision = models.IntegerField(default=0)

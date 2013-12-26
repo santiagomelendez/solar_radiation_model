@@ -2,6 +2,7 @@
 from stations.models import *
 from django.test import TestCase
 from datetime import datetime, timedelta
+from decimal import Decimal
 import pytz
 
 
@@ -15,9 +16,9 @@ class TestConfigurations(TestCase):
 		self.configuration.save()
 		self.end = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		self.rows = [
-			[datetime(2013,12,8,16,40,0).replace(tzinfo=pytz.UTC), 300.1],
-			[datetime(2013,12,8,16,50,0).replace(tzinfo=pytz.UTC), 200.1],
-			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), 100.1]
+			[datetime(2013,12,8,16,40,0).replace(tzinfo=pytz.UTC), Decimal('300.1')],
+			[datetime(2013,12,8,16,50,0).replace(tzinfo=pytz.UTC), Decimal('200.1')],
+			[datetime(2013,12,8,17,00,0).replace(tzinfo=pytz.UTC), Decimal('100.1')]
 			]
 
 	def test_save(self):

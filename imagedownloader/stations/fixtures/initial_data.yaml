@@ -353,8 +353,8 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
   pk: 1
   fields:
     station: 9
-    latitude: -34.588163320193296
-    longitude: -59.06299340809084
+    latitude: '-34.588163320193296'
+    longitude: '-59.06299340809084'
 
 - model: stations.station
   pk: 10
@@ -365,8 +365,8 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
   pk: 1
   fields:
     sensor: 1
-    coefficient: 1.0
-    shift: 0.0
+    coefficient: '1.0'
+    shift: '0.0'
 
 - model: stations.configuration
   pk: 1
