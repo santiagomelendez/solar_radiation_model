@@ -113,4 +113,4 @@ test-coveralls:
 test-coverage: test-coverage-travis-ci test-coveralls
 
 clean:
-	rm -rf sqlite* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
+	rm -rf sqlite* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
