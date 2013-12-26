@@ -115,7 +115,7 @@ test:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 
 test-coverage-travis-ci:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/*.py,requester/models.py' manage.py test stations plumbing requester
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/,requester/models.py' manage.py test stations plumbing requester
 
 test-coveralls:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
