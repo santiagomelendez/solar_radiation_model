@@ -41,39 +41,23 @@ VIRTUALENV=virtualenv$(PYCONCAT)$(PYVERSION)
 SOURCE_ACTIVATE=. bin/activate;
 
 
-test:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
-
-test-coverage-travis-ci:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/*.py,requester/models.py' manage.py test stations plumbing requester
-
-test-coveralls:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
-
-test-coverage: test-coverage-travis-ci test-coveralls
-
-run:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runserver 8000
-
-defaultsuperuser:
-	@ echo "For the 'dev' user please select a password"
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
-
-db-migrate:
-	@ echo "[ migrating    ] setting up the database structure"
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput 2>&1) >> tracking.log
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate 2>&1) >> tracking.log
-
-libs-and-headers: lib-netcdf4 src-aspects
-	$(update_shared_libs)
-
-deploy: libs-and-headers bin/activate db-migrate
+install-python27:
+	$(call install,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
 
 bin-sqlite3:
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
 
-install-python27:
-	$(call install,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
+sqlite3: bin-sqlite3
+	@ echo "[ setting up   ] sqlite3 database"
+	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
+
+bin-postgres:
+	$(call get,postgresql-9.2.4,postgresql-9.2.4.tar.gz,ftp://ftp.postgresql.org/pub/source/v9.2.4)
+	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib -with-python)
+
+postgres: bin-postgres
+	@ echo "[ setting up   ] postgres database"
+	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
 lib-hdf5:
 	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
@@ -83,21 +67,12 @@ lib-netcdf4: lib-hdf5
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
 	$(call compile,netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include,--enable-netcdf-4 --enable-dap --enable-shared --prefix=/usr/local)
 
-src-aspects:
+imagedownloader/aspects.py:
 	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
-src-postgres:
-	$(call get,postgresql-9.2.4,postgresql-9.2.4.tar.gz,ftp://ftp.postgresql.org/pub/source/v9.2.4)
-	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib -with-python)
-
-postgres:
-	@ echo "[ setting up   ] postgres database"
-	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
-
-sqlite3: bin-sqlite3
-	@ echo "[ setting up   ] sqlite3 database"
-	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
+libs-and-headers: lib-netcdf4 imagedownloader/aspects.py
+	$(update_shared_libs)
 
 bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] $(VIRTUALENV)"
@@ -111,6 +86,31 @@ bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ ($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.txt 2>&1) >> tracking.log
 	@ touch bin/activate
+
+db-migrate:
+	@ echo "[ migrating    ] setting up the database structure"
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput 2>&1) >> tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate 2>&1) >> tracking.log
+
+deploy: libs-and-headers bin/activate db-migrate
+
+defaultsuperuser:
+	@ echo "For the 'dev' user please select a password"
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
+
+run:
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runserver 8000
+
+test:
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
+
+test-coverage-travis-ci:
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/*.py,requester/models.py' manage.py test stations plumbing requester
+
+test-coveralls:
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
+
+test-coverage: test-coverage-travis-ci test-coveralls
 
 clean:
 	rm -rf sqlite* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
