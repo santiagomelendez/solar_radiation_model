@@ -7,17 +7,15 @@ Solar Radiation Model is a python service that provides you with a pipe and filt
 Requirements
 ------------
 
-If you want to deploy this repository with some default settings, you should have installed **python2.7** and **gmake**.
+If you want to deploy this repository with some default settings, you should have installed **python** (tested with versions 2.6 and 2.7) and **gmake**. If you Operative System doesn't have python, you can install it from sourcecode executing the next command:
 
-On any linux you only need to execute the next bash command to setting up all the required requirements using the GNUMakefile.
+	$ make install-python27
+
+On any GNU/Linux or OSX you only need to execute the next bash command to setting up all the required requirements using the GNUMakefile.
 
 	$ make sqlite3 deploy
 
-But, if you have got installed pip, you should execute the next command:
-
-	$ make sqlite3 deploy-withoutpip
-
-At last you should configure a superuser access to the fron end. To do so, you should execute the next command and then fill (twice) the password field.
+At last you should configure a superuser frontend access. To do so, you should execute the next command and then fill (twice) the password field.
 
 	$ make defaultsuperuser
 
