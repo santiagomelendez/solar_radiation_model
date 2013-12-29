@@ -25,17 +25,33 @@ update_shared_libs=sudo ldconfig
 
 ifeq ($(OS), Darwin)
 	update_shared_libs=
-	LIBSQLITE3=libsqlite3.0.dylib
-	LIBHDF5=libhdf5_hl.8.dylib
-	LIBNETCDF=libnetcdf.7.dylib
+	LIBPOSTGRES=/usr/local/pgsql/bin
+	LIBSQLITE3=/usr/local/lib/libsqlite3.0.dylib
+	LIBHDF5=/usr/local/lib/libhdf5_hl.8.dylib
+	LIBNETCDF=/usr/local/lib/libnetcdf.7.dylib
+	CONFIGURE_USER_POSTGRES= \
+		sudo dscl . -create /Users/postgres UniqueID 174 && \
+		sudo dscl . -create /Users/postgres PrimaryGroupID 174 && \
+		sudo dscl . -create /Users/postgres HomeDirectory /usr/local/pgsql && \
+		sudo dscl . -create /Users/postgres UserShell /usr/bin/false && \
+		sudo dscl . -create /Users/postgres RealName "PostgreSQL Administrator" && \
+		sudo dscl . -create /Users/postgres Password \* && \
+		dscl . -read /Users/postgres && \
+		sudo dscl . -create /Groups/postgres PrimaryGroupID 174 && \
+		sudo dscl . -create /Groups/postgres Password \* && \
+		dscl . -read /Groups/postgres
 endif
 ifeq ($(OS), Linux)
 	#DISTRO=$(shell lsb_release -si)
 	#ifeq ($(DISTRO), CentOS)
 	#endif
-	LIBSQLITE3=libsqlite3.so.0.8.6
-	LIBHDF5=libhdf5.so.8.0.1
-	LIBNETCDF=libnetcdf.so.7.2.0
+	LIBPOSTGRES=/usr/local/pgsql/bin
+	LIBSQLITE3=/usr/local/lib/libsqlite3.so.0.8.6
+	LIBHDF5=/usr/local/lib/libhdf5.so.8.0.1
+	LIBNETCDF=/usr/local/lib/libnetcdf.so.7.2.0
+	CONFIGURE_USER_POSTGRES= \
+		sudo adduser postgres && \
+		sudo passwd postgres
 endif
 PYCONCAT=
 ifneq ($(PYVERSION),)
@@ -47,6 +63,12 @@ EASYINSTALL=easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=. bin/activate; 
 
+ifneq ($(filter-out postgres,$(MAKECMDGOALS)),$(MAKECMDGOALS))
+	DATABASE_REQUIREMENTS=postgres-requirements
+	dbname=imagedownloader
+	user=postgres
+endif
+
 
 install-python27:
 	$(call get,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
@@ -54,26 +76,43 @@ install-python27:
 	$(call download,setuptools-0.6c11-py2.7.egg,http://pypi.python.org/packages/2.7/s/setuptools)
 	@ sudo sh setuptools-0.6c11-py2.7.egg
 
-/usr/local/lib/$(LIBSQLITE3):
+$(LIBSQLITE3):
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
 
-sqlite3: /usr/local/lib/$(LIBSQLITE3)
+sqlite3: $(LIBSQLITE3)
 	@ echo "[ setting up   ] sqlite3 database"
 	@ cd imagedownloader/imagedownloader && cp -f database.sqlite3.py database.py
 
-bin-postgres:
+$(LIBPOSTGRES):
 	$(call get,postgresql-9.2.4,postgresql-9.2.4.tar.gz,ftp://ftp.postgresql.org/pub/source/v9.2.4)
-	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib -with-python)
+	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib --with-python --with-pam)
+	@ export PATH=${PATH}:$(LIBPOSTGRES)/ ; \
+		$(CONFIGURE_USER_POSTGRES) && \
+		sudo mkdir /usr/local/pgsql/data && \
+		sudo chown postgres:postgres /usr/local/pgsql/data && \
+		sudo -u postgres $(LIBPOSTGRES)/initdb -D /usr/local/pgsql/data
 
-postgres: bin-postgres
+pg-start:
+	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data start
+
+pg-restart:
+	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data reload
+
+pg-stop:
+	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data stop
+
+postgres: $(LIBPOSTGRES) pg-start
+	@ export PATH=${PATH}:$(LIBPOSTGRES)/ ; \
+		sudo -u postgres dropuser $(shell whoami); \
+		sudo -u postgres createuser $(shell whoami) --superuser --createdb
 	@ echo "[ setting up   ] postgres database"
 	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
-/usr/local/lib/$(LIBHDF5):
+$(LIBHDF5):
 	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
 	$(call compile,hdf5-1.8.12,,--prefix=/usr/local --enable-shared --enable-hl)
 
-/usr/local/lib/$(LIBNETCDF): /usr/local/lib/$(LIBHDF5)
+$(LIBNETCDF): $(LIBHDF5)
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
 	$(call compile,netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include,--enable-netcdf-4 --enable-dap --enable-shared --prefix=/usr/local)
 
@@ -81,7 +120,7 @@ imagedownloader/aspects.py:
 	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
-libs-and-headers: /usr/local/lib/$(LIBNETCDF) imagedownloader/aspects.py
+libs-and-headers: $(LIBNETCDF) imagedownloader/aspects.py
 	$(update_shared_libs)
 
 bin/activate: imagedownloader/requirements.txt
@@ -97,10 +136,17 @@ bin/activate: imagedownloader/requirements.txt
 	@ ($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.txt 2>&1) >> tracking.log
 	@ touch bin/activate
 
-db-migrate:
+postgres-requirements:
+	@ echo "[ installing   ] $(PIP) requirements for postgres"
+	@ export PATH=${PATH}:/usr/local/pgsql/bin/ ; \
+		($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
+		(dropdb   $(dbname) -U $(user) 2>&1 ; \
+		createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
+
+db-migrate: $(DATABASE_REQUIREMENTS)
 	@ echo "[ migrating    ] setting up the database structure"
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput 2>&1) >> ../tracking.log
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate 2>&1) >> ../tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput) # 2>&1) >> ../tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate) # 2>&1) >> ../tracking.log
 
 deploy: libs-and-headers bin/activate db-migrate
 
@@ -123,4 +169,4 @@ test-coveralls:
 test-coverage: test-coverage-travis-ci test-coveralls
 
 clean:
-	rm -rf sqlite* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
+	rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
