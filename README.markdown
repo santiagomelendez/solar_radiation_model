@@ -1,6 +1,6 @@
 Solar Radiation Model
 =====================
-[![Build Status](https://travis-ci.org/ecolell/solar_radiation_model.png?branch=master)](https://travis-ci.org/ecolell/solar_radiation_model) [![Coverage Status](https://coveralls.io/repos/ecolell/solar_radiation_model/badge.png)](https://coveralls.io/r/ecolell/solar_radiation_model)
+[![GNU/AGPL License](http://www.gnu.org/graphics/agplv3-88x31.png)](https://github.com/ecolell/solar_radiation_model/blob/master/GNU-AGPL-3.0.txt) [![Build Status](https://travis-ci.org/ecolell/solar_radiation_model.png?branch=master)](https://travis-ci.org/ecolell/solar_radiation_model) [![Coverage Status](https://coveralls.io/repos/ecolell/solar_radiation_model/badge.png)](https://coveralls.io/r/ecolell/solar_radiation_model)
 
 Solar Radiation Model is a python service that provides you with a pipe and filter architecture. Further, it manage a field sensor database and an automatic downloader for satellite images.
 
