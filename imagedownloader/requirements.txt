@@ -1,7 +1,7 @@
 Beaker==1.5.4
 Django==1.4.3
 IPy==0.75
-#PyVirtualDisplay==0.1.1
+PyVirtualDisplay==0.1.1
 PyYAML==3.10
 South==0.7.6
 decorator==3.4.0
