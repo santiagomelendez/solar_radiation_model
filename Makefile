@@ -166,6 +166,9 @@ defaultsuperuser:
 run:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runserver 8000
 
+runbackend:
+	$(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runbackend 4
+
 test:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
 

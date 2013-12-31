@@ -15,6 +15,10 @@ On any GNU/Linux or OSX you only need to execute the next bash command to settin
 
 	$ make sqlite3 deploy
 
+But, if you want use **postgresql** insted of sqlite3 you should execute the next bash command:
+
+	$ make postgres deploy
+
 At last you should configure a superuser frontend access. To do so, you should execute the next command and then fill (twice) the password field.
 
 	$ make defaultsuperuser
@@ -30,9 +34,9 @@ Now you can go to a browser on the same machine and use the address <http://loca
 
 Once you have set all the preferences, it's time to start the **backend** (the processing engine), you should use the next line:
 
-	# python2.7 manage.py runbackend
+	$ make runbackend
 
 About
 -----
 
-This software is developed by GERSolar. You can contact us to <gersolar.dev@gmail.com>.
+This software is developed by [GERSolar](http://www.gersol.unlu.edu.ar/). You can contact us to <gersolar.dev@gmail.com>.
