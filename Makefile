@@ -10,8 +10,8 @@ endef
 define compile
 	@ cd $(1) && \
 	([ -f ./configure ] && echo "[ configuring  ] $(1)" && ($(2) sh ./configure $(3) 2>&1) >> ../tracking.log || echo "[ configured   ] $(1)") && \
-	echo "[ compiling    ] $(1)" && \
-	(make -j 2 2>&1) >> ../tracking.log && \
+	echo "[ compiling    ] $(1) with $(NPROC) cores" && \
+	(make -j $(NPROC) 2>&1) >> ../tracking.log && \
 	echo "[ installing   ] $(1)" && \
 	(sudo make install 2>&1) >> ../tracking.log
 endef
@@ -24,6 +24,7 @@ endef
 update_shared_libs=sudo ldconfig
 POSTGRES_PATH=/usr/local/pgsql/bin
 ifeq ($(OS), Darwin)
+	NPROC=$(shell sysctl -n hw.ncpu)
 	update_shared_libs=
 	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.5.5.dylib
 	LIBSQLITE3=/usr/local/lib/libsqlite3.0.dylib
@@ -45,6 +46,7 @@ ifeq ($(OS), Linux)
 	#DISTRO=$(shell lsb_release -si)
 	#ifeq ($(DISTRO), CentOS)
 	#endif
+	NPROC=$(shell nproc)
 	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.so.5.5
 	LIBSQLITE3=/usr/local/lib/libsqlite3.so.0.8.6
 	LIBHDF5=/usr/local/lib/libhdf5.so.8.0.1
