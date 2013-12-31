@@ -22,10 +22,10 @@ define install
 endef
 
 update_shared_libs=sudo ldconfig
-
+POSTGRES_PATH=/usr/local/pgsql/bin
 ifeq ($(OS), Darwin)
 	update_shared_libs=
-	LIBPOSTGRES=/usr/local/pgsql/bin
+	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.5.5.dylib
 	LIBSQLITE3=/usr/local/lib/libsqlite3.0.dylib
 	LIBHDF5=/usr/local/lib/libhdf5_hl.8.dylib
 	LIBNETCDF=/usr/local/lib/libnetcdf.7.dylib
@@ -45,13 +45,14 @@ ifeq ($(OS), Linux)
 	#DISTRO=$(shell lsb_release -si)
 	#ifeq ($(DISTRO), CentOS)
 	#endif
-	LIBPOSTGRES=/usr/local/pgsql/bin
+	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.so.5.5
 	LIBSQLITE3=/usr/local/lib/libsqlite3.so.0.8.6
 	LIBHDF5=/usr/local/lib/libhdf5.so.8.0.1
 	LIBNETCDF=/usr/local/lib/libnetcdf.so.7.2.0
-	CONFIGURE_USER_POSTGRES= \
-		sudo adduser postgres && \
-		sudo passwd postgres
+	CONFIGURE_USER_POSTGRES= ( sudo grep postgres /etc/passwd || \
+		( sudo adduser postgres && \
+		sudo passwd postgres ) && \
+		sudo ln -fs /usr/local/pgsql/lib/libpq.so.5 /usr/lib/libpq.so.5)
 endif
 PYCONCAT=
 ifneq ($(PYVERSION),)
@@ -69,6 +70,8 @@ ifneq ($(filter-out postgres,$(MAKECMDGOALS)),$(MAKECMDGOALS))
 	user=postgres
 endif
 
+unattended:
+	@ (sudo ls 2>&1) >> tracking.log
 
 install-python27:
 	$(call get,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
@@ -85,26 +88,30 @@ sqlite3: $(LIBSQLITE3)
 
 $(LIBPOSTGRES):
 	$(call get,postgresql-9.2.4,postgresql-9.2.4.tar.gz,ftp://ftp.postgresql.org/pub/source/v9.2.4)
-	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib --with-python --with-pam)
-	@ export PATH=${PATH}:$(LIBPOSTGRES)/ ; \
-		$(CONFIGURE_USER_POSTGRES) && \
-		sudo mkdir /usr/local/pgsql/data && \
-		sudo chown postgres:postgres /usr/local/pgsql/data && \
-		sudo -u postgres $(LIBPOSTGRES)/initdb -D /usr/local/pgsql/data
+	$(call compile,postgresql-9.2.4,,--without-readline --without-zlib)
+	@ ($(CONFIGURE_USER_POSTGRES) && \
+		sudo mkdir /usr/local/pgsql/data 2>&1 && \
+		sudo chown postgres:postgres /usr/local/pgsql/data 2>&1) >> tracking.log
+	@ (sudo -u postgres $(POSTGRES_PATH)/initdb -D /usr/local/pgsql/data 2>&1) >> tracking.log
+	@ sleep 5
 
-pg-start:
-	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data start
+pg-start: $(POSTGRES_PATH)/pg_ctl
+	@ echo "[ starting     ] postgres database"
+	@ (sudo -u postgres $(POSTGRES_PATH)/pg_ctl -D /usr/local/pgsql/data start 2>&1) >> tracking.log || exit 0;
+	@ sleep 20;
 
-pg-restart:
-	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data reload
+pg-restart: $(POSTGRES_PATH)/pg_ctl
+	@ echo "[ restarting   ] postgres database"
+	@ (sudo -u postgres $(POSTGRES_PATH)/pg_ctl -D /usr/local/pgsql/data reload 2>&1) >> tracking.log || exit 0;
 
 pg-stop:
-	sudo -u postgres $(LIBPOSTGRES)/pg_ctl -D /usr/local/pgsql/data stop
+	@ echo "[ stoping      ] postgres database"
+	@ (! (test -s $(POSTGRES_PATH)/data/postmaster.pid && test -s $(POSTGRES_PATH)/pg_ctl) || sudo -u postgres $(POSTGRES_PATH)/pg_ctl -D /usr/local/pgsql/data stop 2>&1) >> tracking.log
+	@ (sudo killall postgres postmaster 2>&1) >> tracking.log || exit 0;
 
 postgres: $(LIBPOSTGRES) pg-start
-	@ export PATH=${PATH}:$(LIBPOSTGRES)/ ; \
-		sudo -u postgres dropuser $(shell whoami); \
-		sudo -u postgres createuser $(shell whoami) --superuser --createdb
+	@ (sudo -u postgres $(POSTGRES_PATH)/dropuser --if-exists $(shell whoami) 2>&1) >> tracking.log
+	@ (sudo -u postgres $(POSTGRES_PATH)/createuser --superuser --createdb $(shell whoami) 2>&1) >> tracking.log
 	@ echo "[ setting up   ] postgres database"
 	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
@@ -121,7 +128,7 @@ imagedownloader/aspects.py:
 	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
 libs-and-headers: $(LIBNETCDF) imagedownloader/aspects.py
-	$(update_shared_libs)
+	@ $(update_shared_libs)
 
 bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] $(VIRTUALENV)"
@@ -138,15 +145,15 @@ bin/activate: imagedownloader/requirements.txt
 
 postgres-requirements:
 	@ echo "[ installing   ] $(PIP) requirements for postgres"
-	@ export PATH=${PATH}:/usr/local/pgsql/bin/ ; \
+	@ export PATH=${PATH}:$(POSTGRES_PATH)/ ; \
 		($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
-		(dropdb   $(dbname) -U $(user) 2>&1 ; \
-		createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
+		($(POSTGRES_PATH)/dropdb   $(dbname) -U $(user) 2>&1 ; \
+		$(POSTGRES_PATH)/createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
 
 db-migrate: $(DATABASE_REQUIREMENTS)
 	@ echo "[ migrating    ] setting up the database structure"
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput) # 2>&1) >> ../tracking.log
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate) # 2>&1) >> ../tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput 2>&1) >> ../tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate 2>&1) >> ../tracking.log
 
 deploy: libs-and-headers bin/activate db-migrate
 
@@ -168,5 +175,6 @@ test-coveralls:
 
 test-coverage: test-coverage-travis-ci test-coveralls
 
-clean:
-	rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
+clean: pg-stop
+	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
+	@ rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
