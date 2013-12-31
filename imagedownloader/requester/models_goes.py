@@ -148,10 +148,10 @@ class FTPFileDownloader(Job):
 			if size < file.size:
 				print 'Downloading '+ file.localname +'...'
 				self.ensure_dir(completepath)
-				file.begin_download = timezone.utcnow().replace(tzinfo=pytz.UTC)
+				file.begin_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
 				file.save()
 				self._ftp.retrbinary('RETR ' + file.remotename, open(completepath, 'wb').write)
-				file.end_download = timezone.utcnow().replace(tzinfo=pytz.UTC)
+				file.end_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
 			file.failures = 0
 			file.downloaded = True
 		except error_perm as e:
@@ -267,7 +267,7 @@ class QOSRequester(Job):
 		range_begin = min(time_range.begin, time_range.end)
 		range_end = max(time_range.begin, time_range.end)
 		inside_range = begin >= range_begin and end <= range_end
-		now = timezone.utcnow().replace(tzinfo=pytz.UTC)
+		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		have_orders_to_download = inside_range and begin < now and end < now and begin != end
 		should_proceed = (not self._automatic.paused) and have_orders_to_download and (not self.full_of_orders())
 		return should_proceed, t_begin, t_end
