@@ -5,6 +5,7 @@ import os
 from django.db.models import Min, Max, Avg, Count
 from decimal import Decimal
 from netCDF4 import Dataset
+from libs.console import total_seconds
 
 # Create your models here.
 
@@ -32,10 +33,10 @@ class UTCTimeRange(models.Model):
 	def step(self):
 		begin = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.begin is None else self.begin
 		end = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.end is None else self.end
-		diff = (end - begin).total_seconds()
+		diff = total_seconds(end - begin)
 		return timedelta(days=(diff / abs(diff)))
 	def steps(self):
-		return int((self.end - self.begin).total_seconds() / (self.step().total_seconds()))
+		return int(total_seconds(self.end - self.begin) / total_seconds(self.step()))
 	def contains(self, datetime):
 		timezoned = timezone.make_aware(datetime, timezone.get_default_timezone())
 		return self.begin <= timezoned and self.end >= timezoned
@@ -109,7 +110,7 @@ class AutomaticDownload(models.Model):
 		begins.append(self.time_range.begin)
 		if not end_0 is None:
 			begins.append(end_0)
-		if self.step().total_seconds() >= 0:
+		if total_seconds(self.step()) >= 0:
 			f = max
 		else:
 			f = min
@@ -277,7 +278,7 @@ class File(models.Model):
 		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		begin = now if self.begin_download is None else self.begin_download
 		last = now if self.end_download is None else self.end_download
-		speed_in_bytes = self.localsize() / (last - begin).total_seconds() if last != begin else 0
+		speed_in_bytes = self.localsize() / total_seconds(last - begin) if last != begin else 0
 		return '%.2f' % (speed_in_bytes / 1024.)
 	def __gt__(self, obj):
 		return self.image_datetime() > obj.image_datetime()

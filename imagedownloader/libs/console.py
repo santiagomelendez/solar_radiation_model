@@ -12,6 +12,9 @@ except OSError:
 			pass
 	engine = FakeTTSX()
 
+def total_seconds(td):
+	return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
 def show(*objs):
 	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
 	sys.stdout.write(begin)

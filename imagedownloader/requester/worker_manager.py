@@ -6,6 +6,8 @@ import traceback
 import sys
 import os
 from splinter import Browser
+from libs.console import total_seconds
+
 try:
 	from pyvirtualdisplay import Display
 except ImportError:
@@ -51,7 +53,7 @@ class Worker:
 						task.run(manager)
 						end = datetime.utcnow().replace(tzinfo=pytz.UTC)
 						task.ready = True
-						self.inform("finish in " + str((end - begin).total_seconds()) + " seconds (" + task.__class__.__name__ + ").")
+						self.inform("finish in " + str(total_seconds(end - begin)) + " seconds (" + task.__class__.__name__ + ").")
 					except Exception as e:
 						self.inform("has captured an exception on (" + str(task.__class__.__name__)+ "): " + str(e))
 						print_exception()
