@@ -11,6 +11,8 @@ class TestCollectors(TestCase):
 
 	def setUp(self):
 		self.collect = Collect.objects.get(name='year.Mmonth')
+		self.other_collect = Collect.objects.get(name='year.Mmonth')
+		self.other_collect.get_key = lambda file_status: "even" if (file_status.file.datetime()).month % 2 == 0 else "uneven"
 		self.stream = Stream(root_path="/var/service/data/GVAR_IMG/argentina/")
 		self.stream.save()
 		months = range(1,13)
@@ -27,3 +29,35 @@ class TestCollectors(TestCase):
 		self.assertTrue(self.stream.tags.empty())
 		self.collect.mark_with_tags(self.stream)
 		self.assertTrue(self.stream.tags.empty())
+
+	def test_get_key(self):
+		# check if the abstract class should raise an exception because these method doesn't
+		# exist on an abstract class.
+		with self.assertRaises(AttributeError) as err:
+			self.collect.get_key(self.stream.files.all()[0])
+		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+
+	def test_get_keys(self):
+		# check if when this is sended to an abstract class should raise the same exception that
+		# with get_key.
+		with self.assertRaises(AttributeError) as err:
+			self.collect.get_keys(self.stream)
+		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+		# check if when a fake get_key method exists, a set of uniques keys is returned.
+		keys = self.other_collect.get_keys(self.stream)
+		self.assertEquals(len(keys), 2)
+		for key in keys:
+			self.assertTrue(key in ["even", "uneven"])
+
+	def test_init_empty_streams(self):
+		# check if when this is sended to an abstract class should raise the same exception that
+		# with get_key.
+		with self.assertRaises(AttributeError) as err:
+			self.collect.init_empty_streams(self.stream)
+		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+		# check if when a fake get_key method exists, a set of uniques keys is returned.
+		streams = self.other_collect.init_empty_streams(self.stream)
+		self.assertEquals(len(streams.keys()), 2)
+		for key in streams.keys():
+			self.assertTrue(key in ["even", "uneven"])
+			self.assertTrue(streams[key].empty())
