@@ -61,3 +61,19 @@ class TestCollectors(TestCase):
 		for key in streams.keys():
 			self.assertTrue(key in ["even", "uneven"])
 			self.assertTrue(streams[key].empty())
+
+	def test_do(self):
+		# check if all the files statuses of the stream are unprocessed.
+		self.assertTrue(self.stream.files.filter(processed=True).count(), 0)
+		# check if collect files into two differents streams: even and uneven (with the fake
+		# get_key).
+		other = {"even": "uneven", "uneven": "even"}
+		result = self.other_collect.do(self.stream)
+		for fs in self.stream.files.all():
+			self.assertTrue(fs.processed)
+			key = self.other_collect.get_key(fs)
+			stream = [s for s in result if s.tags.exist(key)][0]
+			other_stream = [s for s in result if s.tags.exist(other[key])][0]
+			self.assertNotEquals(stream, [])
+			self.assertTrue(fs.file in [ f.file for f in stream.files.all()])
+			self.assertFalse(fs.file in [ f.file for f in other_stream.files.all()])
