@@ -2,9 +2,8 @@ import sys
 sys.path.append(".")
 from django.db import models
 from requester.models import *
-from model_utils.managers import *
 from decimal import Decimal
-from polymodels.models import PolymorphicModel
+from polymodels.models import PolymorphicModel, PolymorphicManager
 import glob
 from libs.file import netcdf as nc
 import calendar
@@ -181,7 +180,7 @@ class FileStatus(models.Model):
 		return fs
 
 
-class ProcessManager(InheritanceManager):
+class ProcessManager(PolymorphicManager):
 
 	def all(self, *argc, **argv):
 		return super(ProcessManager,self).all(*argc, **argv).select_subclasses()
