@@ -1,7 +1,6 @@
 import datetime
 import sys
 import numpy as np
-import datetime as dt
 import pytz
 import csv
 
@@ -48,7 +47,7 @@ for row in xrange(x.size):
 integration_time = int(sys.argv[3]) * 60
 
 for row in xrange(x.size):
-   matriz.append((naive_to_local_time(datetime_convert_to_iso(x[row][0], x[row][1], x[row][2]),localtz),float("%.2f" % x[row][3])/integration_time ))
+   matriz.append((naive_to_aware_time(datetime_convert_to_iso(x[row][0], x[row][1], x[row][2]),localtz),float("%.2f" % x[row][3])/integration_time ))
 
 matrix2csv(matriz)
 

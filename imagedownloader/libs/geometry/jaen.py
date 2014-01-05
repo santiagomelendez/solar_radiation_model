@@ -318,7 +318,7 @@ def getintfromdatetime(dt):
 	if np.iterable(dt) == 0:
 		return int(dt.strftime("%Y%m%d%H%M%S"))
 	else:
-		return np.array([ getintfromdatetime(n) for n in number ])
+		return np.array([ getintfromdatetime(n) for n in dt ])
 
 def getdatetimefromint(number):
 	if np.iterable(number) == 0:
