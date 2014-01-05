@@ -78,7 +78,7 @@ class CollectTimed(Collect):
 		dt = file_status.file.datetime()
 		if self.yearly: r += str(dt.year)
 		if self.monthly: r += (".M" + str(dt.month).zfill(2))
-		if self.weekly: r += (".W" + str(dt.isocalendar()[1]).zfill)
+		if self.weekly: r += (".W" + str(dt.isocalendar()[1]).zfill(2))
 		return r
 
 

@@ -110,6 +110,42 @@
   fields:
     minimum: '10.00'
 
+- model: plumbing.process
+  pk: 7
+  fields:
+    content_type: 32
+    name: 'year'
+    description: 'Classify the files by year.'
+
+- model: plumbing.collect
+  pk: 7
+  fields: {}
+
+- model: plumbing.collecttimed
+  pk: 7
+  fields:
+    yearly: True
+    monthly: False
+    weekly: False
+
+- model: plumbing.process
+  pk: 8
+  fields:
+    content_type: 32
+    name: 'year.Wweek'
+    description: 'Classify the files by year and by week.'
+
+- model: plumbing.collect
+  pk: 8
+  fields: {}
+
+- model: plumbing.collecttimed
+  pk: 8
+  fields:
+    yearly: True
+    monthly: False
+    weekly: True
+
 - model: plumbing.processorder
   pk: 1
   fields:
