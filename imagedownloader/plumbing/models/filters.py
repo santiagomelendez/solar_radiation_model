@@ -40,6 +40,9 @@ class Collect(Process):
 	class Meta:
 		app_label = 'plumbing'
 
+	def get_key(self, file_status):
+		raise AttributeError("'Collect' object has no attribute 'get_key'")
+
 	def get_keys(self, stream):
 		return set([ self.get_key(fs) for fs in stream.files.all() ])
 
@@ -117,7 +120,7 @@ class FilterTimed(Process):
 		app_label = 'plumbing'
 	time_range = models.ManyToManyField(UTCTimeRange,db_index=True)
 
-	def do(self, srteam):
+	def do(self, stream):
 		resultant_stream = stream.clone()
 		for fs in stream.files.all():
 			if self.time_range.contains(fs.file.datetime()):
