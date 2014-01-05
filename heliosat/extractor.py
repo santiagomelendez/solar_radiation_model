@@ -5,7 +5,7 @@ sys.path.append(".")
 import domain_process as dp
 import processfiles as pf
 import h5py
-from functions import *
+from functions import gettstdatetime, getdatetimefromint, getintfromdatetime, getclearsky, getcloudindex, getsecondmin, getsolarelevation, getdatetimefromint, getslots, getcloudalbedo, geteffectivealbedo, getapparentalbedo, gettransmitance, getopticaldepth, getcorrectedelevation, getopticalpath, getelevation, getalbedo, getatmosphericradiance, getsatellitalzenitangle, getglobalirradiance, getdiffuseirradiance, getbeamirradiance, getexcentricity, getzenitangle, gethourlyangle, getdecimalhour, gettsthour, gettimeequation, getdeclination, gettotaldays, getjulianday, getdailyangle
 import msg_navigation as msg
 from netCDF4 import Dataset
 import tlinke
@@ -141,7 +141,7 @@ def getterrain(hrv):
 	filename =  Config.DATA_ROOT_MOUNT +'/terrain/srtm_' + ('hrv' if hrv else 'nonhrv') + '.tif'
 	ds = gdal.Open(filename, gdal.GA_ReadOnly)
 	data = ds.ReadAsArray()
-	data[data == -32768] = numpi.nan
+	data[data == -32768] = np.nan
 	return data
 
 def extractimages(year, month, lat, lon, hrv):
