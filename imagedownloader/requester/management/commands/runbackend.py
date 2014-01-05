@@ -4,7 +4,7 @@ import signal
 import sys
 
 
-class Command(BaseCommand):
+class Command(BaseCommand,object):
 	args = '<worker_quantity>'
 	help = 'Run the background process that download the active AutomaticDownload instances.'
 	def __init__(self, *args, **options):

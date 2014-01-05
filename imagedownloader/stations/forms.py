@@ -6,7 +6,7 @@ import pytz
 from importer import from_csv, from_xls
 
 
-class DocumentForm(forms.Form):
+class DocumentForm(forms.Form,object):
 
     def __init__(self, *args, **kwargs):
         super(DocumentForm, self).__init__(*args, **kwargs)

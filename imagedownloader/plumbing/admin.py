@@ -19,7 +19,7 @@ class FileStatusAdmin(admin.ModelAdmin):
 	list_display = ['stream', 'file']
 
 
-class ProcessInlineForm(ModelForm):
+class ProcessInlineForm(ModelForm,object):
 
 	def __init__(self, *args, **kwargs):
 		super(ProcessInlineForm, self).__init__(*args, **kwargs)

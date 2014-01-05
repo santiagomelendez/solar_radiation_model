@@ -47,7 +47,7 @@ class TagManager(models.Model):
 		return ".".join(self.list())
 
 
-class Stream(models.Model):
+class Stream(models.Model,object):
 	class Meta:
 		app_label = 'plumbing'
 	root_path = models.TextField(db_index=True)
@@ -180,7 +180,7 @@ class FileStatus(models.Model):
 		return fs
 
 
-class ProcessManager(PolymorphicManager):
+class ProcessManager(PolymorphicManager,object):
 
 	def all(self, *argc, **argv):
 		return super(ProcessManager,self).all(*argc, **argv).select_subclasses()

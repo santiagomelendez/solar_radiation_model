@@ -99,7 +99,7 @@ class Station(models.Model):
 		return [p.coordinates() for p in self.position_set.all()]
 
 
-class Configuration(models.Model):
+class Configuration(models.Model,object):
 	begin = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	end = models.DateTimeField(blank=True, null=True)
 	position = models.ForeignKey(Position)
