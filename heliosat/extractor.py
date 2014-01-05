@@ -15,6 +15,7 @@ import processgroundstations as pgs
 import pylab as pl
 from osgeo import gdal
 from config import Config
+import numpy as np
 
 is_hrv = False
 
@@ -299,7 +300,7 @@ def workwith(year, month):
 	show("-----------------------")
 	if not(os.path.exists(filename)):
 		begin = datetime.now()
-		o = extractimages(year, month, lat, lon, is_hrv)
+		extractimages(year, month, lat, lon, is_hrv)
 		end = datetime.now()
 		show("Time consumed:", end - begin)
 
@@ -314,7 +315,7 @@ def workwith(year, month):
 	show("Time consumed:", end - begin)
 
 	begin = datetime.now()
-	s = validate(year, month, False)
+	validate(year, month, False)
 	end = datetime.now()
 	show("Time consumed:", end - begin)
 	

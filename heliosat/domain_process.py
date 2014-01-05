@@ -64,7 +64,7 @@ def np_read_lat_lon(name):
 #lat, lon = generate_lat_lon(sm, False)
 #nc_save_lat_lon(lat, lon, Config.DATA_ROOT_MOUNT + '/domain/root')
 latitude_sat, longitude_sat = nc_read_lat_lon(Config.DATA_ROOT_MOUNT + '/domain/root')
-#latitude_hrvsat, longitude_hrvsat = nc_read_lat_lon(Config.DATA_ROOT_MOUNT + '/domain/roothrv')
+latitude_hrvsat, longitude_hrvsat = nc_read_lat_lon(Config.DATA_ROOT_MOUNT + '/domain/roothrv')
 
 def getsubmatrix(matrix, imin, imax, jmin, jmax):
 	return matrix[imin:imax+1,jmin:jmax+1]
@@ -81,7 +81,7 @@ def getsubmatrix_img(matrix, hrv):
 	return getsubmatrix(matrix, imin, imax, jmin, jmax)
 
 latitude_img, longitude_img = getsubmatrix_img(latitude_sat, False), getsubmatrix_img(longitude_sat, False)
-#latitude_hrvimg, longitude_hrvimg = getsubmatrix_img(latitude_hrvsat, True), getsubmatrix_img(longitude_hrvsat, True)
+latitude_hrvimg, longitude_hrvimg = getsubmatrix_img(latitude_hrvsat, True), getsubmatrix_img(longitude_hrvsat, True)
 
 latitude_dom, longitude_dom = [],[]
 x_sat, y_sat = [],[]
