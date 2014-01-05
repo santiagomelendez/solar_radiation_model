@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import sys
+sys.path.append(".")
 import domain_process as dp
 import processfiles as pf
 import h5py
