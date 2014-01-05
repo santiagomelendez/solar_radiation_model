@@ -11,7 +11,6 @@ from scipy import stats
 import os
 #import pylab as pl
 #from osgeo import gdal
-import sys
 import time
 
 from libs.file import netcdf as nc
