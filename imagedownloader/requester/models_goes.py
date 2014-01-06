@@ -29,7 +29,7 @@ class IMAPNotificationChecker(Job):
 		if isinstance(payload,str):
 			return payload
 		else:
-			return '\n'.join([extract_body(part.get_payload()) for part in payload])
+			return '\n'.join([self.extract_body(part.get_payload()) for part in payload])
 	def get_selection(self, selection, lines):
 		for l in lines:
 			result = re.search(selection, l)

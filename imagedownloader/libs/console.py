@@ -1,10 +1,11 @@
 import sys
-import pyttsx
 from datetime import datetime
+import pytz
 
 try:
+	import pyttsx
 	engine = pyttsx.init()
-except OSError:
+except (OSError, ImportError):
 	class FakeTTSX:
 		def say(self, speech):
 			pass
