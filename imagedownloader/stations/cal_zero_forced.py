@@ -1,5 +1,5 @@
 import sys
-from pylab import *
+from pylab import show, plot, figure, subplot, mean, genfromtxt, corrcoef, legend
 from scipy import stats
 from scipy.optimize import curve_fit
 
