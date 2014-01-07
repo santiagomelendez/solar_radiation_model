@@ -1,10 +1,10 @@
 from django.db import models
 from core import Process, Stream, FileStatus, File
 from libs.file import netcdf as nc
-import os
 import calendar
-import collections
 from libs import matrix
+import pytz
+from datetime import datetime
 
 
 class Compact(Process):
