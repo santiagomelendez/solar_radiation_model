@@ -40,3 +40,7 @@ About
 -----
 
 This software is developed by [GERSolar](http://www.gersol.unlu.edu.ar/). You can contact us to <gersolar.dev@gmail.com>.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/ecolell/solar_radiation_model/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
