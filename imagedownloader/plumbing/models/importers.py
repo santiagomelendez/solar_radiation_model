@@ -5,7 +5,7 @@ from libs.console import *
 
 
 class Image(File):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 
 	def channel(self):
@@ -38,7 +38,7 @@ class Image(File):
 
 
 class Program(ComplexProcess):
-	class Meta:
+	class Meta(object):
         	app_label = 'plumbing'
 	stream = models.ForeignKey(Stream)
 

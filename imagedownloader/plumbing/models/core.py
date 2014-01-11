@@ -10,7 +10,7 @@ import calendar
 
 
 class TagManager(models.Model):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	tag_string = models.TextField(db_index=True, default="")
 
@@ -48,7 +48,7 @@ class TagManager(models.Model):
 
 
 class Stream(models.Model,object):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	root_path = models.TextField(db_index=True)
 	tags = models.ForeignKey(TagManager, related_name='stream', default=TagManager.empty)
@@ -104,7 +104,7 @@ class Stream(models.Model,object):
 
 
 class File(models.Model):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	localname = models.TextField(unique = True, db_index=True, default="")
 	created = models.DateTimeField(auto_now_add=True)
@@ -167,7 +167,7 @@ class File(models.Model):
 
 
 class FileStatus(models.Model):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 		unique_together = ("file", "stream")
 	file = models.ForeignKey('File', related_name='stream')
@@ -190,7 +190,7 @@ class ProcessManager(PolymorphicManager,object):
 
 
 class Process(PolymorphicModel):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	objects = ProcessManager()
 	name = models.TextField(db_index=True)
@@ -204,7 +204,7 @@ class Process(PolymorphicModel):
 
 
 class ComplexProcess(Process):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	processes = models.ManyToManyField('Process', through='ProcessOrder', related_name='complex_process')
 
@@ -229,7 +229,7 @@ class ComplexProcess(Process):
 
 
 class ProcessOrder(models.Model):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	position = models.IntegerField()
 	process = models.ForeignKey('Process', related_name='used_by')

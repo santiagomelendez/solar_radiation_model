@@ -20,7 +20,7 @@ class FileStatusAdmin(admin.ModelAdmin):
 
 
 class ProcessInlineForm(ModelForm,object):
-	class Meta:
+	class Meta(object):
 	        model = ProcessOrder
 	        fields = ['position','process']
 

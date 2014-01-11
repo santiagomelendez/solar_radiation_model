@@ -10,7 +10,7 @@ sys.path.append(".")
 
 
 class FilterSolarElevation(Process):
-	class Meta:
+	class Meta(object):
         	app_label = 'plumbing'
 	minimum = models.DecimalField(max_digits=4,decimal_places=2)
 	hourly_longitude = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
@@ -37,7 +37,7 @@ class FilterSolarElevation(Process):
 
 
 class Collect(Process):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 
 	def get_key(self, file_status):
@@ -70,7 +70,7 @@ class Collect(Process):
 
 
 class CollectTimed(Collect):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	yearly = models.BooleanField()
 	monthly = models.BooleanField()
@@ -86,7 +86,7 @@ class CollectTimed(Collect):
 
 
 class CollectChannel(Collect):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 
 	def get_key(self, file_status):
@@ -94,7 +94,7 @@ class CollectChannel(Collect):
 
 
 class FilterChannel(Process):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	channels = models.ManyToManyField(Channel,db_index=True)
 
@@ -116,7 +116,7 @@ class FilterChannel(Process):
 
 
 class FilterTimed(Process):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 	time_range = models.ManyToManyField(UTCTimeRange,db_index=True)
 
@@ -136,7 +136,7 @@ class FilterTimed(Process):
 
 
 class AppendCountToRadiationCoefficient(Process):
-	class Meta:
+	class Meta(object):
 		app_label = 'plumbing'
 
 	def do(self, stream):

@@ -182,7 +182,7 @@ class Measurement(models.Model):
 	finish = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 	refresh_presision = models.IntegerField(default=0)
 	configuration = models.ForeignKey(Configuration)
-	class Meta:
+	class Meta(object):
 		unique_together = ('configuration', 'finish',)
 
 	@classmethod
