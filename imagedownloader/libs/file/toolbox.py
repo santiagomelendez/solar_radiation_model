@@ -10,15 +10,15 @@ def cut(filename, i_from, i_to):
 	img_from = int(i_from)
 	img_to = int(i_to)
 	img_range = img_to - img_from
-	root, is_new = nc.open(filename)
+	root = nc.open(filename)[0]
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
 	time = nc.getvar(root, 'data_time')
-	root_cut, is_new = nc.open('cut.' + filename)
-	timing_d = nc.getdim(root_cut, 'timing', img_range)
-	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
-	easting_d = nc.getdim(root_cut, 'easting', data.shape[2])
+	root_cut = nc.open('cut.' + filename)[0]
+	nc.getdim(root_cut, 'timing', img_range)
+	nc.getdim(root_cut, 'northing', data.shape[1])
+	nc.getdim(root_cut, 'easting', data.shape[2])
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	lat_cut[:] = lat[:]
@@ -70,13 +70,13 @@ def search_position(station, lat, lon):
 def cut_positions(filename, blurred, *positions):
 	blurred = int(blurred)
 	pos = eval("".join(positions))
-	root, is_new = nc.open(filename)
+	root = nc.open(filename)[0]
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	root_cut, is_new = nc.clonefile(root, 'cut_positions.' + filename, ['lat', 'lon', 'data'])
-	northing_d = nc.getdim(root_cut, 'northing_cut', len(pos))
-	easting_d = nc.getdim(root_cut, 'easting_cut', 2)
+	root_cut = nc.clonefile(root, 'cut_positions.' + filename, ['lat', 'lon', 'data'])[0]
+	nc.getdim(root_cut, 'northing_cut', len(pos))
+	nc.getdim(root_cut, 'easting_cut', 2)
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing_cut','easting_cut',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing_cut','easting_cut',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing_cut','easting_cut',),4)
@@ -92,15 +92,15 @@ def cut_positions(filename, blurred, *positions):
 
 def cut_projected_linke(filename):
 	from libs.linke import toolbox as linke
-	root, is_new = nc.open(filename)
+	root = nc.open(filename)[0]
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
 	time = nc.getvar(root, 'data_time')
-	root_cut, is_new = nc.open('wlinke.' + filename)
-	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
-	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
-	easting_d = nc.getdim(root_cut, 'easting', data.shape[2])
+	root_cut = nc.open('wlinke.' + filename)[0]
+	nc.getdim(root_cut, 'timing', data.shape[0])
+	nc.getdim(root_cut, 'northing', data.shape[1])
+	nc.getdim(root_cut, 'easting', data.shape[2])
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
@@ -115,15 +115,15 @@ def cut_projected_linke(filename):
 
 def cut_projected_terrain(filename):
 	from libs.dem import dem
-	root, is_new = nc.open(filename)
+	root = nc.open(filename)[0]
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
 	time = nc.getvar(root, 'data_time')
-	root_cut, is_new = nc.open('wterrain.' + filename)
-	timing_d = nc.getdim(root_cut, 'timing', data.shape[0])
-	northing_d = nc.getdim(root_cut, 'northing', data.shape[1])
-	easting_d = nc.getdim(root_cut, 'easting', data.shape[2])
+	root_cut = nc.open('wterrain.' + filename)[0]
+	nc.getdim(root_cut, 'timing', data.shape[0])
+	nc.getdim(root_cut, 'northing', data.shape[1])
+	nc.getdim(root_cut, 'easting', data.shape[2])
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing','easting',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing','easting',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing','easting',),4)
@@ -142,7 +142,7 @@ def chunk_report(bytes_so_far, chunk_size, total_size):
 		percent = round(percent*100, 2)
 		replace = ("Downloaded %d of %d bytes (%0.2f%%)" % (bytes_so_far, total_size, percent)).ljust(80)
 	else:
-		replace = ("Downloading %d of unknown bytes" % (bytes_so_far)).ljust(80)
+		replace = ("Downloading %d of unknown bytes (chunks of %i bytes)" % (bytes_so_far, chunk_size)).ljust(80)
 	say("\r"+replace)
 	if bytes_so_far >= total_size:
 		sys.stdout.write('\n')
@@ -169,7 +169,6 @@ def chunk_download(response, destiny, chunk_size=8192, report_hook=None):
 def download(source, destiny):
 	import urllib2
 	remote = urllib2.urlopen(source)
-	meta = remote.info()
 	filename = source.split("/")[-1]
 	say("Downloading of "+filename+"... ")
 	chunk_download(remote, destiny, report_hook=chunk_report)
@@ -183,8 +182,8 @@ def unzip(source_filename, dest_dir):
 			words = member.filename.split('/')
 			path = dest_dir
 			for word in words[:-1]:
-				drive, word = os.path.splitdrive(word)
-				head, word = os.path.split(word)
+				word = os.path.splitdrive(word)[1]
+				word = os.path.split(word)[1]
 				if word in (os.curdir, os.pardir, ''): continue
 				path = os.path.join(path, word)
 			zf.extract(member, path)
