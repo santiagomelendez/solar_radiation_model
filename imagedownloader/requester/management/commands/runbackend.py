@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from requester.models_goes import *
+from requester.models_goes import WorkerManager, QOSManager
 import signal
 import sys
 
@@ -8,7 +8,7 @@ class Command(BaseCommand,object):
 	args = '<worker_quantity>'
 	help = 'Run the background process that download the active AutomaticDownload instances.'
 	def __init__(self, *args, **options):
-		super(Command, self).__init__()
+		super(Command, self).__init__(*args, **options)
 
 	def handle(self, *args, **options):
 		quantity = int(args[0]) if len(args) > 0 else 8
