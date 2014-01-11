@@ -1,6 +1,6 @@
 from django.db import models
-from requester.models import *
-from core import *
+from requester.models import Decimal, Channel, UTCTimeRange
+from core import Process
 import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc
