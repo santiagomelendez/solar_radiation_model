@@ -4,8 +4,6 @@ import sys
 sys.path.append('.')
 import numpy as np
 import netcdf as nc
-from libs.console import *
-from datetime import datetime
 
 def cut(filename, i_from, i_to):
 	img_from = int(i_from)
