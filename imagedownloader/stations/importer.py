@@ -44,7 +44,7 @@ def rows2slots(rows, image_per_hour):
 def rows2netcdf(rows, filename, index):
 	root, is_new = nc.open(filename)
 	if not is_new:
-		measurements = nc.clonevar(root, 'estimated', 'measurements')
+		measurements = nc.clonevar(root, 'globalradiation', 'measurements')
 		slots = nc.getvar(root, 'slots')
 		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
 		instant_radiation = rows2slots(rows,2)
