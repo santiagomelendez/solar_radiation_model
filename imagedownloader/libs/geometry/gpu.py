@@ -8,14 +8,12 @@ try:
 except ImportError: 
 	cuda_can_help = False 
 
-pi = np.pi
 ma = np.ma
+pi = str(np.float32(np.pi))
+deg2rad_ratio = str(np.float32(np.pi / 180))
+rad2deg_ratio = str(np.float32(180 / np.pi))
 
-_pi = str(np.float32(pi))
-_deg2rad_ratio = str(np.float32(pi / 180))
-_rad2deg_ratio = str(np.float32(180 / pi))
-
-def _gpu_exec(func, *matrixs):
+def gpu_exec(func, *matrixs):
 	matrixs = [ np.matrix(m).astype(np.float32) for m in matrixs]
 	matrixs_gpu = [ cuda.mem_alloc(m.nbytes) for m in matrixs ]
 	for i in range(len(matrixs)):

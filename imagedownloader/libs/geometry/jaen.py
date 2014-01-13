@@ -3,13 +3,12 @@ from libs.console import *
 
 try:
 	from pycuda.compiler import SourceModule
-	import pycuda.gpuarray as gpuarray
-	import pycuda.driver as cuda
-	import pycuda.autoinit
 	cuda_can_help = False
 except ImportError:
-	class SourceModule:
+	class SourceModule(object):
 		def __init__(self, c):
+			pass
+		def get_function(self, name):
 			pass
 	cuda_can_help = False
 
@@ -62,7 +61,7 @@ mod_getexcentricity = SourceModule("""
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
-		gamma[i3d] *= """ + gpu._deg2rad_ratio + """;
+		gamma[i3d] *= """ + gpu.deg2rad_ratio + """;
 		gamma[i3d] = 1.000110 + 0.034221 * cos(gamma[i3d]) + 0.001280 * sin(gamma[i3d]) + 0.000719 * cos(2 * gamma[i3d]) + 0.000077 * sin(2 * gamma[i3d]);
 	  }
 	  """)
@@ -74,7 +73,7 @@ def getexcentricity(gamma):
 		show("")
 		for i in range(sh[0]):
 			show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]-1).zfill(3))
-			gamma[i] = gpu._gpu_exec(func, gamma[i])
+			gamma[i] = gpu.gpu_exec(func, gamma[i])
 		result = gamma
 	else:
 		gamma = np.deg2rad(gamma)
@@ -87,9 +86,10 @@ mod_getdeclination = SourceModule("""
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
-		gamma[i3d] *= """ + gpu._deg2rad_ratio + """;
-		gamma[i3d] = 0.006918 - 0.399912 * cos(gamma[i3d]) + 0.070257 * sin(gamma[i3d]) - 0.006758 * cos(2 * gamma[i3d]) + 0.000907 * sin(2 * gamma[i3d]) - 0.002697 * cos(3 * gamma[i3d]) + 0.00148 * sin(3 * gamma[i3d]);
-		gamma[i3d] *= """ + gpu._rad2deg_ratio + """;
+		gamma[i3d] *= """ + gpu.deg2rad_ratio + """;
+		gamma[i3d] = 0.006918 - 0.399912 * cos(gamma[i3d]) + 0.070257 * sin(gamma[i3d]) - 0.006758 * cos(2 * gamma[i3d]) + \
+		0.000907 * sin(2 * gamma[i3d]) - 0.002697 * cos(3 * gamma[i3d]) + 0.00148 * sin(3 * gamma[i3d]);
+		gamma[i3d] *= """ + gpu.rad2deg_ratio + """;
 	  }
 	  """)
 def getdeclination(gamma):
@@ -100,10 +100,11 @@ def getdeclination(gamma):
 		#print "\n",
 		#for i in range(sh[0]):
 		#	print "\r--->" + str(i).zfill(3) + "/" + str(sh[0]-1).zfill(3),
-		result = gpu._gpu_exec(func, gamma)
+		result = gpu.gpu_exec(func, gamma)
 	else:
 		gamma = np.deg2rad(gamma)
-		result = np.rad2deg(0.006918 - 0.399912 * np.cos(gamma) + 0.070257 * np.sin(gamma) - 0.006758 * np.cos(2 * gamma) + 0.000907 * np.sin(2 * gamma) - 0.002697 * np.cos(3 * gamma) + 0.00148 * np.sin(3 * gamma))
+		result = np.rad2deg(0.006918 - 0.399912 * np.cos(gamma) + 0.070257 * np.sin(gamma) - 0.006758 * np.cos(2 * gamma) + \
+			0.000907 * np.sin(2 * gamma) - 0.002697 * np.cos(3 * gamma) + 0.00148 * np.sin(3 * gamma))
 	return result
 
 def gettimeequation(gamma):
@@ -127,18 +128,18 @@ mod_getzenitangle = SourceModule("""
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
-		float lat_r = lat[i2d] * """ + gpu._deg2rad_ratio + """;
-		float dec_r = dec[it] * """ + gpu._deg2rad_ratio + """;
-		hourlyangle[i3d] *= """ + gpu._deg2rad_ratio + """;
+		float lat_r = lat[i2d] * """ + gpu.deg2rad_ratio + """;
+		float dec_r = dec[it] * """ + gpu.deg2rad_ratio + """;
+		hourlyangle[i3d] *= """ + gpu.deg2rad_ratio + """;
 		hourlyangle[i3d] = acos(sin(dec_r) * sin(lat_r) + cos(dec_r) * cos(lat_r) * cos(hourlyangle[i3d]));
-		hourlyangle[i3d] *= """ + gpu._rad2deg_ratio + """;
+		hourlyangle[i3d] *= """ + gpu.rad2deg_ratio + """;
 	  }
 	  """)
 def getzenithangle(declination, latitude, hourlyangle):
 	result = None
 	if cuda_can_help:
 		func = mod_getzenitangle.get_function("getzenitangle")
-		result = gpu._gpu_exec(func, hourlyangle, latitude, declination)
+		result = gpu.gpu_exec(func, hourlyangle, latitude, declination)
 	else:
 		hourlyangle = np.deg2rad(hourlyangle)
 		lat = np.deg2rad(latitude)
@@ -163,7 +164,8 @@ def getsolarelevationmatrix(dt, sub_lon, lat, lon):
 
 def getcorrectedelevation(elevation):
 	elevation = np.deg2rad(elevation)
-	return np.rad2deg(elevation + 0.061359*((0.1594 + 1.1230*elevation + 0.065656 * np.power(elevation,2))/(1+ 28.9344 * elevation + 277.3971 * np.power(elevation,2))))
+	return np.rad2deg(elevation + 0.061359*((0.1594 + 1.1230*elevation + 0.065656 * np.power(elevation,2))/ \
+		(1+ 28.9344 * elevation + 277.3971 * np.power(elevation,2))))
 
 def getopticalpath(correctedelevation, terrainheight, atmosphere_theoretical_height):
 	# In the next line the correctedelevation is used over a degree base
@@ -176,7 +178,8 @@ def getopticaldepth(opticalpath):
 	tmp = np.zeros(opticalpath.shape) + 1.0
 	highslopebeam = opticalpath <= 20
 	lowslopebeam = opticalpath > 20
-	tmp[highslopebeam] = 1/(6.6296 + 1.7513 * opticalpath[highslopebeam] - 0.1202 * np.power(opticalpath[highslopebeam],2) + 0.0065 * np.power(opticalpath[highslopebeam],3) - 0.00013 * np.power(opticalpath[highslopebeam],4))
+	tmp[highslopebeam] = 1/(6.6296 + 1.7513 * opticalpath[highslopebeam] - 0.1202 * np.power(opticalpath[highslopebeam],2) + \
+		0.0065 * np.power(opticalpath[highslopebeam],3) - 0.00013 * np.power(opticalpath[highslopebeam],4))
 	tmp[lowslopebeam] = 1/(10.4 + 0.718 * opticalpath[lowslopebeam])
 	return tmp
 
@@ -237,7 +240,7 @@ def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
 		show("")
 		for i in range(sh[0]):
 			show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]).zfill(3))
-			radiance[i] = gpu._gpu_exec(func, radiance[i], totalirradiance, excentricity[i], zenitangle[i])
+			radiance[i] = gpu.gpu_exec(func, radiance[i], totalirradiance, excentricity[i], zenitangle[i])
 		result = radiance
 	else:
 		zenitangle = np.deg2rad(zenitangle)
@@ -250,8 +253,8 @@ mod_getsatellitalzenithangle = SourceModule("""
 		//int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		//int i3d = i2d + it;
-		lat[i2d] *= """ + gpu._deg2rad_ratio + """;
-		float lon_diff = (lon[i2d] - sub_lon) * """ + gpu._deg2rad_ratio + """;
+		lat[i2d] *= """ + gpu.deg2rad_ratio + """;
+		float lon_diff = (lon[i2d] - sub_lon) * """ + gpu.deg2rad_ratio + """;
 		float lat_cos_only = cos(lat[i2d]);
 		float re = rpol / (sqrt(1-(pow(req,2) - pow(rpol,2))/(pow(req,2))*pow(lat_cos_only,2)));
 		float lat_cos = re * lat_cos_only;
@@ -260,7 +263,7 @@ mod_getsatellitalzenithangle = SourceModule("""
 		float r3 = re * sin(lat[i2d]);
 		float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
 		lat[i2d] = (""" + str(np.float32(np.pi)) + """ - acos((pow(h,2) - pow(re,2) - pow(rs,2))/(-2 * re * rs)));
-		lat[i2d] *= """ + gpu._rad2deg_ratio + """;
+		lat[i2d] *= """ + gpu.rad2deg_ratio + """;
 	  }
 	  """)
 def getsatellitalzenithangle(lat, lon, sub_lon):
@@ -270,7 +273,7 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
 	h = 42166.55637 # 42164.0
 	if cuda_can_help:
 		func = mod_getsatellitalzenithangle.get_function("getsatellitalzenithangle")
-		lat = gpu._gpu_exec(func, lat, lon, sub_lon, rpol, req, h)
+		lat = gpu.gpu_exec(func, lat, lon, sub_lon, rpol, req, h)
 		result = lat
 	else:
 		lat = np.deg2rad(lat)
@@ -334,7 +337,7 @@ def getsolarelevation(declination,lat,omega):
 
 def getsecondmin(albedo):
 	min1_albedo = np.ma.masked_array(albedo, albedo == np.amin(albedo, axis=0))
-	return np.amin(albedo, axis=0)
+	return np.amin(min1_albedo, axis=0)
 
 def getcloudindex(apparentalbedo, groundalbedo, cloudalbedo):
 	return (apparentalbedo - groundalbedo)/(cloudalbedo - groundalbedo)
