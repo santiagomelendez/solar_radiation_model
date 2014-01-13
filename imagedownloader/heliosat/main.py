@@ -2,16 +2,12 @@
 
 import sys
 sys.path.append(".")
-import gc
 
 import numpy as np
 from datetime import datetime
-import calendar
 from libs.statistics import stats
-import os
 #import pylab as pl
 #from osgeo import gdal
-import time
 
 from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
@@ -19,13 +15,13 @@ from libs.linke import toolbox as linke
 from libs.dem import dem
 #from libs.paint import jaen as draw
 #import processgroundstations as pgs
-from libs.console import *
+from libs.console import say, show, show_times
 
 SAT_LON = -60.0 # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 
-def getsatelliteradiance(data, root, index):
+def getsatelliteradiance(data, index):
 	return data[index]
 
 def geti0met():
@@ -78,7 +74,7 @@ def process_temporal_data(lat, lon, root):
 	nc.sync(root)
 	v_satellitalzenithangle = None
 
-def process_irradiance(lat, lon, data, root):
+def process_irradiance(root):
 	excentricity = nc.getvar(root,'excentricity')[:]
 	solarangle = nc.getvar(root,'solarangle')[:]
 	solarelevation = nc.getvar(root,'solarelevation')[:]
@@ -98,7 +94,7 @@ def process_irradiance(lat, lon, data, root):
 	nc.sync(root)
 	v_gc, v_dc, v_bc = None, None, None
 
-def process_atmospheric_irradiance(lat, lon, data, root):
+def process_atmospheric_irradiance(root):
 	i0met = geti0met()
 	dc = nc.getvar(root,'dc')[:]
 	satellitalzenithangle = nc.getvar(root,'satellitalzenithangle')[:]
@@ -114,7 +110,7 @@ def process_atmospheric_irradiance(lat, lon, data, root):
 	nc.sync(root)
 	v_atmosphericalbedo, v_satellitalelevation = None, None
 
-def process_optical_fading(lat, lon, data, root):
+def process_optical_fading(root):
 	solarelevation = nc.getvar(root,'solarelevation')[:]
 	terrain = nc.getvar(root,'dem')[:]
 	satellitalelevation = nc.getvar(root, 'satellitalelevation')[:]
@@ -135,7 +131,7 @@ def process_optical_fading(lat, lon, data, root):
 	nc.sync(root)
 	v_earth, v_sat = None, None
 
-def process_albedos(lat, lon, data, root):
+def process_albedos(data, root):
 	i0met = geti0met()
 	excentricity = nc.getvar(root,'excentricity')[:]
 	solarangle = nc.getvar(root,'solarangle')[:]
@@ -161,13 +157,13 @@ def process_albedos(lat, lon, data, root):
 	nc.sync(root)
 	v_albedo = None
 
-def process_atmospheric_data(lat, lon, data, root):
-	process_irradiance(lat, lon, data, root)
-	process_atmospheric_irradiance(lat, lon, data, root)
-	process_optical_fading(lat, lon, data, root)
-	process_albedos(lat, lon, data, root)
+def process_atmospheric_data(root):
+	process_irradiance(root)
+	process_atmospheric_irradiance(root)
+	process_optical_fading(root)
+	process_albedos(data, root)
 
-def process_ground_albedo(lat, lon, data, root):
+def process_ground_albedo(lon, data, root):
 	slots = nc.getvar(root, "slots")[:]
 	declination = nc.getvar(root, "declination")[:]
 	#The day is divided in _slots_ to avoid the minutes diferences between days.
@@ -211,7 +207,7 @@ def process_ground_albedo(lat, lon, data, root):
 	nc.sync(root)
 	f_groundalbedo = None
 
-def process_radiation(lat, lon, data, root):
+def process_radiation(root):
 	apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
 	groundalbedo = nc.getvar(root, "groundalbedo")[:]
 	cloudalbedo = nc.getvar(root, "cloudalbedo")[:]
@@ -241,7 +237,6 @@ def process_radiation(lat, lon, data, root):
 
 def process_validate(root):
 	from libs.statistics import error
-	tst_hour_step = 1/24.
 	estimated = nc.getvar(root, 'globalradiation')
 	measured = nc.getvar(root, 'measurements')
 	stations = [0]
@@ -268,17 +263,17 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 	show("Filename: ", filename)
 	show("-----------------------\n")
 
-	root, is_new = nc.open(filename)
+	root = nc.open(filename)[0]
 	lat = (nc.getvar(root, 'lat'))[:]
 	lon = (nc.getvar(root, 'lon'))[:]
 	data = calibrated_data(root)
 	
 	process_temporal_data(lat, lon, root)
-	process_atmospheric_data(lat, lon, data, root)
+	process_atmospheric_data(root)
 
-	process_ground_albedo(lat, lon, data, root)
+	process_ground_albedo(lat, data, root)
 
-	process_radiation(lat, lon, data, root)
+	process_radiation(root)
 
 	process_validate(root)
 	#draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
@@ -290,7 +285,7 @@ import re
 current_module = sys.modules[__name__]
 methods = current_module.__dict__
 fxs = [ func for name,func in methods.items() if re.match( r'^process.*',name) or re.match( r'workwith',name) ]
-#aspects.with_wrap(show_times, *fxs)
+aspects.with_wrap(show_times, *fxs)
 
 
 #import cProfile, pstats, io
