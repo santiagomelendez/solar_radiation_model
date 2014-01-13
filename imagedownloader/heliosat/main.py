@@ -7,7 +7,7 @@ import gc
 import numpy as np
 from datetime import datetime
 import calendar
-from scipy import stats
+from libs.statistics import stats
 import os
 #import pylab as pl
 #from osgeo import gdal
