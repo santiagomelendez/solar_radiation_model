@@ -30,5 +30,11 @@ class TestMeasurements(TestCase):
 		with self.assertRaises(InvalidMeasurementError):
 			m3 = Measurement.register_or_check(self.finish, self.mean + 1, self.between, self.refresh_presision, self.configuration)
 		self.assertEquals(Measurement.objects.count(), 1)
-		
-		
+
+	def test_serialization(self):
+		# check if the __str__ method is defined to return the object configuration, finish, mean and between attributes.
+		measurement = Measurement.register_or_check(self.finish, self.mean, self.between, self.refresh_presision, self.configuration)
+		result = u'%s %s %.2f (%i sec)' % (unicode(measurement.configuration), unicode(measurement.finish), self.mean, self.between)
+		self.assertEquals(str(measurement), result.encode("utf-8"))
+		# check if the __unicode__ method is defined to return the string of bytes as a text.
+		self.assertEquals(unicode(measurement), result)
