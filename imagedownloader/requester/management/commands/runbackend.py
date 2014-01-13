@@ -7,6 +7,7 @@ import sys
 class Command(BaseCommand,object):
 	args = '<worker_quantity>'
 	help = 'Run the background process that download the active AutomaticDownload instances.'
+
 	def __init__(self, *args, **options):
 		super(Command, self).__init__(*args, **options)
 
@@ -18,6 +19,6 @@ class Command(BaseCommand,object):
 		try:
 			self.background.start_workers()
 		except KeyboardInterrupt:
-				print 'You pressed Ctrl+C!'
+			print 'You pressed Ctrl+C!'
 			self.background.stop_workers()
-   			sys.exit(0)
+			sys.exit(0)
