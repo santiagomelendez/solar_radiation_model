@@ -12,15 +12,17 @@ def getfloat(number):
 	number = number.translate(None, " ")
 	return 0.0 if number == "" else float(number.split("*")[0])
 
-class CountsShift:
+class CountsShift(object):
+	sats = {'goes13': 32.0}
 	def coefficient(self, sat):
-		return 32.0
+		return CountShift.sats[sat]
 
-class SpaceMeasurement:
+class SpaceMeasurement(object):
+	sats = {'goes13': 29.0}
 	def coefficient(self, sat):
-		return 29.0
+		return SpaceMeasurement.sats[sat]
 
-class PreLaunch:
+class PreLaunch(object):
 	def __init__(self):
 		table = self.table()
 		self.coefficients = self.coefficients(table)
@@ -36,7 +38,7 @@ class PreLaunch:
 	def coefficient(self, sat):
 		return self.coefficients[getsat(sat)]
 
-class PostLaunch:
+class PostLaunch(object):
 	def __init__(self):
 		table = self.table()
 		self.sats = self.satellites(table)
