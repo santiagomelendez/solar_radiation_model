@@ -1,15 +1,16 @@
 from django.db import models
 from decimal import Decimal
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
-import hashlib
-import os
 
 
 class OpticFilter(models.Model):
 	name = models.TextField(db_index=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.name
 
 
@@ -17,6 +18,9 @@ class Brand(models.Model):
 	name = models.TextField(db_index=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.name
 
 
@@ -26,6 +30,9 @@ class Product(models.Model):
 	specifications = models.TextField(db_index=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.name
 
 
@@ -35,7 +42,10 @@ class Device(models.Model):
 	description = models.TextField(db_index=True,default="")
 
 	def __str__(self):
-		return "%s (%s)" % (self.serial_number, self.product)
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s (%s)' % (self.serial_number, self.product)
 
 
 class Sensor(Device):
@@ -67,7 +77,10 @@ class SensorCalibration(models.Model):
 	shift = models.DecimalField(max_digits=10,decimal_places=7,default=Decimal('0.00'))
 
 	def __str__(self):
-		return '%2f x + %2f' % (self.coefficient, self.shift)
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%2f x + %2f' % (self.coefficient, self.shift)
 
 
 class Position(models.Model):
@@ -80,7 +93,7 @@ class Position(models.Model):
 		return '(%4f, %4f)' % (self.latitude, self.longitude)
 
 	def __str__(self):
-		return self.__unicode__().encode('ascii', 'ignore')
+		return unicode(self).encode('utf-8')
 
 	def __unicode__(self):
 		return u'%s %s' % (self.station.name, self.coordinates())
@@ -90,7 +103,7 @@ class Station(models.Model):
 	name = models.TextField(db_index=True)
 
 	def __str__(self):
-		return self.name.encode('ascii', 'ignore')
+		return unicode(self).encode("utf-8")
 
 	def __unicode__(self):
 		return self.name
@@ -167,10 +180,10 @@ class Configuration(models.Model,object):
 		return super(Configuration, self).save(*args, **kwargs)
 
 	def __str__(self):
-		return self.__unicode__().encode('ascii', 'ignore')
+		return unicode(self).encode('utf8')
 
 	def __unicode__(self):
-		return u'%s | %s | %s' % (self.position, str(self.modified), self.calibration )
+		return u'%s | %s | %s' % (self.position, unicode(self.modified), self.calibration )
 
 class InvalidMeasurementError(RuntimeError):
 	pass

@@ -13,4 +13,7 @@ class TestDevices(TestCase):
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return the object serial_number and a device product name.
-		self.assertEquals(str(self.device), self.device.serial_number + " (" + str(self.device.product) + ")")
+		result = u'%s (%s)' % (self.device.serial_number, unicode(self.device.product))
+		self.assertEquals(str(self.device), result.encode("utf-8"))
+		# check if the __unicode__ method is defined to return the string of bytes as a text.
+		self.assertEquals(unicode(self.device), result)

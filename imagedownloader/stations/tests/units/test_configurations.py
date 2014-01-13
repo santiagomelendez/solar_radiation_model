@@ -32,9 +32,9 @@ class TestConfigurations(TestCase):
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return the object position, when it was modified and the calibration parameters.
-		result = u'%s | %s | %s' % (str(self.configuration.position), str(self.configuration.modified), self.configuration.calibration )
-		self.assertEquals(str(self.configuration), result)
-		result = u'%s | %s | %s' % (self.configuration.position, str(self.configuration.modified), self.configuration.calibration )
+		result = u'%s | %s | %s' % (self.configuration.position, unicode(self.configuration.modified), self.configuration.calibration )
+		self.assertEquals(str(self.configuration), result.encode("utf-8"))
+		# check if the __unicode__ method is defined to return the string of bytes as a text.
 		self.assertEquals(unicode(self.configuration), result)
 
 	def test_go_inactive(self):

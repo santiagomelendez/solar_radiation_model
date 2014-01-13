@@ -13,7 +13,7 @@ class TestPositions(TestCase):
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return an ascii.
-		self.assertEquals(str(self.position), 'Lujn (-34.588163, -59.062993)')
+		self.assertEquals(str(self.position), 'Luj\xc3\xa1n (-34.588163, -59.062993)')
 		# to finish, check if the __unicode__ method is defined.
 		self.assertEquals(unicode(self.position), u'Luján (-34.588163, -59.062993)')
 

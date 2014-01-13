@@ -13,7 +13,7 @@ class TestStations(TestCase):
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return an ascii.
-		self.assertEquals(str(self.station),"Lujn")
+		self.assertEquals(str(self.station),"Luj\xc3\xa1n")
 		# to finish, check if the __unicode__ method is defined.
 		self.assertEquals(unicode(self.station), u'Luján')
 
