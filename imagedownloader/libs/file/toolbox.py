@@ -31,7 +31,7 @@ def cut(filename, i_from, i_to):
 	nc.close(root)
 	nc.close(root_cut)
 
-def search_position(station, lat, lon):
+def binary_search_position(station, lat, lon):
 	numrows = lat.shape[0]
 	numcols = lat.shape[1]
 	# This is valid because latitude and longitude values are all negative for Argentina
@@ -42,7 +42,9 @@ def search_position(station, lat, lon):
 	y = deltay
 	count = 0
 	limit = int(np.ceil(np.log(max(numrows,numcols))/np.log(2)))
-	for k in range(1,limit):
+	k = 1
+	while k <= limit:
+	    k += 1
 	    count = count + 2
 	    if lat[x,y+deltay/2] > station[0]:  # +deltay/2, considering lat curvature
 	        x = x + deltax
@@ -67,6 +69,12 @@ def search_position(station, lat, lon):
 	        y = y-1
 	return x, y
 
+def statistical_search_position(station, lat, lon):
+	diffs = np.abs(lat[:] - station[0]) + np.abs(lon[:] - station[1])
+	np.where(diffs <= np.min(diffs))
+	x, y = [ v[0] for v in np.where(diffs <= np.min(diffs))]
+	return x, y
+
 def cut_positions(filename, blurred, *positions):
 	blurred = int(blurred)
 	pos = eval("".join(positions))
@@ -82,7 +90,7 @@ def cut_positions(filename, blurred, *positions):
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing_cut','easting_cut',),4)
 	for i in range(len(pos)):
 		show("\rCutting data: processing position %d / %d " % (i+1, len(pos)))
-		x, y = search_position(pos[i], lat, lon)
+		x, y = statistical_search_position(pos[i], lat, lon)
 		lat_cut[i,0] = lat[x,y]
 		lon_cut[i,0] = lon[x,y]
 		data_cut[:,i,0] = np.apply_over_axes(np.mean, data[:,x-blurred:x+blurred,y-blurred:y+blurred], axes=[1,2]) if blurred > 0 else data[:,x,y]
