@@ -2,7 +2,7 @@ from django.db import models
 from datetime import datetime, timedelta
 import pytz  # 3rd party
 import os
-from django.db.models import Min, Max, Avg, Count
+from django.db.models import Min, Max, Avg
 from decimal import Decimal
 from netCDF4 import Dataset
 from libs.console import total_seconds
