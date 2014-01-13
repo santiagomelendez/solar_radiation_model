@@ -54,7 +54,6 @@ class PostLaunch(object):
 	def coefficients(self, table):
 		co = {}
 		for r in table[2:]:
-			size = len(r.getchildren())
 			co[getmonth(r[0].text_content())] = [ getfloat(e.text_content()) for e in r.getchildren()[1:] ]
 		return co
 	def coefficient(self, sat, year, month):
