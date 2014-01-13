@@ -18,6 +18,6 @@ class Command(BaseCommand,object):
 		try:
 			self.background.start_workers()
 		except KeyboardInterrupt:
-    			print 'You pressed Ctrl+C!'
+				print 'You pressed Ctrl+C!'
 			self.background.stop_workers()
    			sys.exit(0)

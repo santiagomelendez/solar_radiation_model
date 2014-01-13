@@ -39,7 +39,7 @@ class Image(File):
 
 class Program(ComplexProcess):
 	class Meta(object):
-        	app_label = 'plumbing'
+			app_label = 'plumbing'
 	stream = models.ForeignKey(Stream)
 
 	def downloaded_files(self):

@@ -6,27 +6,27 @@ import csv
 
 
 def matrix2csv(matrix):
-    with open(sys.argv[2], 'w') as fp:
-        a = csv.writer(fp, delimiter=',',  quoting=csv.QUOTE_NONNUMERIC)
-        a.writerows(matriz)
+	with open(sys.argv[2], 'w') as fp:
+		a = csv.writer(fp, delimiter=',',  quoting=csv.QUOTE_NONNUMERIC)
+		a.writerows(matriz)
 
 
 def datetime_convert_to_iso(year, julianday, hour):
 
-    naive_date = datetime.date(int(year), 1, 1) + datetime.timedelta(int(julianday) -1)
-    naive_time = datetime.datetime.strptime((str(hour)).zfill(4), '%H%M')
-    naive_time = naive_time.time()
-    naive_iso_time = datetime.datetime.combine(naive_date, naive_time)
+	naive_date = datetime.date(int(year), 1, 1) + datetime.timedelta(int(julianday) -1)
+	naive_time = datetime.datetime.strptime((str(hour)).zfill(4), '%H%M')
+	naive_time = naive_time.time()
+	naive_iso_time = datetime.datetime.combine(naive_date, naive_time)
 
-    return naive_iso_time
+	return naive_iso_time
 
 
 def naive_to_aware_time(naivetime, tz ):
-    
-    local_time = tz.localize(naivetime)
-    utc_time = local_time.astimezone(pytz.utc)
-    
-    return utc_time
+	
+	local_time = tz.localize(naivetime)
+	utc_time = local_time.astimezone(pytz.utc)
+	
+	return utc_time
 
 # a modificar en el futuro para acceder a datos de otras zona
 localtz = pytz.timezone('America/Argentina/Buenos_Aires')
@@ -34,9 +34,9 @@ localtz = pytz.timezone('America/Argentina/Buenos_Aires')
 matriz = []
 
 x = np.genfromtxt(fname=sys.argv[1],
-                  delimiter=',',
-                  dtype = (int, int, int, float)                   
-                  )
+				  delimiter=',',
+				  dtype = (int, int, int, float)				   
+				  )
 
 '''
 for row in xrange(x.size):

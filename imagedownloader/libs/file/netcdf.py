@@ -38,25 +38,25 @@ dtypes[numpy.dtype('float32')] = 'f4'
 dtypes[numpy.dtype('int32')] = 'i4'
 
 def clonevar(root, var, new_varname):
-    var = getvar(root, var) if var.__class__ is str else var
-    dims = [ str(d) for d in var.dimensions ]
-    try:
-        digit = var.least_significant_digit
-    except AttributeError:
-        digit = 0
-    var_clone = getvar(root, new_varname, dtypes[var.dtype] , dims , digit )
-    var_clone[:] = np.zeros(var_clone.shape)
-    return var_clone
+	var = getvar(root, var) if var.__class__ is str else var
+	dims = [ str(d) for d in var.dimensions ]
+	try:
+		digit = var.least_significant_digit
+	except AttributeError:
+		digit = 0
+	var_clone = getvar(root, new_varname, dtypes[var.dtype] , dims , digit )
+	var_clone[:] = np.zeros(var_clone.shape)
+	return var_clone
 
 def clonefile(root, filename, avoided=[]):
-    variables = [ str(v) for v in root.variables.keys() if not v in avoided ]
-    root_clone, is_new = open(filename)
-    for d in root.dimensions:
-        dim = getdim(root, d)
-        dim_clone = getdim(root_clone, d, len(dim))
-    for v in variables:
-        var = getvar(root, v)
-        var_clone = clonevar(root_clone, var, v)
-        var_clone[:] = var[:]
-    return root_clone, is_new
+	variables = [ str(v) for v in root.variables.keys() if not v in avoided ]
+	root_clone, is_new = open(filename)
+	for d in root.dimensions:
+		dim = getdim(root, d)
+		dim_clone = getdim(root_clone, d, len(dim))
+	for v in variables:
+		var = getvar(root, v)
+		var_clone = clonevar(root_clone, var, v)
+		var_clone[:] = var[:]
+	return root_clone, is_new
 

@@ -11,7 +11,7 @@ sys.path.append(".")
 
 class FilterSolarElevation(Process):
 	class Meta(object):
-        	app_label = 'plumbing'
+			app_label = 'plumbing'
 	minimum = models.DecimalField(max_digits=4,decimal_places=2)
 	hourly_longitude = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
 

@@ -21,8 +21,8 @@ class FileStatusAdmin(admin.ModelAdmin):
 
 class ProcessInlineForm(ModelForm,object):
 	class Meta(object):
-	        model = ProcessOrder
-	        fields = ['position','process']
+			model = ProcessOrder
+			fields = ['position','process']
 
 	def __init__(self, *args, **kwargs):
 		super(ProcessInlineForm, self).__init__(*args, **kwargs)

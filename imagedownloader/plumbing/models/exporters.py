@@ -9,7 +9,7 @@ from datetime import datetime
 
 class Compact(Process):
 	class Meta(object):
-        	app_label = 'plumbing'
+			app_label = 'plumbing'
 	extension = models.TextField()
 	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
 

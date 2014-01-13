@@ -44,29 +44,29 @@ def binary_search_position(station, lat, lon):
 	limit = int(np.ceil(np.log(max(numrows,numcols))/np.log(2)))
 	k = 1
 	while k <= limit:
-	    k += 1
-	    count = count + 2
-	    if lat[x,y+deltay/2] > station[0]:  # +deltay/2, considering lat curvature
-	        x = x + deltax
-	    else:
-	        x = x - deltax
-	#    print "coord x: (",x,",",y,")"
-	    #print x,y,";"
-	    if lon[x-deltax/2,y] > station[1]:  # -deltax/2, considering long curvature
-	        y = y - deltay
-	    else:
-	        y = y + deltay
-	#    print "coord y: (",x,",",y,")"
-	    #print x,y,";"
-	    deltax = deltax/2
-	    deltay = deltay/2
+		k += 1
+		count = count + 2
+		if lat[x,y+deltay/2] > station[0]:  # +deltay/2, considering lat curvature
+			x = x + deltax
+		else:
+			x = x - deltax
+	#	print "coord x: (",x,",",y,")"
+		#print x,y,";"
+		if lon[x-deltax/2,y] > station[1]:  # -deltax/2, considering long curvature
+			y = y - deltay
+		else:
+			y = y + deltay
+	#	print "coord y: (",x,",",y,")"
+		#print x,y,";"
+		deltax = deltax/2
+		deltay = deltay/2
 	while (lat[x,y] > station[0] or lon[x,y] > station[1]):
-	    while (lat[x,y] > station[0]):
-	        count = count + 1
-	        x = x+1
-	    while (lon[x,y] > station[1]):
-	        count = count + 1
-	        y = y-1
+		while (lat[x,y] > station[0]):
+			count = count + 1
+			x = x+1
+		while (lon[x,y] > station[1]):
+			count = count + 1
+			y = y-1
 	return x, y
 
 def statistical_search_position(station, lat, lon):

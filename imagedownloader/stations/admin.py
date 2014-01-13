@@ -4,21 +4,21 @@ from django.forms import ModelForm
 
 
 class BrandAdmin(admin.ModelAdmin):
-    list_display = [ 'name', ]
+	list_display = [ 'name', ]
 
 
 class OpticFilterAdmin(admin.ModelAdmin):
-    list_display = [ 'name', ]
+	list_display = [ 'name', ]
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = [ 'brand', 'name' ]
-    list_display_links = list_display[1:]
+	list_display = [ 'brand', 'name' ]
+	list_display_links = list_display[1:]
 
 
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = [ 'product', 'serial_number', 'description' ]
-    list_display_links = list_display[1:]
+	list_display = [ 'product', 'serial_number', 'description' ]
+	list_display_links = list_display[1:]
 
 
 class SensorAdmin(DeviceAdmin):
@@ -37,21 +37,21 @@ class SensorCalibrationAdmin(admin.ModelAdmin):
 
 
 class ConfigurationAdmin(admin.ModelAdmin):
-    list_display = [ 'position', 'calibration', 'created', 'modified' ]
-    list_display_links = list_display[1:]
+	list_display = [ 'position', 'calibration', 'created', 'modified' ]
+	list_display_links = list_display[1:]
 
 
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = [ 'configuration', 'finish', 'mean', 'between', 'refresh_presision' ]
-    list_display_links = list_display[:3]
+	list_display = [ 'configuration', 'finish', 'mean', 'between', 'refresh_presision' ]
+	list_display_links = list_display[:3]
 
 
 class StationAdmin(admin.ModelAdmin):
-    list_display = [ 'name', 'coordinates' ]
+	list_display = [ 'name', 'coordinates' ]
 
 
 class PositionAdmin(admin.ModelAdmin):
-    list_display = [ 'station', 'latitude', 'longitude' ]
+	list_display = [ 'station', 'latitude', 'longitude' ]
 
 
 admin.site.register(Position, PositionAdmin)
