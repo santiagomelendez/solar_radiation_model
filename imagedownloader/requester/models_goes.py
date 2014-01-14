@@ -1,13 +1,10 @@
-from requester.models import *
-from requester.worker_manager import *
-from django.utils import timezone
-from django.conf import settings
+from requester.models import FTPServerAccount, EmailAccount
+from requester.worker_manager import Job, print_exception
 import re
 import imaplib
 import email
 from ftplib import FTP, error_perm, error_temp
-import sys
-from libs.console import *
+from libs.console import show
 import os
 
 class IMAPNotificationChecker(Job):
@@ -22,7 +19,7 @@ class IMAPNotificationChecker(Job):
 	def disconnect(self):
 		try:
 			self._connection.close()
-		except Exception as e:
+		except Exception:
 			print_exception()
 		self._connection.logout()
 	def extract_body(self,payload):
@@ -57,7 +54,7 @@ class IMAPNotificationChecker(Job):
 		return host, user, passwd, files
 	def notifications(self):
 		self._connection.select('data-notification')
-		typ, data = self._connection.search(None, 'UNSEEN')
+		data = self._connection.search(None, 'UNSEEN')[1]
 		notifications = []
 		try:
 			for num in data[0].split():
@@ -72,7 +69,7 @@ class IMAPNotificationChecker(Job):
 							scraped_data=self.scrap_body(payload)
 							order_id = result.group(1)
 							notifications.append((order_id, scraped_data))
-				typ, response = self._connection.store(num, '+FLAGS', r'(\Seen)')
+				typ = self._connection.store(num, '+FLAGS', r'(\Seen)')[0]
 		finally:
 			pass
 		return notifications
@@ -80,9 +77,9 @@ class IMAPNotificationChecker(Job):
 		self.connect()
 		notifications = self.notifications()
 		for n in notifications:
-			order, created_order = Order.objects.get_or_create(identification=n[0])
+			order = Order.objects.get_or_create(identification=n[0])[0]
 			if len(order.file_set.all()) == 0:
-				service, created_service = FTPServerAccount.objects.get_or_create(hostname=n[1][0],username=n[1][1])
+				service = FTPServerAccount.objects.get_or_create(hostname=n[1][0],username=n[1][1])[0]
 				service.password = n[1][2]
 				service.save()
 				order.server = service
@@ -136,35 +133,35 @@ class FTPFileDownloader(Job):
 		if not os.path.exists(d):
 			os.makedirs(d)
 	def download(self):
-		file = self.get_file_object()
+		f = self.get_file_object()
 		try:
-			file.size = self.get_size()
-			file.localname = self.get_localname()
-			completepath = file.completepath()
+			f.size = self.get_size()
+			f.localname = self.get_localname()
+			completepath = f.completepath()
 			if os.path.exists(completepath):
 				size = (os.stat(completepath)).st_size
 			else:
 				size = 0
 			if size < file.size:
-				print 'Downloading '+ file.localname +'...'
+				print 'Downloading '+ f.localname +'...'
 				self.ensure_dir(completepath)
-				file.begin_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
-				file.save()
-				self._ftp.retrbinary('RETR ' + file.remotename, open(completepath, 'wb').write)
-				file.end_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
-			file.failures = 0
-			file.downloaded = True
+				f.begin_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
+				f.save()
+				self._ftp.retrbinary('RETR ' + f.remotename, open(completepath, 'wb').write)
+				f.end_download = datetime.utcnow().replace(tzinfo=pytz.UTC)
+			f.failures = 0
+			f.downloaded = True
 		except error_perm as e:
-			show(file.localname.ljust(60) + '[DONT EXISTS]')
+			show(f.localname.ljust(60) + '[DONT EXISTS]')
 			show(str(e) + '\n')
-			file.failures += 1
+			f.failures += 1
 		except Exception as e:
-			show(file.localname.ljust(60) + '[FAIL]')
+			show(f.localname.ljust(60) + '[FAIL]')
 			show(str(e) + '\n')
-			file.size = 0
-			file.localname = ''
+			f.size = 0
+			f.localname = ''
 			print_exception()
-		file.save()
+		f.save()
 	def run(self,background):
 		self.connect()
 		self.download()
@@ -292,7 +289,7 @@ class QOSRequester(Job):
 		background.wait('QOSRequester'+str(self._automatic.title), 2*60)
 		background.put_job(self)
 
-class QOSManager:
+class QOSManager(object):
 	class QOSManager__impl(Job):
 		def __init__(self):
 			self._priority = 1

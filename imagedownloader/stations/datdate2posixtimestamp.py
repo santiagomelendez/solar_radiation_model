@@ -4,9 +4,8 @@ import numpy as np
 
 
 x = np.genfromtxt(fname=sys.argv[1],
-				  delimiter=',',
-				  dtype = (int, int, int, float)				   
-				  )
+	delimiter=',',
+	dtype = (int, int, int, float))
 
 def time_convert_to_posix(year, julianday, hour):
 	fecha = datetime.date(int(year), 1, 1) + datetime.timedelta(int(julianday) -1)
@@ -16,5 +15,5 @@ def time_convert_to_posix(year, julianday, hour):
 	return tiempo_posix
 
 for row in xrange(x.size):
-	timestamp = time_convert_to_posix(x[row][0], x[row][1], x[row][2]) 
+	timestamp = time_convert_to_posix(x[row][0], x[row][1], x[row][2])
 	print timestamp, x[row][3]

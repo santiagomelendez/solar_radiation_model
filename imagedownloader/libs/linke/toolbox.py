@@ -2,7 +2,7 @@ import numpy as np
 from libs.file import netcdf as nc
 from libs.geometry import project as p
 from datetime import datetime
-from libs.console import *
+from libs.console import say
 import os
 localpath = os.path.dirname(__file__)
 gdal_supported = False
@@ -17,7 +17,7 @@ filename = source.split("/")[-1]
 destiny = localpath + "/" + filename
 
 def initial_configuration():
-	from libs.file.toolbox import download, unzip
+	from libs.file.toolbox import download
 	say("Downloading "+filename+" package... ")
 	download(source,destiny)
 
@@ -29,7 +29,7 @@ def get_month(month):
 		ds = gdal.Open(localpath + "/tifs/"+str(month).zfill(2)+"_longlat_wgs84.tif")
 		linke = ds.ReadAsArray()
 	else:
-		root, n = nc.open(destiny)
+		root = nc.open(destiny)[0]
 		data = nc.getvar(root, "linketurbidity")
 		linke = data[month -1]
 	# The linke turbidity is obtained when the image pixel value is divied by 20.
@@ -49,7 +49,7 @@ def cut_projected(root):
 	lon = nc.getvar(root, 'lon')
 	time = nc.getvar(root, 'data_time')
 	months = list(set([ (datetime.fromtimestamp(int(t))).month for t in time ]))
-	months_d = nc.getdim(root, 'monthing')
+	nc.getdim(root, 'monthing')
 	months_cut = nc.getvar(root, 'months', 'i2', ('monthing',))
 	dims = list(lat.dimensions)
 	dims.insert(0, 'monthing')

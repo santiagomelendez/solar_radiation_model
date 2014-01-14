@@ -1,8 +1,6 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from requester.models import *
-from decimal import Decimal
 from polymodels.models import PolymorphicModel, PolymorphicManager
 import glob
 from libs.file import netcdf as nc
@@ -120,7 +118,7 @@ class File(models.Model):
 		return self.datetime() < obj.datetime()
 
 	def __str__(self):
-		return self.localname.split("/")[-1]
+		return unicode(self.localname).split("/")[-1]
 
 	def localsize(self):
 		path = self.completepath()
@@ -153,7 +151,7 @@ class File(models.Model):
 
 	def latlon(self):
 		try:
-			root, n = nc.open(self.completepath())
+			root = nc.open(self.completepath())[0]
 			lat = nc.getvar(root,'lat')[:]
 			lon = nc.getvar(root, 'lon')[:]
 			nc.close(root)

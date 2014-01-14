@@ -5,12 +5,15 @@ sys.path.append(".")
 import domain_process as dp
 import processfiles as pf
 import h5py
-from functions import gettstdatetime, getdatetimefromint, getintfromdatetime, getclearsky, getcloudindex, getsecondmin, getsolarelevation, getdatetimefromint, getslots, getcloudalbedo, geteffectivealbedo, getapparentalbedo, gettransmitance, getopticaldepth, getcorrectedelevation, getopticalpath, getelevation, getalbedo, getatmosphericradiance, getsatellitalzenitangle, getglobalirradiance, getdiffuseirradiance, getbeamirradiance, getexcentricity, getzenitangle, gethourlyangle, getdecimalhour, gettsthour, gettimeequation, getdeclination, gettotaldays, getjulianday, getdailyangle
+from functions import gettstdatetime, getdatetimefromint, getintfromdatetime, getclearsky, getcloudindex, \
+	getsecondmin, getsolarelevation, getdatetimefromint, getslots, getcloudalbedo, geteffectivealbedo, getapparentalbedo, \
+	gettransmitance, getopticaldepth, getcorrectedelevation, getopticalpath, getelevation, getalbedo, getatmosphericradiance, \
+	getsatellitalzenitangle, getglobalirradiance, getdiffuseirradiance, getbeamirradiance, getexcentricity, getzenitangle, \
+	gethourlyangle, getdecimalhour, gettsthour, gettimeequation, getdeclination, gettotaldays, getjulianday, getdailyangle
 import msg_navigation as msg
 from netCDF4 import Dataset
 import tlinke
 from datetime import datetime
-import calendar
 from scipy import stats
 import os
 import processgroundstations as pgs
@@ -76,9 +79,9 @@ def nc_process_create(filename):
 	return rootgrp
 
 def nc_process_insert_geo(rootgrp, lat, lon, terrain):
-	d_north = rootgrp.createDimension('northing', lat.shape[0])
-	d_east = rootgrp.createDimension('easting', lat.shape[1])
-	d_timing = rootgrp.createDimension('timing', None)
+	rootgrp.createDimension('northing', lat.shape[0])
+	rootgrp.createDimension('easting', lat.shape[1])
+	rootgrp.createDimension('timing', None)
 	v_lat = nc_process_getvariable(rootgrp,'latitudes', 'f4', ('northing','easting',), 4)
 	v_lon = nc_process_getvariable(rootgrp,'longitudes', 'f4', ('northing','easting',), 4)
 	v_terrain = nc_process_getvariable(rootgrp,'elevacion_terreno', 'f4', ('northing','easting',), 4)
@@ -102,34 +105,34 @@ def nc_process_insert_img(rootgrp, index, dt, img, linketurbidity, hrv):
 	#rootgrp.sync()
 
 def nc_process_insert_tmp(rootgrp, index, tiempotst, slots, radiance, atmosphericradiance, gc, cloudalbedo, apparentalbedo, observedalbedo, atmosphericalbedo, solarelevation, tearth, tsat):
-    v_tiempotst = nc_process_getvariable(rootgrp,'tiempo_tst', 'f4', ('timing','northing','easting',),4)
-    v_tiempotst[index,:] = tiempotst
-    v_slots = nc_process_getvariable(rootgrp,'slots', 'u1', ('timing',))
-    v_slots[index] = slots
-    v_radiance = nc_process_getvariable(rootgrp,'radiancia', 'f4', ('timing','northing','easting',),4)
-    v_radiance[index,:] = radiance
-    v_atmosphericradiance = nc_process_getvariable(rootgrp,'radiancia_atmosferica', 'f4', ('timing','northing','easting',),4)
-    v_atmosphericradiance[index,:] = atmosphericradiance
-    v_gc = nc_process_getvariable(rootgrp, 'radiacion_global_despejado', 'f4', ('timing','northing','easting',),4)
-    v_gc[index,:] = gc
-    v_cloudalbedo = nc_process_getvariable(rootgrp, 'albedo_nubes', 'f4', ('timing','northing','easting',),4)
-    v_cloudalbedo[index,:] = cloudalbedo
-    v_apparentalbedo = nc_process_getvariable(rootgrp, 'albedo_aparente', 'f4', ('timing','northing','easting',),4)
-    v_apparentalbedo[index,:] = apparentalbedo
-    v_observedalbedo = nc_process_getvariable(rootgrp, 'albedo_observado', 'f4', ('timing','northing','easting',),4)
-    v_observedalbedo[index,:] = observedalbedo
-    v_atmosphericalbedo = nc_process_getvariable(rootgrp, 'albedo_atmosferico', 'f4', ('timing','northing','easting',),4)
-    v_atmosphericalbedo[index,:] = atmosphericalbedo
-    v_solarelevation = nc_process_getvariable(rootgrp, 'elevacion_solar', 'f4', ('timing','northing','easting',),4)
-    v_solarelevation[index,:] = solarelevation
-    v_tearth = nc_process_getvariable(rootgrp, 'transmitancia_global_descendente', 'f4', ('timing','northing','easting',),4)
-    v_tearth[index,:] = tearth
-    v_tsat = nc_process_getvariable(rootgrp, 'transmitancia_global_ascendente', 'f4', ('timing','northing','easting',),4)
-    v_tsat[index,:] = tsat
-    #rootgrp.sync()
+	v_tiempotst = nc_process_getvariable(rootgrp,'tiempo_tst', 'f4', ('timing','northing','easting',),4)
+	v_tiempotst[index,:] = tiempotst
+	v_slots = nc_process_getvariable(rootgrp,'slots', 'u1', ('timing',))
+	v_slots[index] = slots
+	v_radiance = nc_process_getvariable(rootgrp,'radiancia', 'f4', ('timing','northing','easting',),4)
+	v_radiance[index,:] = radiance
+	v_atmosphericradiance = nc_process_getvariable(rootgrp,'radiancia_atmosferica', 'f4', ('timing','northing','easting',),4)
+	v_atmosphericradiance[index,:] = atmosphericradiance
+	v_gc = nc_process_getvariable(rootgrp, 'radiacion_global_despejado', 'f4', ('timing','northing','easting',),4)
+	v_gc[index,:] = gc
+	v_cloudalbedo = nc_process_getvariable(rootgrp, 'albedo_nubes', 'f4', ('timing','northing','easting',),4)
+	v_cloudalbedo[index,:] = cloudalbedo
+	v_apparentalbedo = nc_process_getvariable(rootgrp, 'albedo_aparente', 'f4', ('timing','northing','easting',),4)
+	v_apparentalbedo[index,:] = apparentalbedo
+	v_observedalbedo = nc_process_getvariable(rootgrp, 'albedo_observado', 'f4', ('timing','northing','easting',),4)
+	v_observedalbedo[index,:] = observedalbedo
+	v_atmosphericalbedo = nc_process_getvariable(rootgrp, 'albedo_atmosferico', 'f4', ('timing','northing','easting',),4)
+	v_atmosphericalbedo[index,:] = atmosphericalbedo
+	v_solarelevation = nc_process_getvariable(rootgrp, 'elevacion_solar', 'f4', ('timing','northing','easting',),4)
+	v_solarelevation[index,:] = solarelevation
+	v_tearth = nc_process_getvariable(rootgrp, 'transmitancia_global_descendente', 'f4', ('timing','northing','easting',),4)
+	v_tearth[index,:] = tearth
+	v_tsat = nc_process_getvariable(rootgrp, 'transmitancia_global_ascendente', 'f4', ('timing','northing','easting',),4)
+	v_tsat[index,:] = tsat
+	#rootgrp.sync()
 
 def nc_process_ready(rootgrp):
-    rootgrp.close()
+	rootgrp.close()
 
 def geti0met(hrv):
 	return 79.0113 if hrv else 693.17
@@ -188,7 +191,8 @@ def extractimages(year, month, lat, lon, hrv):
 			effectivealbedo = geteffectivealbedo(solarangle)
 			cloudalbedo = getcloudalbedo(effectivealbedo,atmosphericalbedo,t_earth,t_sat)
 			slots = getslots(dt)
-			nc_process_insert_tmp(root,index, tst_hour, slots, satelliteradiance, atmosphericradiance, gc, cloudalbedo, apparentalbedo, observedalbedo, atmosphericalbedo, solarelevation, t_earth, t_sat)
+			nc_process_insert_tmp(root,index, tst_hour, slots, satelliteradiance, atmosphericradiance, gc, cloudalbedo, apparentalbedo, observedalbedo, \
+				atmosphericalbedo, solarelevation, t_earth, t_sat)
 			index += 1
 			#~ print("sza=",np.rad2deg((sza.min(), sza.max())))
 			#~ print("ro=",observedalbedo.min(),observedalbedo.max())
@@ -258,7 +262,6 @@ def validate(year, month, hrv):
 	tst_hour_step = 1/24.
 	root = nc_process_create(getfilename(year, month, hrv))
 	globalradiation = nc_process_var(root, 'radiacion_global')
-	clearskyradiation = nc_process_var(root, 'radiacion_global_despejado')
 	dt_int = nc_process_var(root, 'datetime')
 	timestamp = np.array([date2num(getdatetimefromint(i)) for i in dt_int])
 	tst_hour = nc_process_var(root, 'tiempo_tst')
@@ -308,12 +311,12 @@ def workwith(year, month):
 		show("Time consumed:", end - begin)
 
 	begin = datetime.now()
-	p = extractgroundalbedo(filename, is_hrv)
+	extractgroundalbedo(filename, is_hrv)
 	end = datetime.now()
 	show("Time consumed:", end - begin)
 
 	begin = datetime.now()
-	q = extractradiation(filename)
+	extractradiation(filename)
 	end = datetime.now()
 	show("Time consumed:", end - begin)
 

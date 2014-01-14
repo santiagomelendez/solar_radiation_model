@@ -6,7 +6,7 @@ def open(filename):
 	is_new = not os.path.exists(filename)
 	try:
 		root = (Dataset(filename, mode='w',format='NETCDF4') if is_new else Dataset(filename,mode='a'))
-	except:
+	except Exception:
 		root = Dataset(filename, mode='r')
 	return root, is_new
 
@@ -48,12 +48,13 @@ def clonevar(root, var, new_varname):
 	var_clone[:] = np.zeros(var_clone.shape)
 	return var_clone
 
-def clonefile(root, filename, avoided=[]):
+def clonefile(root, filename, avoided):
+	if avoided is None: avoided = []
 	variables = [ str(v) for v in root.variables.keys() if not v in avoided ]
 	root_clone, is_new = open(filename)
 	for d in root.dimensions:
 		dim = getdim(root, d)
-		dim_clone = getdim(root_clone, d, len(dim))
+		getdim(root_clone, d, len(dim))
 	for v in variables:
 		var = getvar(root, v)
 		var_clone = clonevar(root_clone, var, v)

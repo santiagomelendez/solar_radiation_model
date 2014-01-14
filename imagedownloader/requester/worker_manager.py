@@ -11,7 +11,7 @@ from libs.console import total_seconds
 try:
 	from pyvirtualdisplay import Display
 except ImportError:
-	class Display:
+	class Display(object):
 		def start(self):
 			pass
 		def stop(self):
@@ -24,24 +24,24 @@ def print_exception():
 
 class Job(object):
 	def __init__(self, priority=4):
-		self._priority = priority
+		self.priority = priority
 		self.ready = False
 	def __cmp__(self, other):
-		return cmp(self._priority, other._priority)
+		return cmp(self.priority, other.priority)
 	def run(self, background):
 		pass
 	def cleanup(self):
 		pass
 
-class Worker:
-	def __init__(self, id, manager):
-		self._id = id
+class Worker(object):
+	def __init__(self, the_id, manager):
+		self.id = the_id
 		self._manager = manager
 		self.running = False
 		self.inform("initialized!")
 	def inform(self, message):
-		print "\033[32;1mWorker" + str(self._id) + " " + str(message) + "\033[0m"
-	def start_working(self, manager):
+		print "\033[32;1mWorker" + str(self.id) + " " + str(message) + "\033[0m"
+	def start_working(self):
 		self.running = True
 		def functor(worker, manager):
 			while worker.running:
@@ -65,7 +65,7 @@ class Worker:
 		self.running = False
 		self.inform("begining the shutdown!")
 
-class BrowserManager:
+class BrowserManager(object):
 	def __init__(self):
 		self._lock = False
 	def bootup(self):
@@ -87,14 +87,14 @@ class BrowserManager:
 			background.wait('Browser lock', 15)
 		self._lock = True
 		return self.browser
-	def release(self,background):
+	def release(self):
 		self._lock = False
 	def shutdown(self):
 		self.browser.quit()
 		self._display.stop()
 
-class WorkerManager:
-	class __impl:
+class WorkerManager(object):
+	class __impl(object):
 		def __init__(self, worker_amount):
 			self._queue = PriorityQueue()
 			self._workers = [Worker(i,self) for i in range(worker_amount)]
@@ -110,7 +110,7 @@ class WorkerManager:
 			self.get_waiter(named).wait(seconds)
 		def get_job(self, worker):
 			while (self.running and (self._locked or self._queue.empty())):
-				self.wait('get_job_for'+str(worker._id), 0.1)
+				self.wait('get_job_for'+str(worker.id), 0.1)
 			self._locked = True
 			job = self._queue.get()
 			self._queue.task_done()

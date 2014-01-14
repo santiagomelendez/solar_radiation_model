@@ -146,7 +146,7 @@ class AppendCountToRadiationCoefficient(Process):
 			f = fs.file
 			if f.channel() == '01':
 				sat = f.satellite()
-				root, is_new = nc.open(f.completepath())
+				root = nc.open(f.completepath())[0]
 				nc.getdim(root,'coefficient',1)
 				var = nc.getvar(root, 'counts_shift', 'f4', ('coefficient',), 4)
 				var[0] = calibration.counts_shift.coefficient(sat)

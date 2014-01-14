@@ -1,9 +1,6 @@
 import numpy as np
 try:
-	from pycuda.compiler import SourceModule
-	import pycuda.gpuarray as gpuarray
 	import pycuda.driver as cuda
-	import pycuda.autoinit
 	cuda_can_help = True
 except ImportError: 
 	cuda_can_help = False 

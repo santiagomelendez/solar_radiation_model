@@ -1,7 +1,6 @@
 import sys
 sys.path.append(".")
-from core import *
-from libs.console import *
+from core import File, ComplexProcess
 
 
 class Image(File):
@@ -52,9 +51,3 @@ class Program(ComplexProcess):
 
 	def execute(self):
 		self.do(self.stream)
-
-#import re
-#current_module = sys.modules[__name__]
-#methods = current_module.__dict__
-#fxs = [ Program.execute ]
-#aspects.with_wrap(show_times, *fxs)

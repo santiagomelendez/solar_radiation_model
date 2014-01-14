@@ -5,12 +5,12 @@ from config import Config
 
 months = {}
 
-#~ def np_save_lat_lon(lat, lon, name):
-    #~ np.savetxt(name+'/lat.np.gz', lat)
-    #~ np.savetxt(name+'/lon.np.gz', lon)
+#~def np_save_lat_lon(lat, lon, name):
+#~	np.savetxt(name+'/lat.np.gz', lat)
+#~	np.savetxt(name+'/lon.np.gz', lon)
 
 def np_read_tlinke(name):
-    return np.loadtxt(Config.DATA_ROOT_MOUNT + '/tlinke/'+name +'.asc', skiprows=6)
+	return np.loadtxt(Config.DATA_ROOT_MOUNT + '/tlinke/'+name +'.asc', skiprows=6)
 
 def gettlinke(dt, hrv):
 	is_hrv = 'hrv' if hrv else 'nonhrv'
