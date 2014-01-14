@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import File, ComplexProcess
+from core import File, ComplexProcess, Stream
 from datetime import datetime, timedelta
 import re
 from libs.file import netcdf as nc

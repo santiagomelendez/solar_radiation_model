@@ -6,7 +6,7 @@ import glob
 from libs.file import netcdf as nc
 from libs.console import show
 import calendar
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import os
 import re
