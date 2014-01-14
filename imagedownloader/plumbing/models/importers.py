@@ -1,7 +1,11 @@
 import sys
 sys.path.append(".")
+from django.db import models
 from core import File, ComplexProcess
-
+from datetime import datetime, timedelta
+import re
+from libs.file import netcdf as nc
+import os
 
 class Image(File):
 	class Meta(object):
@@ -26,10 +30,10 @@ class Image(File):
 	def latlon(self):
 		if self.channel() is None:
 			return None, None
-		root = Dataset(self.completepath(),'r')
-		lat = root.variables['lat'][:]
-		lon = root.variables['lon'][:]
-		root.close()
+		root = nc.open(self.completepath())[0]
+		lat = nc.getvar(root, "lat")[:]
+		lon = nc.getvar(root, "lon")[:]
+		nc.close(root)
 		return lat, lon
 
 	def completepath(self):

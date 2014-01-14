@@ -1,4 +1,4 @@
-from requester.models import FTPServerAccount, EmailAccount
+from requester.models import FTPServerAccount, EmailAccount, Order, File, Request
 from requester.worker_manager import Job, print_exception
 import re
 import imaplib
@@ -6,6 +6,8 @@ import email
 from ftplib import FTP, error_perm, error_temp
 from libs.console import show
 import os
+from datetime import datetime
+
 
 class IMAPNotificationChecker(Job):
 	def __init__(self, server):
@@ -142,7 +144,7 @@ class FTPFileDownloader(Job):
 				size = (os.stat(completepath)).st_size
 			else:
 				size = 0
-			if size < file.size:
+			if size < f.size:
 				print 'Downloading '+ f.localname +'...'
 				self.ensure_dir(completepath)
 				f.begin_download = datetime.utcnow().replace(tzinfo=pytz.UTC)

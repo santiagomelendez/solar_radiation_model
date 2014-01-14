@@ -2,7 +2,7 @@ from django.db import models
 from datetime import datetime, timedelta
 import pytz  # 3rd party
 import os
-from django.db.models import Min, Max, Avg
+from django.db.models import Min, Max
 from decimal import Decimal
 from netCDF4 import Dataset
 from libs.console import total_seconds
@@ -37,8 +37,8 @@ class UTCTimeRange(models.Model):
 		return timedelta(days=(diff / abs(diff)))
 	def steps(self):
 		return int(total_seconds(self.end - self.begin) / total_seconds(self.step()))
-	def contains(self, datetime):
-		timezoned = timezone.make_aware(datetime, timezone.get_default_timezone())
+	def contains(self, dt):
+		timezoned = dt.replace(tzinfo=pytz.UTC)
 		return self.begin <= timezoned and self.end >= timezoned
 
 class Account(models.Model):
@@ -263,7 +263,7 @@ class File(models.Model):
 		root.close()
 		return lat, lon
 	def filename(self):
-		return self.remotename.split("/")[-1]
+		return unicode(self.remotename).split("/")[-1]
 	def completepath(self):
 		root = self.order.request.automatic_download.root_path if self.order else '.'
 		return os.path.expanduser(os.path.normpath(root + '/' + self.localname))

@@ -4,7 +4,12 @@ from django.db import models
 from polymodels.models import PolymorphicModel, PolymorphicManager
 import glob
 from libs.file import netcdf as nc
+from libs.console import show
 import calendar
+from datetime import datetime
+import pytz
+import os
+import re
 
 
 class TagManager(models.Model):
