@@ -56,15 +56,15 @@ def getdailyangle(julianday, totaldays):
 	return np.rad2deg(2 * np.pi * (julianday -1) / totaldays)
 
 mod_getexcentricity = SourceModule("""
-	  __global__ void getexcentricity(float *gamma)
-	  {
+	__global__ void getexcentricity(float *gamma)
+	{
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
 		gamma[i3d] *= """ + gpu.deg2rad_ratio + """;
 		gamma[i3d] = 1.000110 + 0.034221 * cos(gamma[i3d]) + 0.001280 * sin(gamma[i3d]) + 0.000719 * cos(2 * gamma[i3d]) + 0.000077 * sin(2 * gamma[i3d]);
-	  }
-	  """)
+	}
+	""")
 def getexcentricity(gamma):
 	result = None
 	if cuda_can_help:
@@ -81,8 +81,8 @@ def getexcentricity(gamma):
 	return result
 
 mod_getdeclination = SourceModule("""
-	  __global__ void getdeclination(float *gamma)
-	  {
+	__global__ void getdeclination(float *gamma)
+	{
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
@@ -90,8 +90,8 @@ mod_getdeclination = SourceModule("""
 		gamma[i3d] = 0.006918 - 0.399912 * cos(gamma[i3d]) + 0.070257 * sin(gamma[i3d]) - 0.006758 * cos(2 * gamma[i3d]) + \
 		0.000907 * sin(2 * gamma[i3d]) - 0.002697 * cos(3 * gamma[i3d]) + 0.00148 * sin(3 * gamma[i3d]);
 		gamma[i3d] *= """ + gpu.rad2deg_ratio + """;
-	  }
-	  """)
+	}
+	""")
 def getdeclination(gamma):
 	result = None
 	if cuda_can_help:
@@ -123,8 +123,8 @@ def gethourlyangle(tst_hour, latitud_sign):
 	return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
 
 mod_getzenitangle = SourceModule("""
-	  __global__ void getzenitangle(float *hourlyangle, float *lat, float *dec)
-	  {
+	__global__ void getzenitangle(float *hourlyangle, float *lat, float *dec)
+	{
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
@@ -133,8 +133,8 @@ mod_getzenitangle = SourceModule("""
 		hourlyangle[i3d] *= """ + gpu.deg2rad_ratio + """;
 		hourlyangle[i3d] = acos(sin(dec_r) * sin(lat_r) + cos(dec_r) * cos(lat_r) * cos(hourlyangle[i3d]));
 		hourlyangle[i3d] *= """ + gpu.rad2deg_ratio + """;
-	  }
-	  """)
+	}
+	""")
 def getzenithangle(declination, latitude, hourlyangle):
 	result = None
 	if cuda_can_help:
@@ -224,14 +224,14 @@ def getglobalirradiance(beamirradiance, diffuseirradiance):
 	return beamirradiance + diffuseirradiance
 
 mod_getalbedo = SourceModule("""
-	  __global__ void getalbedo(float *radiance, float totalirradiance, float *excentricity, float *zenitangle)
-	  {
+	__global__ void getalbedo(float *radiance, float totalirradiance, float *excentricity, float *zenitangle)
+	{
 		int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		int i3d = i2d + it;
 		radiance[i3d] = (""" + str(np.float32(np.pi)) + """ * radiance[i3d])/(totalirradiance * excentricity[i3d] * cos(zenitangle[i3d]));
-	  }
-	  """)
+	}
+	""")
 def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
 	result = None
 	if cuda_can_help:
@@ -248,8 +248,8 @@ def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
 	return result
 
 mod_getsatellitalzenithangle = SourceModule("""
-	  __global__ void getsatellitalzenithangle(float *lat, float *lon, float sub_lon, float rpol, float req, float h)
-	  {
+	__global__ void getsatellitalzenithangle(float *lat, float *lon, float sub_lon, float rpol, float req, float h)
+	{
 		//int it = threadIdx.x;
 		int i2d = blockDim.x*blockIdx.x;
 		//int i3d = i2d + it;
@@ -264,8 +264,8 @@ mod_getsatellitalzenithangle = SourceModule("""
 		float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
 		lat[i2d] = (""" + str(np.float32(np.pi)) + """ - acos((pow(h,2) - pow(re,2) - pow(rs,2))/(-2 * re * rs)));
 		lat[i2d] *= """ + gpu.rad2deg_ratio + """;
-	  }
-	  """)
+	}
+	""")
 def getsatellitalzenithangle(lat, lon, sub_lon):
 	result = None
 	rpol = 6356.5838
@@ -291,7 +291,7 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
 def getatmosphericradiance(extraterrestrialirradiance, i0met,diffuseclearsky, satellitalzenitangle):
 	satellitalzenitangle = np.deg2rad(satellitalzenitangle)
 	anglerelation = np.power((0.5 / np.cos(satellitalzenitangle)),0.8)
-	return (i0met * diffuseclearsky * anglerelation) /  (np.pi * extraterrestrialirradiance)
+	return (i0met * diffuseclearsky * anglerelation) / (np.pi * extraterrestrialirradiance)
 
 
 def getdifferentialalbedo(firstalbedo, secondalbedo, t_earth, t_sat):

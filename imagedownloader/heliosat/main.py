@@ -157,13 +157,13 @@ def process_albedos(data, root):
 	nc.sync(root)
 	v_albedo = None
 
-def process_atmospheric_data(root):
+def process_atmospheric_data(data, root):
 	process_irradiance(root)
 	process_atmospheric_irradiance(root)
 	process_optical_fading(root)
 	process_albedos(data, root)
 
-def process_ground_albedo(lon, data, root):
+def process_ground_albedo(lat, data, root):
 	slots = nc.getvar(root, "slots")[:]
 	declination = nc.getvar(root, "declination")[:]
 	#The day is divided in _slots_ to avoid the minutes diferences between days.
@@ -269,7 +269,7 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 	data = calibrated_data(root)
 	
 	process_temporal_data(lat, lon, root)
-	process_atmospheric_data(root)
+	process_atmospheric_data(data, root)
 
 	process_ground_albedo(lat, data, root)
 

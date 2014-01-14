@@ -21,43 +21,43 @@ ULLAT_HRV, ULLON_HRV = 9786 -4, 6366 -4
 URLAT_HRV, URLON_HRV = 9039 -6, 5169 -4
 
 def generate_lat_lon(shape, hrv):
-    columns, rows = np.meshgrid(np.arange(shape.shape[0],0,-1), np.arange(shape.shape[1],0,-1))
-    return msg_navigation.coord2geo(columns, rows, hrv)
+	columns, rows = np.meshgrid(np.arange(shape.shape[0],0,-1), np.arange(shape.shape[1],0,-1))
+	return msg_navigation.coord2geo(columns, rows, hrv)
 
 def nc_save_lat_lon(lat, lon, name):
-    rootgrp = Dataset(name + '.nc','w',format='NETCDF4')
-    d_north = rootgrp.createDimension('northing', lat.shape[0])
-    d_east = rootgrp.createDimension('easting', lat.shape[1])
-    v_lat = rootgrp.createVariable('latitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
-    v_lon = rootgrp.createVariable('longitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
-    v_lat[:] = lat
-    v_lon[:] = lon
-    rootgrp.close()
+	rootgrp = Dataset(name + '.nc','w',format='NETCDF4')
+	d_north = rootgrp.createDimension('northing', lat.shape[0])
+	d_east = rootgrp.createDimension('easting', lat.shape[1])
+	v_lat = rootgrp.createVariable('latitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
+	v_lon = rootgrp.createVariable('longitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
+	v_lat[:] = lat
+	v_lon[:] = lon
+	rootgrp.close()
 
 def nc_read_lat_lon(name):
-    rootgrp = Dataset(name + '.nc','r')
-    lat = np.array(rootgrp.variables['latitudes'][:])
-    lon = np.array(rootgrp.variables['longitudes'][:])
-    rootgrp.close()
-    return lat, lon
+	rootgrp = Dataset(name + '.nc','r')
+	lat = np.array(rootgrp.variables['latitudes'][:])
+	lon = np.array(rootgrp.variables['longitudes'][:])
+	rootgrp.close()
+	return lat, lon
 
 def px_save_lat_lon(lat, lon, name):
-    pickle.dump(lat, open(name+'/lat.pkl.gz','wb'))
-    pickle.dump(lon, open(name+'/lon.pkl.gz','wb'))
+	pickle.dump(lat, open(name+'/lat.pkl.gz','wb'))
+	pickle.dump(lon, open(name+'/lon.pkl.gz','wb'))
 
 def px_read_lat_lon(name):
-    lat = pickle.load(open(name+'/lat.pkl.gz','rb'))
-    lon = pickle.load(open(name+'/lon.pkl.gz','rb'))
-    return lat, lon
+	lat = pickle.load(open(name+'/lat.pkl.gz','rb'))
+	lon = pickle.load(open(name+'/lon.pkl.gz','rb'))
+	return lat, lon
 
 def np_save_lat_lon(lat, lon, name):
-    np.savetxt(name+'/lat.np.gz', lat)
-    np.savetxt(name+'/lon.np.gz', lon)
+	np.savetxt(name+'/lat.np.gz', lat)
+	np.savetxt(name+'/lon.np.gz', lon)
 
 def np_read_lat_lon(name):
-    lat = np.loadtxt(name +'/lat.np.gz')
-    lon = np.loadtxt(name +'/lon.np.gz')
-    return lat, lon
+	lat = np.loadtxt(name +'/lat.np.gz')
+	lon = np.loadtxt(name +'/lon.np.gz')
+	return lat, lon
 
 #sm = np.zeros([3712,3712])
 #sm_hrv = np.zeros([11136,11136])
@@ -73,7 +73,7 @@ def getdom_img(hrv):
 	if hrv:
 		imin, imax, jmin, jmax = R_HRVSIZE - ULLAT_HRV, R_HRVSIZE - URLAT_HRV, C_HRVSIZE - ULLON_HRV, C_HRVSIZE - URLON_HRV 
 	else:
-		imin, imax, jmin, jmax = R_SIZE    - ULLAT,     R_SIZE    - URLAT,     C_SIZE    - ULLON,     C_SIZE    - URLON
+		imin, imax, jmin, jmax = R_SIZE	- ULLAT,	 R_SIZE	- URLAT,	 C_SIZE	- ULLON,	 C_SIZE	- URLON
 	return imin,imax,jmin,jmax
 
 def getsubmatrix_img(matrix, hrv):

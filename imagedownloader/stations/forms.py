@@ -29,7 +29,7 @@ class DocumentForm(forms.Form,object):
 	def process_rows(self,request,configuration):
 		file = request.FILES['backup']
 		backup_name = configuration.get_backup_filename(file.name)
-		with open(backup_name, 'wb+') as destination:
+		with open(backup_name, 'wb') as destination:
 			for chunk in file.chunks():
 				destination.write(chunk)
 		try:

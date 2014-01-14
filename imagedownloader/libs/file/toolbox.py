@@ -50,13 +50,13 @@ def binary_search_position(station, lat, lon):
 			x = x + deltax
 		else:
 			x = x - deltax
-	#	print "coord x: (",x,",",y,")"
+		#print "coord x: (",x,",",y,")"
 		#print x,y,";"
 		if lon[x-deltax/2,y] > station[1]:  # -deltax/2, considering long curvature
 			y = y - deltay
 		else:
 			y = y + deltay
-	#	print "coord y: (",x,",",y,")"
+		#print "coord y: (",x,",",y,")"
 		#print x,y,";"
 		deltax = deltax/2
 		deltay = deltay/2
@@ -198,11 +198,11 @@ def unzip(source_filename, dest_dir):
 
 if __name__=="__main__":
 	functions = { 'cut' : cut,
-		 'cut_positions' : cut_positions,
-		 'get_tlinke': cut_projected_linke,
-		 'get_terrain' : cut_projected_terrain,
-		 'download': download,
-		 'unzip': unzip }
+		'cut_positions' : cut_positions,
+		'get_tlinke': cut_projected_linke,
+		'get_terrain' : cut_projected_terrain,
+		'download': download,
+		'unzip': unzip }
 	functions[sys.argv[1]](*(sys.argv[2:]))
 	show("\nReady.\n")
 

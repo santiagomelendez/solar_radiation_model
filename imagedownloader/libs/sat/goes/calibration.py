@@ -15,7 +15,7 @@ def getfloat(number):
 class CountsShift(object):
 	sats = {'goes13': 32.0}
 	def coefficient(self, sat):
-		return CountShift.sats[sat]
+		return CountsShift.sats[sat]
 
 class SpaceMeasurement(object):
 	sats = {'goes13': 29.0}
