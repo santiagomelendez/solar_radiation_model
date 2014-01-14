@@ -101,7 +101,7 @@ class FilterChannel(Process):
 	def do(self, stream):
 		resultant_stream = stream.clone()
 		channels = self.channels.all()
-		chs = [ str(ch.in_file) for ch in channels ]
+		chs = [ unicode(ch.in_file) for ch in channels ]
 		sat = channels[0].satellite
 		for fs in stream.files.all():
 			if fs.file.channel() in chs and fs.file.satellite() == sat.in_file:
@@ -123,16 +123,16 @@ class FilterTimed(Process):
 	def do(self, stream):
 		resultant_stream = stream.clone()
 		for fs in stream.files.all():
-			if self.time_range.contains(fs.file.datetime()):
+			trs = [ tr for tr in self.time_range.all() if tr.contains(fs.file.datetime()) ]
+			if len(trs) > 0:
 				fs.clone_for(resultant_stream)
 			fs.processed=True
 			fs.save()
 		return resultant_stream
 
 	def mark_with_tags(self, stream):
-		# TODO: Correct self.time_range.all() = self.time_range.begin self.time_range.end
-		dates = [str(ch.in_file).zfill(2) for t in self.time_range.all()].join("_")
-		stream.tags.append("UTC_"+re.sub("[\-\:\.\ ]","", str(d)))
+		dates = [unicode(tr).zfill(2) for tr in self.time_range.all()].join("_")
+		stream.tags.append("UTC_"+re.sub("[\-\:\.\ ]","", unicode(dates)))
 
 
 class AppendCountToRadiationCoefficient(Process):
