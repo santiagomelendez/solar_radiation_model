@@ -19,7 +19,7 @@ class TestCollectorsChannel(TestCase):
 		self.files = [ File.objects.get_or_create(localname="%s2013/goes13.2013.M01.BAND_%s.nc" % (self.stream.root_path, ch))[0] for ch in self.channels_str]
 		for i in range(len(self.files)):
 			self.files[i].save()
-			fs = FileStatus.objects.get_or_create(file=self.files[i],stream=self.stream,processed=(i%2==0))[0]
+			fs = MaterialStatus.objects.get_or_create(material=self.files[i],stream=self.stream,processed=(i%2==0))[0]
 			fs.save()
 
 	def test_mark_with_tags(self):
@@ -31,5 +31,5 @@ class TestCollectorsChannel(TestCase):
 
 	def test_get_key(self):
 		# check if the class return the classification key of the file.
-		for fs in self.stream.files.all():
-			self.assertEquals(self.collect.get_key(fs), "BAND_%s" % str(fs.file.channel()).zfill(2))
+		for fs in self.stream.materials.all():
+			self.assertEquals(self.collect.get_key(fs), "BAND_%s" % str(fs.material.channel()).zfill(2))

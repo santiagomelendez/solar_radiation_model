@@ -15,8 +15,8 @@ class TestProcesses(TestCase):
 
 	def test_serialization(self):
 		# check if the __str__ method is defined to return the class name with the name parameter.
-		self.assertEquals(str(self.process.type_cast()), 'CollectTimed [year.Mmonth]')
-		self.assertEquals(str(self.other_process.type_cast()), "FilterSolarElevation [Filter night's images]")
+		self.assertEquals(str(self.process), 'CollectTimed [year.Mmonth]')
+		self.assertEquals(str(self.other_process), "FilterSolarElevation [Filter night's images]")
 
 	def test_mark_with_tags(self):
 		# check if the mark_with_tags method in the Process class don't

@@ -21,7 +21,7 @@ class TestCollectorsTimed(TestCase):
 		self.files = [ File.objects.get_or_create(localname="%s%s/goes13.%s.%s.160927.BAND_01.nc" % (self.stream.root_path,dt[0],dt[0],dt[1]))[0] for dt in self.days_tuples]
 		for f in self.files:
 			f.save()
-			fs = FileStatus.objects.get_or_create(file=f,stream=self.stream,processed=False)[0]
+			fs = MaterialStatus.objects.get_or_create(material=f,stream=self.stream,processed=False)[0]
 			fs.save()
 
 	def test_mark_with_tags(self):
@@ -35,8 +35,8 @@ class TestCollectorsTimed(TestCase):
 
 	def test_get_key(self):
 		# check if the class return the classification key of the file.
-		for fs in self.stream.files.all():
-			dt = fs.file.datetime()
+		for fs in self.stream.materials.all():
+			dt = fs.material.datetime()
 			self.assertEquals(self.years_collect.get_key(fs), str(dt.year))
 			self.assertEquals(self.months_collect.get_key(fs), "%s.M%s" % (str(dt.year),str(dt.month).zfill(2)))
 			self.assertEquals(self.weeks_collect.get_key(fs), "%s.W%s" % (str(dt.year),str(dt.isocalendar()[1]).zfill(2)))

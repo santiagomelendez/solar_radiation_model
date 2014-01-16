@@ -1,5 +1,5 @@
 from django.db import models
-from core import Process, Stream, FileStatus, File
+from core import Process, Stream, MaterialStatus, File
 from libs.file import netcdf as nc
 import calendar
 from libs import matrix
@@ -16,7 +16,7 @@ class Compact(Process):
 	def do(self, stream):
 		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
 		f = self.do_file(filename,stream)
-		fs = FileStatus(file=f,stream=self.resultant_stream)
+		fs = MaterialStatus(material=f,stream=self.resultant_stream)
 		fs.save()
 		return self.resultant_stream
 

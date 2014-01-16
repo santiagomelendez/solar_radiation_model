@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from polymodels.models import PolymorphicModel, PolymorphicManager
+from polymorphic import PolymorphicModel
 import glob
 from libs.file import netcdf as nc
 from libs.console import show
@@ -82,9 +82,9 @@ class Stream(models.Model,object):
 		for f in self.get_root_path_files():
 			f, n = File.objects.get_or_create(localname=str(f))
 			if n: f.save()
-			fs, n = FileStatus.objects.get_or_create(file=f,stream=self)
+			fs, n = MaterialStatus.objects.get_or_create(material=f,stream=self)
 			if n: fs.save()
-			#self.files.add(fs)
+			#self.materials.add(fs)
 			files_tmp.append([fs, True]) 
 		return files_tmp
 
@@ -96,22 +96,41 @@ class Stream(models.Model,object):
 		return s
 
 	def unprocessed(self):
-		return self.files.filter(processed=False)
+		return self.materials.filter(processed=False)
 
 	def sorted_files(self):
-		return sorted(self.unprocessed(), key=lambda fs: fs.file.filename())
+		return sorted(self.unprocessed(), key=lambda fs: fs.material.filename())
 
 	def empty(self):
 		pending = self.unprocessed()
 		return len(pending) == 0
 
 
-class File(models.Model):
+class Material(PolymorphicModel):
+	class Meta(object):
+		app_label = 'plumbing'
+	created = models.DateTimeField(auto_now_add=True)
+	modified = models.DateTimeField(auto_now=True)
+
+
+class MaterialStatus(models.Model):
+	class Meta(object):
+		app_label = 'plumbing'
+		unique_together = ("material", "stream")
+	material = models.ForeignKey('Material', related_name='stream')
+	stream = models.ForeignKey(Stream, related_name='materials')
+	processed = models.BooleanField()
+
+	def clone_for(self, stream):
+		cloned_material_status = MaterialStatus(material=self.material,stream=stream)
+		cloned_material_status.save()
+		return cloned_material_status
+
+
+class File(Material):
 	class Meta(object):
 		app_label = 'plumbing'
 	localname = models.TextField(unique = True, db_index=True, default="")
-	created = models.DateTimeField(auto_now_add=True)
-	modified = models.DateTimeField(auto_now=True)
 
 	def filename(self):
 		return self.localname
@@ -169,33 +188,9 @@ class File(models.Model):
 		return os.path.expanduser(os.path.normpath(self.localname))
 
 
-class FileStatus(models.Model):
-	class Meta(object):
-		app_label = 'plumbing'
-		unique_together = ("file", "stream")
-	file = models.ForeignKey('File', related_name='stream')
-	stream = models.ForeignKey(Stream, related_name='files')
-	processed = models.BooleanField()
-
-	def clone_for(self, stream):
-		fs = FileStatus(file=self.file,stream=stream)
-		fs.save()
-		return fs
-
-
-class ProcessManager(PolymorphicManager,object):
-
-	def all(self, *argc, **argv):
-		return super(ProcessManager,self).all(*argc, **argv).select_subclasses()
-
-	def filter(self, *argc, **argv):
-		return super(ProcessManager,self).filter(*argc, **argv).select_subclasses()
-
-
 class Process(PolymorphicModel):
 	class Meta(object):
 		app_label = 'plumbing'
-	objects = ProcessManager()
 	name = models.TextField(db_index=True)
 	description = models.TextField(db_index=True)
 

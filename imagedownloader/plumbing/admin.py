@@ -15,8 +15,8 @@ class FileAdmin(admin.ModelAdmin):
 	list_display = ['localname', 'created', 'modified']
 
 
-class FileStatusAdmin(admin.ModelAdmin):
-	list_display = ['stream', 'file']
+class MaterialStatusAdmin(admin.ModelAdmin):
+	list_display = ['stream', 'material']
 
 
 class ProcessInlineForm(ModelForm,object):
@@ -76,7 +76,7 @@ class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
 admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)
 admin.site.register(File, FileAdmin)
-admin.site.register(FileStatus, FileStatusAdmin)
+admin.site.register(MaterialStatus, MaterialStatusAdmin)
 admin.site.register(AppendCountToRadiationCoefficient, AppendCountToRadiationCoefficientAdmin)
 admin.site.register(ComplexProcess, ComplexProcessAdmin)
 admin.site.register(Compact, CompactAdmin)

@@ -19,7 +19,7 @@ pytz==2012j
 #scipy==0.10.1
 splinter==0.4.9
 pyttsx==1.1
-django-polymodels==1.2.2
+django-polymorphic==0.5.3
 pyquery==1.2.6
 xlrd==0.9.2
 coveralls==0.3

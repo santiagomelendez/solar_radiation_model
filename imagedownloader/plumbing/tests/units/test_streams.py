@@ -20,7 +20,7 @@ class TestStreams(TestCase):
 		self.files = [ File.objects.get_or_create(localname="%s2013/goes13.2013.M%s.BAND.1.nc" % (self.stream.root_path, str(i).zfill(2)))[0] for i in months]
 		for i in range(len(self.files)):
 			self.files[i].save()
-			fs = FileStatus.objects.get_or_create(file=self.files[i],stream=self.stream,processed=(i%2==0))[0]
+			fs = MaterialStatus.objects.get_or_create(material=self.files[i],stream=self.stream,processed=(i%2==0))[0]
 			fs.save()
 
 	def test_serialization(self):
@@ -53,8 +53,8 @@ class TestStreams(TestCase):
 		self.assertNotEquals(clone.tags, self.stream.tags)
 		self.assertEquals(clone.tags.list(), self.stream.tags.list())
 		# check if the cloned stream is empty, and if the clone method avoid clone the files.
-		self.assertEquals(self.stream.files.count(), 12)
-		self.assertEquals(clone.files.count(), 0)
+		self.assertEquals(self.stream.materials.count(), 12)
+		self.assertEquals(clone.materials.count(), 0)
 
 	def test_unprocessed(self):
 		# check if return only the unprocessed files.
@@ -77,5 +77,5 @@ class TestStreams(TestCase):
 		prev = None
 		for fs in self.stream.sorted_files():
 			if prev:
-				self.assertTrue(prev.file.filename() <= fs.file.filename())
+				self.assertTrue(prev.material.filename() <= fs.material.filename())
 			prev = fs

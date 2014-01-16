@@ -17,7 +17,7 @@ class TestFileStatuses(TestCase):
 		self.second_stream.save()
 		self.file = File.objects.get_or_create(localname="/var/service/data/argentina/2013/pkg.goes15.2013.W40.BAND_02.nc")[0]
 		self.file.save()
-		self.file_status = FileStatus.objects.get_or_create(file=self.file,stream=self.stream)[0]
+		self.file_status = MaterialStatus.objects.get_or_create(material=self.file,stream=self.stream)[0]
 		self.file_status.save()
 
 	def test_clone(self):
@@ -27,4 +27,4 @@ class TestFileStatuses(TestCase):
 		# check if the cloned file_status has the second_stream and the same file object.
 		self.assertEquals(self.file_status.stream, self.stream)
 		self.assertEquals(clone.stream, self.second_stream)
-		self.assertEquals(clone.file, self.file_status.file)
+		self.assertEquals(clone.material, self.file_status.material)
