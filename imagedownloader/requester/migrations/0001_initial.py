@@ -16,6 +16,7 @@ class Migration(SchemaMigration):
             ('south_latitude', self.gf('django.db.models.fields.DecimalField')(max_digits=4, decimal_places=2)),
             ('east_longitude', self.gf('django.db.models.fields.DecimalField')(max_digits=5, decimal_places=2)),
             ('west_longitude', self.gf('django.db.models.fields.DecimalField')(max_digits=5, decimal_places=2)),
+            ('hourly_longitude', self.gf('django.db.models.fields.DecimalField')(default='0.00', max_digits=5, decimal_places=2)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
@@ -34,6 +35,7 @@ class Migration(SchemaMigration):
         # Adding model 'Account'
         db.create_table('requester_account', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('polymorphic_ctype', self.gf('django.db.models.fields.related.ForeignKey')(related_name='polymorphic_requester.account_set', null=True, to=orm['contenttypes.ContentType'])),
             ('password', self.gf('django.db.models.fields.TextField')()),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
@@ -75,6 +77,7 @@ class Migration(SchemaMigration):
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.TextField')()),
             ('identification', self.gf('django.db.models.fields.TextField')()),
+            ('in_file', self.gf('django.db.models.fields.TextField')()),
             ('request_server', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.WebServerAccount'])),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
@@ -98,6 +101,8 @@ class Migration(SchemaMigration):
             ('title', self.gf('django.db.models.fields.TextField')(db_index=True)),
             ('area', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.Area'])),
             ('time_range', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.UTCTimeRange'])),
+            ('paused', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('max_simultaneous_request', self.gf('django.db.models.fields.IntegerField')()),
             ('email_server', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.EmailAccount'])),
             ('root_path', self.gf('django.db.models.fields.TextField')()),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
@@ -121,6 +126,7 @@ class Migration(SchemaMigration):
             ('end', self.gf('django.db.models.fields.DateTimeField')(db_index=True)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
+            ('aged', self.gf('django.db.models.fields.BooleanField')(default=False)),
         ))
         db.send_create_signal('requester', ['Request'])
 
@@ -131,6 +137,7 @@ class Migration(SchemaMigration):
             ('server', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.FTPServerAccount'], null=True)),
             ('identification', self.gf('django.db.models.fields.TextField')(db_index=True)),
             ('downloaded', self.gf('django.db.models.fields.BooleanField')(default=False)),
+            ('empty_flag', self.gf('django.db.models.fields.BooleanField')(default=False)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
@@ -139,13 +146,14 @@ class Migration(SchemaMigration):
         # Adding model 'File'
         db.create_table('requester_file', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('order', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.Order'])),
-            ('localname', self.gf('django.db.models.fields.TextField')()),
-            ('remotename', self.gf('django.db.models.fields.TextField')()),
-            ('size', self.gf('django.db.models.fields.IntegerField')()),
+            ('localname', self.gf('django.db.models.fields.TextField')(default='', unique=True, db_index=True)),
+            ('order', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.Order'], null=True)),
+            ('remotename', self.gf('django.db.models.fields.TextField')(null=True)),
+            ('size', self.gf('django.db.models.fields.IntegerField')(null=True)),
             ('downloaded', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
             ('begin_download', self.gf('django.db.models.fields.DateTimeField')(null=True, db_index=True)),
             ('end_download', self.gf('django.db.models.fields.DateTimeField')(null=True, db_index=True)),
+            ('failures', self.gf('django.db.models.fields.IntegerField')(default=0)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
             ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
         ))
@@ -206,17 +214,26 @@ class Migration(SchemaMigration):
 
 
     models = {
+        'contenttypes.contenttype': {
+            'Meta': {'ordering': "('name',)", 'unique_together': "(('app_label', 'model'),)", 'object_name': 'ContentType', 'db_table': "'django_content_type'"},
+            'app_label': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
+        },
         'requester.account': {
             'Meta': {'object_name': 'Account'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'password': ('django.db.models.fields.TextField', [], {})
+            'password': ('django.db.models.fields.TextField', [], {}),
+            'polymorphic_ctype': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'polymorphic_requester.account_set'", 'null': 'True', 'to': "orm['contenttypes.ContentType']"})
         },
         'requester.area': {
             'Meta': {'object_name': 'Area'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'east_longitude': ('django.db.models.fields.DecimalField', [], {'max_digits': '5', 'decimal_places': '2'}),
+            'hourly_longitude': ('django.db.models.fields.DecimalField', [], {'default': "'0.00'", 'max_digits': '5', 'decimal_places': '2'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.TextField', [], {}),
@@ -231,7 +248,9 @@ class Migration(SchemaMigration):
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'email_server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.EmailAccount']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'max_simultaneous_request': ('django.db.models.fields.IntegerField', [], {}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'paused': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'root_path': ('django.db.models.fields.TextField', [], {}),
             'time_range': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.UTCTimeRange']"}),
             'title': ('django.db.models.fields.TextField', [], {'db_index': 'True'})
@@ -258,12 +277,13 @@ class Migration(SchemaMigration):
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'downloaded': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
             'end_download': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'db_index': 'True'}),
+            'failures': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'localname': ('django.db.models.fields.TextField', [], {}),
+            'localname': ('django.db.models.fields.TextField', [], {'default': "''", 'unique': 'True', 'db_index': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'order': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Order']"}),
-            'remotename': ('django.db.models.fields.TextField', [], {}),
-            'size': ('django.db.models.fields.IntegerField', [], {})
+            'order': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Order']", 'null': 'True'}),
+            'remotename': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'size': ('django.db.models.fields.IntegerField', [], {'null': 'True'})
         },
         'requester.ftpserveraccount': {
             'Meta': {'object_name': 'FTPServerAccount', '_ormbases': ['requester.ServerAccount']},
@@ -278,6 +298,7 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'Order'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'downloaded': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'empty_flag': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'identification': ('django.db.models.fields.TextField', [], {'db_index': 'True'}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
@@ -286,6 +307,7 @@ class Migration(SchemaMigration):
         },
         'requester.request': {
             'Meta': {'object_name': 'Request'},
+            'aged': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'automatic_download': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.AutomaticDownload']"}),
             'begin': ('django.db.models.fields.DateTimeField', [], {'db_index': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
@@ -298,6 +320,7 @@ class Migration(SchemaMigration):
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'identification': ('django.db.models.fields.TextField', [], {}),
+            'in_file': ('django.db.models.fields.TextField', [], {}),
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.TextField', [], {}),
             'request_server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.WebServerAccount']"})

@@ -25,6 +25,7 @@
 - model: requester.account
   pk: 1
   fields:
+    polymorphic_ctype: 33
     password: pass
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
@@ -44,6 +45,7 @@
 - model: requester.account
   pk: 2
   fields:
+    polymorphic_ctype: 31
     password: pass
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"

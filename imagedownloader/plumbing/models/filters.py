@@ -1,13 +1,11 @@
 from django.db import models
-from requester.models import Decimal, Channel, UTCTimeRange
+from requester.models import Channel
+from decimal import Decimal
 from core import Process
 import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc
-import re
-import sys
 from libs.geometry.jaen import getslots
-sys.path.append(".")
 
 
 class Collect(Process):
@@ -64,7 +62,7 @@ class CollectTimed(Collect):
 		if self.week_day: r += (".P" + str(dt.weekday()))
 		if self.daily: r += (".D" + str(dt.timetuple().tm_yday))
 		if self.hourly: r += (".H" + str(dt.hour).zfill(2))
-		if self.slotly: r += (".S" + str(getslots(dt.hour,slots_by_day/24)).zfill(2))
+		if self.slotly: r += (".S" + str(getslots(dt.hour,self.slots_by_day/24)).zfill(2))
 		return r
 
 
@@ -80,7 +78,7 @@ class Filter(Process):
 	class Meta(object):
 		app_label = 'plumbing'
 
-	def should_be_cloned(fs):
+	def should_be_cloned(self, material_status):
 		return False
 
 	def do(self, stream):
@@ -102,11 +100,11 @@ class FilterChannel(Filter):
 		app_label = 'plumbing'
 	channels = models.ManyToManyField(Channel,db_index=True)
 
-	def should_be_cloned(self, file_status):
+	def should_be_cloned(self, material_status):
 		channels = self.channels.all()
 		chs = [ unicode(ch.in_file) for ch in channels ]
 		sat = channels[0].satellite
-		return fs.file.channel() in chs and fs.file.satellite() == sat.in_file
+		return material_status.material.channel() in chs and material_status.material.satellite() == sat.in_file
 
 
 class FilterTimed(Filter):
@@ -126,15 +124,15 @@ class FilterTimed(Filter):
 		half_error = self.error / 2
 		return self.number - half_error <= self.number <= self.number + half_error
 
-	def should_be_cloned(self, file_status):
-		dt = file_status.file.datetime()
+	def should_be_cloned(self, material_status):
+		dt = material_status.file.datetime()
 		if self.yearly: return self.contains(dt.year)
 		if self.monthly: return self.contains(dt.month)
 		if self.weekly: return self.contains(dt.isocalendar()[1])
 		if self.week_day: return self.contains(dt.weekday())
 		if self.daily: return self.contains(dt.timetuple().tm_yday)
 		if self.hourly: return self.contains(dt.hour)
-		if self.slotly: return self.contains(getslots(dt.hour,slots_by_day/24))
+		if self.slotly: return self.contains(getslots(dt.hour,self.slots_by_day/24))
 
 
 class FilterSolarElevation(Filter):
@@ -150,11 +148,11 @@ class FilterSolarElevation(Filter):
 			solarelevation_min = solarelevation.min()
 		return solarelevation_min
 
-	def should_be_cloned(self, file_status):
+	def should_be_cloned(self, material_status):
 		sub_lon = np.float(self.hourly_longitude)
-		lat,lon = fs.file.latlon()
+		lat,lon = material_status.file.latlon()
 		lower_solar_elevation = np.float(self.minimum)
-		return self.solar_elevation(fs.file, sub_lon, lat, lon) >= lower_solar_elevation
+		return self.solar_elevation(material_status.material, sub_lon, lat, lon) >= lower_solar_elevation
 
 	def mark_with_tags(self, stream):
 		stream.tags.append("SE"+str(self.minimum))
