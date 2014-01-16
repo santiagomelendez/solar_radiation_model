@@ -1,4 +1,5 @@
 from django.contrib import admin
+from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from plumbing.models import *
 from django.forms import ModelForm
 
@@ -11,12 +12,24 @@ class StreamAdmin(admin.ModelAdmin):
 	list_display = ['root_path', 'created', 'modified']
 
 
-class FileAdmin(admin.ModelAdmin):
-	list_display = ['localname', 'created', 'modified']
+class MaterialChildAdmin(PolymorphicChildModelAdmin):
+	base_model = Material
+
+
+class MaterialAdmin(PolymorphicParentModelAdmin):
+	base_model = Material
+	list_filter = (PolymorphicChildModelFilter,)
+	child_models = (
+		(File, MaterialChildAdmin),
+	)
 
 
 class MaterialStatusAdmin(admin.ModelAdmin):
 	list_display = ['stream', 'material']
+
+
+class ProcessChildAdmin(PolymorphicChildModelAdmin):
+	base_model = Process
 
 
 class ProcessInlineForm(ModelForm,object):
@@ -37,52 +50,30 @@ class ProcessOrderInline(admin.TabularInline):
 	ordering = ["position",]
 
 
-class ComplexProcessAdmin(admin.ModelAdmin):
+class ComplexProcessChildAdmin(ProcessChildAdmin):
 	list_display = [ 'name', 'description']
 	inlines = [ProcessOrderInline]
 	search_fields = ['name', 'description', ]
 
 
-class ProgramAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description', 'stream']
-	inlines = [ProcessOrderInline]
-	search_fields = ['name', 'description', ]
-
-
-class CompactAdmin(admin.ModelAdmin):
-	list_display= [ 'name', 'description', 'extension']
-
-
-class CollectTimedAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description']
-
-
-class CollectChannelAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description' ]
-
-
-class FilterAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description']
-
-
-class FilterSolarElevationAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description', 'minimum']
-
-
-class AppendCountToRadiationCoefficientAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'description']
+class ProcessAdmin(PolymorphicParentModelAdmin):
+	base_model = Process
+	list_filter = (PolymorphicChildModelFilter,)
+	child_models = (
+		(CollectTimed, ProcessChildAdmin),
+		(CollectChannel, ProcessChildAdmin),
+		(FilterTimed, ProcessChildAdmin),
+		(FilterChannel, ProcessChildAdmin),
+		(FilterSolarElevation, ProcessChildAdmin),
+		(AppendCountToRadiationCoefficient, ProcessChildAdmin),
+		(Compact, ProcessChildAdmin),
+		(ComplexProcess, ComplexProcessChildAdmin),
+		(Program, ComplexProcessChildAdmin),
+	)
 
 
 admin.site.register(TagManager, TagManagerAdmin)
 admin.site.register(Stream, StreamAdmin)
-admin.site.register(File, FileAdmin)
+admin.site.register(Material, MaterialAdmin)
 admin.site.register(MaterialStatus, MaterialStatusAdmin)
-admin.site.register(AppendCountToRadiationCoefficient, AppendCountToRadiationCoefficientAdmin)
-admin.site.register(ComplexProcess, ComplexProcessAdmin)
-admin.site.register(Compact, CompactAdmin)
-admin.site.register(Program, ProgramAdmin)
-admin.site.register(FilterTimed, FilterAdmin)
-admin.site.register(FilterChannel, FilterAdmin)
-admin.site.register(CollectTimed, CollectTimedAdmin)
-admin.site.register(CollectChannel, CollectChannelAdmin)
-admin.site.register(FilterSolarElevation, FilterSolarElevationAdmin)
+admin.site.register(Process, ProcessAdmin)

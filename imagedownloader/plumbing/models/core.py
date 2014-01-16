@@ -106,16 +106,23 @@ class Stream(models.Model,object):
 		return len(pending) == 0
 
 
-class Material(PolymorphicModel):
+class Material(PolymorphicModel, object):
 	class Meta(object):
 		app_label = 'plumbing'
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
 
+	def __str__(self):
+		return unicode(Material.objects.get(id=self.id)).encode("utf-8")
+
+	def __unicode__(self):
+		return u'(created: %s, modified: %s)' % (unicode(self.created), unicode(self.modified))
+
 
 class MaterialStatus(models.Model):
 	class Meta(object):
 		app_label = 'plumbing'
+		verbose_name_plural = 'Material statuses'
 		unique_together = ("material", "stream")
 	material = models.ForeignKey('Material', related_name='stream')
 	stream = models.ForeignKey(Stream, related_name='materials')
@@ -187,15 +194,22 @@ class File(Material):
 	def completepath(self):
 		return os.path.expanduser(os.path.normpath(self.localname))
 
+	def __unicode__(self):
+		return self.localname
+
 
 class Process(PolymorphicModel):
 	class Meta(object):
 		app_label = 'plumbing'
+		verbose_name_plural = 'Processes'
 	name = models.TextField(db_index=True)
 	description = models.TextField(db_index=True)
 
 	def __str__(self):
-		return self.__class__.__name__ + ' [' + self.name + ']'
+		return unicode(Process.objects.get(id=self.id)).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s [%s]' % (self.__class__.__name__, self.name)
 
 	def mark_with_tags(self, stream):
 		pass
