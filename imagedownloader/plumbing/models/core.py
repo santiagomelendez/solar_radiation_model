@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from polymorphic import PolymorphicModel
+from polymorphic import PolymorphicModel, PolymorphicManager
 import glob
 from libs.file import netcdf as nc
 from libs.console import show
@@ -118,6 +118,7 @@ class Stream(models.Model,object):
 class Material(PolymorphicModel, object):
 	class Meta(object):
 		app_label = 'plumbing'
+	objects = PolymorphicManager()
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
 
@@ -217,6 +218,7 @@ class Process(PolymorphicModel):
 	class Meta(object):
 		app_label = 'plumbing'
 		verbose_name_plural = 'Processes'
+	objects = PolymorphicManager()
 	name = models.TextField(db_index=True)
 	description = models.TextField(db_index=True)
 

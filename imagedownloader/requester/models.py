@@ -1,5 +1,5 @@
 from django.db import models
-from polymorphic import PolymorphicModel
+from polymorphic import PolymorphicModel, PolymorphicManager
 from datetime import datetime, timedelta
 import pytz  # 3rd party
 import os
@@ -57,6 +57,7 @@ class UTCTimeRange(models.Model):
 class Account(PolymorphicModel,object):
 	class Meta(object):
 		app_label = 'requester'
+	objects = PolymorphicManager()
 	password = models.TextField()
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)

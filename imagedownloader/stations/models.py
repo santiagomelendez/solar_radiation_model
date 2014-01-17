@@ -1,5 +1,5 @@
 from django.db import models
-from polymorphic import PolymorphicModel
+from polymorphic import PolymorphicModel, PolymorphicManager
 from decimal import Decimal
 from datetime import datetime
 import pytz
@@ -38,6 +38,7 @@ class Product(models.Model):
 
 
 class Device(PolymorphicModel):
+	objects = PolymorphicManager()
 	product = models.ForeignKey(Product)
 	serial_number = models.TextField(db_index=True,default="")
 	description = models.TextField(db_index=True,default="")
