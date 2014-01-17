@@ -74,7 +74,7 @@ class Stream(models.Model,object):
 		""" On save, update timestamps """
 		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
 		self.tags.save()
-		if not self.id:
+		if not self.pk:
 			self.created = now
 		self.modified = now
 		return super(Stream, self).save(*args, **kwargs)
@@ -122,7 +122,7 @@ class Material(PolymorphicModel, object):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return unicode(Material.objects.get(pk=self.id)).encode("utf-8")
+		return unicode(Material.objects.get(pk=self.pk)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'(created: %s, modified: %s)' % (unicode(self.created), unicode(self.modified))
@@ -221,7 +221,7 @@ class Process(PolymorphicModel):
 	description = models.TextField(db_index=True)
 
 	def __str__(self):
-		return unicode(Process.objects.get(pk=self.id)).encode("utf-8")
+		return unicode(Process.objects.get(pk=self.pk)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s [%s]' % (self.__class__.__name__, self.name)

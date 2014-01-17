@@ -113,6 +113,7 @@ class FilterTimed(Filter):
 	yearly = models.BooleanField()
 	monthly = models.BooleanField()
 	weekly = models.BooleanField()
+	week_day = models.BooleanField()
 	daily = models.BooleanField()
 	hourly = models.BooleanField()
 	slotly = models.BooleanField()
