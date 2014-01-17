@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render, redirect
-from plumbing.models import Program, Stream, File
+from plumbing.models import Program, Stream, Product
 
 # Create your views here.
 
@@ -28,6 +28,6 @@ def update(request):
 		s.sync_files()
 	template = loader.get_template('plumbing/update.html')
 	context = Context({
-		'file_new_count': File.objects.count(),
+		'file_new_count': Product.objects.count(),
 	})
 	return HttpResponse(template.render(context))
