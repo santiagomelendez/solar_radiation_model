@@ -49,6 +49,12 @@ class TagManager(models.Model):
 	def make_filename(self):
 		return ".".join(self.list())
 
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'[%s]' % self.tag_string
+
 
 class Stream(models.Model,object):
 	class Meta(object):
@@ -59,6 +65,9 @@ class Stream(models.Model,object):
 	modified = models.DateTimeField(default=datetime.utcnow().replace(tzinfo=pytz.UTC))
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.root_path
 
 	def save(self, *args, **kwargs):
@@ -113,7 +122,7 @@ class Material(PolymorphicModel, object):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return unicode(Material.objects.get(id=self.id)).encode("utf-8")
+		return unicode(Material.objects.get(pk=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'(created: %s, modified: %s)' % (unicode(self.created), unicode(self.modified))
@@ -128,6 +137,12 @@ class MaterialStatus(models.Model):
 	stream = models.ForeignKey(Stream, related_name='materials')
 	processed = models.BooleanField()
 
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s -> %s' % (unicode(self.stream), unicode(self.material))
+
 	def clone_for(self, stream):
 		cloned_material_status = MaterialStatus(material=self.material,stream=stream)
 		cloned_material_status.save()
@@ -140,7 +155,7 @@ class File(Material):
 	localname = models.TextField(unique = True, db_index=True, default="")
 
 	def filename(self):
-		return self.localname
+		return unicode(self.localname)
 
 	def __gt__(self, obj):
 		return self.datetime() > obj.datetime()
@@ -206,7 +221,7 @@ class Process(PolymorphicModel):
 	description = models.TextField(db_index=True)
 
 	def __str__(self):
-		return unicode(Process.objects.get(id=self.id)).encode("utf-8")
+		return unicode(Process.objects.get(pk=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s [%s]' % (self.__class__.__name__, self.name)
@@ -246,3 +261,9 @@ class ProcessOrder(models.Model):
 	position = models.IntegerField()
 	process = models.ForeignKey('Process', related_name='used_by')
 	complex_process = models.ForeignKey(ComplexProcess)
+
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return unicode(self.process)
