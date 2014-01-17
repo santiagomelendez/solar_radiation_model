@@ -1,4 +1,5 @@
 from django.db import models
+from polymorphic import PolymorphicModel
 from decimal import Decimal
 from datetime import datetime
 import pytz
@@ -36,16 +37,16 @@ class Product(models.Model):
 		return self.name
 
 
-class Device(models.Model):
+class Device(PolymorphicModel):
 	product = models.ForeignKey(Product)
 	serial_number = models.TextField(db_index=True,default="")
 	description = models.TextField(db_index=True,default="")
 
 	def __str__(self):
-		return unicode(self).encode("utf-8")
+		return unicode(Device.objects.get(pk=self.id)).encode("utf-8")
 
 	def __unicode__(self):
-		return u'%s (%s)' % (self.serial_number, self.product)
+		return u'%s %s (%s)' % (self.__class__.__name__, unicode(self.product), self.serial_number)
 
 
 class Sensor(Device):

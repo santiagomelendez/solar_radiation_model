@@ -1,4 +1,5 @@
 from django.contrib import admin
+from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from stations.models import *
 from django.forms import ModelForm
 
@@ -16,18 +17,24 @@ class ProductAdmin(admin.ModelAdmin):
 	list_display_links = list_display[1:]
 
 
-class DeviceAdmin(admin.ModelAdmin):
-	list_display = [ 'product', 'serial_number', 'description' ]
-	list_display_links = list_display[1:]
+class DeviceChildAdmin(PolymorphicChildModelAdmin):
+	base_model = Device
+
+
+class DeviceAdmin(PolymorphicParentModelAdmin):
+	base_model = Device
+	list_filter = (PolymorphicChildModelFilter,)
+	child_models = (
+		(Sensor, DeviceChildAdmin),
+		(Datalogger, DeviceChildAdmin),
+		(Tracker, DeviceChildAdmin),
+		(ShadowBall, DeviceChildAdmin),
+		(InclinedSupport, DeviceChildAdmin)
+	)
 
 
 class SensorAdmin(DeviceAdmin):
 	list_display = [ 'product', 'serial_number', 'description', 'optic_filter' ]
-	list_display_links = list_display[1:]
-
-
-class InclinedSupportAdmin(DeviceAdmin):
-	list_display = [ 'product', 'serial_number', 'description', 'angle', ]
 	list_display_links = list_display[1:]
 
 
@@ -59,11 +66,7 @@ admin.site.register(Station, StationAdmin)
 admin.site.register(Brand, BrandAdmin)
 admin.site.register(Product, ProductAdmin)
 admin.site.register(OpticFilter, OpticFilterAdmin)
-admin.site.register(Sensor, SensorAdmin)
-admin.site.register(Datalogger, DeviceAdmin)
-admin.site.register(ShadowBall, DeviceAdmin)
-admin.site.register(Tracker, DeviceAdmin)
-admin.site.register(InclinedSupport, InclinedSupportAdmin)
+admin.site.register(Device, DeviceAdmin)
 admin.site.register(SensorCalibration, SensorCalibrationAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
 admin.site.register(Measurement, MeasurementAdmin)
