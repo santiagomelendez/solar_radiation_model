@@ -43,7 +43,7 @@ class Device(PolymorphicModel):
 	description = models.TextField(db_index=True,default="")
 
 	def __str__(self):
-		return unicode(Device.objects.get(pk=self.id)).encode("utf-8")
+		return unicode(Device.objects.get(pk=self.pk)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s %s (%s)' % (self.__class__.__name__, unicode(self.product), self.serial_number)
@@ -175,7 +175,7 @@ class Configuration(models.Model,object):
 	def save(self, *args, **kwargs):
 		""" On save, update timestamps """
 		now = datetime.utcnow().replace(tzinfo=pytz.UTC)
-		if not self.id:
+		if not self.pk:
 			self.created = now
 		self.modified = now
 		return super(Configuration, self).save(*args, **kwargs)
