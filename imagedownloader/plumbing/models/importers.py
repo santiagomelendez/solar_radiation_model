@@ -1,11 +1,45 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import File, ComplexProcess, Stream
+from core import File, ComplexProcess, Stream, Adapter
 from datetime import datetime, timedelta
 import re
 from libs.file import netcdf as nc
 import os
+import threading
+import glob
+
+
+class Importer(Adapter):
+	class Meta(object):
+			app_label = 'plumbing'
+	frequency = models.IntegerField(default=15*60) # It is expressed in seconds
+
+	@classmethod
+	def setup_unloaded(klass):
+		importers = [ i for i in klass.objects.all() if not hasattr(i,thread) ]
+		for i in importers:
+			i.thread = threading.Timer(i.frequency, i.update).start()
+		return len(importers)
+
+
+class SyncImporter(Importer):
+	class Meta(object):
+			app_label = 'plumbing'
+
+	def get_root_path_files(self):
+		return glob.glob(self.stream.root_path + "*/*.nc")
+
+	def update(self):
+		materials_tmp = []
+		for f in self.get_root_path_files():
+			f, n = File.objects.get_or_create(localname=unicode(f))
+			if n: f.save()
+			ms, n = MaterialStatus.objects.get_or_create(material=f,stream=self.stream)
+			if n: fs.save()
+			materials_tmp.append([ms, True])
+		return materials_tmp
+
 
 class Image(File):
 	class Meta(object):

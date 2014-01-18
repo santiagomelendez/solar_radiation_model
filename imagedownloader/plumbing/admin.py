@@ -69,6 +69,7 @@ class ProcessAdmin(PolymorphicParentModelAdmin):
 		(Compact, ProcessChildAdmin),
 		(ComplexProcess, ComplexProcessChildAdmin),
 		(Program, ComplexProcessChildAdmin),
+		(SyncImporter, ProcessChildAdmin),
 	)
 
 

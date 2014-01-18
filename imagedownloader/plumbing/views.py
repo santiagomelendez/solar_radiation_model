@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render, redirect
-from plumbing.models import Program, Stream, Material
+from plumbing.models import Program, Stream, Material, Importer
 
 # Create your views here.
 
@@ -23,11 +23,9 @@ def status(request):
 	return render(request, 'plumbing/status.html', {'programs': programs})
 
 def update(request):
-	streams = Stream.objects.all()
-	for s in streams:
-		s.sync_files()
+	new_importers = Importer.setup_unloaded()
 	template = loader.get_template('plumbing/update.html')
 	context = Context({
-		'file_new_count': Material.objects.count(),
+		'new_importers': new_importers,
 	})
 	return HttpResponse(template.render(context))

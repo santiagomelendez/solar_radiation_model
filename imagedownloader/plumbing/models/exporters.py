@@ -46,7 +46,7 @@ class Compact(Process):
 		return f
 
 	def do_var(self, root, var_name, stream):
-		file_statuses = stream.sorted_files()
+		file_statuses = sorted(self.stream.unprocessed(), key=lambda fs: fs.material.filename())
 		shape = nc.getvar(root,'lat').shape
 		for fs in file_statuses:
 			# join the distributed content

@@ -24,8 +24,11 @@ class TestStreams(TestCase):
 			fs.save()
 
 	def test_serialization(self):
-		# check if the __str__ method is defined to return the object root_path parameter.
-		self.assertEquals(str(self.stream), self.stream.root_path)
+		# check if the __str__ method is defined to return the object pk, root_path and tags parameter.
+		result = u'%s %s %s' % (unicode(self.stream.pk), self.stream.root_path, unicode(self.stream.tags))
+		self.assertEquals(str(self.stream), str(result))
+		# check if the __unicode__ method is defined to return the object pk, root_path and tags parameter.
+		self.assertEquals(unicode(self.stream), result)
 
 	def test_save(self):
 		# check if hte instance was created between the begining and the ending of the setup.
@@ -36,10 +39,10 @@ class TestStreams(TestCase):
 		self.stream.save()
 		self.assertTrue(self.stream.modified > self.stream.created)
 
-	def test_get_stream_from_file(self):
+	def test_get_stream_from_filename(self):
 		# check if can extract the stream's root_path from the filename.
 		filename = self.stream.root_path + "2013/goes13.2013.M12.BAND_01.nc"
-		self.assertEquals(Stream.get_stream_from_file(filename), self.stream.root_path)
+		self.assertEquals(Stream.get_stream_from_filename(filename), self.stream.root_path)
 
 	def test_clone(self):
 		# check if the clone method create a new stream.
@@ -71,11 +74,3 @@ class TestStreams(TestCase):
 			fs.delete()
 		# check if return False when it hasn't got pending files.
 		self.assertTrue(self.stream.empty())
-
-	def test_sorted_files(self):
-		# check if all the files where sorted by the file datetime.
-		prev = None
-		for fs in self.stream.sorted_files():
-			if prev:
-				self.assertTrue(prev.material.filename() <= fs.material.filename())
-			prev = fs

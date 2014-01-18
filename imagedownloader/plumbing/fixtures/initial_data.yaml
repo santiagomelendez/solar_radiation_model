@@ -27,7 +27,7 @@
 - model: plumbing.process
   pk: 1
   fields:
-    polymorphic_ctype: 41
+    polymorphic_ctype: 44
     name: 'Filter nights and compact'
     description: 'Filter all images with solar elevation < 10 degrees.'
 
@@ -43,7 +43,7 @@
 - model: plumbing.process
   pk: 2
   fields:
-    polymorphic_ctype: 39
+    polymorphic_ctype: 40
     name: 'Save'
     description: 'Compile all in a NetCDF4 file.'
 
@@ -56,7 +56,7 @@
 - model: plumbing.process
   pk: 3
   fields:
-    polymorphic_ctype: 35
+    polymorphic_ctype: 36
     name: 'G13C1'
     description: 'Select GOES 13 Channel 1 (visible channel).'
 
@@ -72,7 +72,7 @@
 - model: plumbing.process
   pk: 4
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year.Mmonth'
     description: 'Classify the files by year and by month.'
 
@@ -90,7 +90,7 @@
 - model: plumbing.process
   pk: 5
   fields:
-    polymorphic_ctype: 33
+    polymorphic_ctype: 34
     name: 'Channel classify'
     description: 'Aggregate images by channel number'
 
@@ -105,7 +105,7 @@
 - model: plumbing.process
   pk: 6
   fields:
-    polymorphic_ctype: 37
+    polymorphic_ctype: 38
     name: 'Filter night''s images'
     description: 'Only pass the images with a solar elevation >= 10 degrees.'
 
@@ -121,7 +121,7 @@
 - model: plumbing.process
   pk: 7
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year'
     description: 'Classify the files by year.'
 
@@ -139,7 +139,7 @@
 - model: plumbing.process
   pk: 8
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year.Wweek'
     description: 'Classify the files by year and by week.'
 
