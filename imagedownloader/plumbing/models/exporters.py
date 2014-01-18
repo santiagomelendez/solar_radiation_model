@@ -16,8 +16,8 @@ class Compact(Process):
 	def do(self, stream):
 		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
 		f = self.do_file(filename,stream)
-		fs = MaterialStatus(material=f,stream=self.resultant_stream)
-		fs.save()
+		ms = MaterialStatus(material=f,stream=self.resultant_stream)
+		ms.save()
 		return self.resultant_stream
 
 	def getdatetimenow(self):
@@ -46,14 +46,14 @@ class Compact(Process):
 		return f
 
 	def do_var(self, root, var_name, stream):
-		file_statuses = sorted(self.stream.unprocessed(), key=lambda fs: fs.material.filename())
+		material_statuses = sorted(stream.unprocessed(), key=lambda ms: ms.material.filename())
 		shape = nc.getvar(root,'lat').shape
-		for fs in file_statuses:
+		for ms in material_statuses:
 			# join the distributed content
 			v_ch   = nc.getvar(root,var_name, 'f4', ('timing','northing','easting',), 4)
 			v_ch_t = nc.getvar(root,var_name + '_time', 'f4', ('timing',))
 			try:
-				rootimg = nc.open(fs.file.completepath())[0]
+				rootimg = nc.open(ms.material.completepath())[0]
 				data = (nc.getvar(rootimg, 'data'))[:]
 				# Force all the channels to the same shape
 				if not (data.shape[1:3] == shape):
@@ -62,8 +62,8 @@ class Compact(Process):
 				if v_ch.shape[1] == data.shape[1] and v_ch.shape[2] == data.shape[2]:
 					index = v_ch.shape[0]
 					v_ch[index,:] = data
-					v_ch_t[index] = calendar.timegm(fs.file.datetime().utctimetuple())
+					v_ch_t[index] = calendar.timegm(ms.material.datetime().utctimetuple())
 				nc.close(rootimg)
 				nc.sync(root)
 			except RuntimeError:
-				print fs.file.completepath()
+				print ms.material.completepath()
