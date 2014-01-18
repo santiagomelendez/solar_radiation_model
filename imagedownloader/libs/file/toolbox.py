@@ -73,7 +73,7 @@ def statistical_search_position(station, lat, lon):
 	diffs = np.abs(lat[:] - station[0]) + np.abs(lon[:] - station[1])
 	np.where(diffs <= np.min(diffs))
 	x, y = [ v[0] for v in np.where(diffs <= np.min(diffs))]
-	return x, y
+	return (x, y) if 0 < x < lat.shape[0] and 0 < y < lat.shape[1] else (None, None)
 
 def cut_positions(filename, blurred, *positions):
 	blurred = int(blurred)
@@ -88,13 +88,16 @@ def cut_positions(filename, blurred, *positions):
 	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing_cut','easting_cut',),4)
 	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing_cut','easting_cut',),4)
 	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing_cut','easting_cut',),4)
+	ix = 0
 	for i in range(len(pos)):
 		show("\rCutting data: processing position %d / %d " % (i+1, len(pos)))
 		x, y = statistical_search_position(pos[i], lat, lon)
-		lat_cut[i,0] = lat[x,y]
-		lon_cut[i,0] = lon[x,y]
-		data_cut[:,i,0] = np.apply_over_axes(np.mean, data[:,x-blurred:x+blurred,y-blurred:y+blurred], axes=[1,2]) if blurred > 0 else data[:,x,y]
-		lat_cut[i,1], lon_cut[i,1], data_cut[:,i,1] = lat_cut[i,0], lon_cut[i,0], data_cut[:,i,0]
+		if x and y:
+			lat_cut[ix,0] = lat[x,y]
+			lon_cut[ix,0] = lon[x,y]
+			data_cut[:,ix,0] = np.apply_over_axes(np.mean, data[:,x-blurred:x+blurred,y-blurred:y+blurred], axes=[1,2]) if blurred > 0 else data[:,x,y]
+			lat_cut[ix,1], lon_cut[ix,1], data_cut[:,ix,1] = lat_cut[ix,0], lon_cut[ix,0], data_cut[:,ix,0]
+			ix += 1
 	nc.close(root)
 	nc.close(root_cut)
 
