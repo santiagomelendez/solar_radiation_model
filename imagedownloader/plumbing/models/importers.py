@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import File, ComplexProcess, Stream, Adapter
+from core import File, ComplexProcess, Stream, Adapter, MaterialStatus
 from datetime import datetime, timedelta
 import re
 from libs.file import netcdf as nc
@@ -17,7 +17,7 @@ class Importer(Adapter):
 
 	@classmethod
 	def setup_unloaded(klass):
-		importers = [ i for i in klass.objects.all() if not hasattr(i,thread) ]
+		importers = [ i for i in klass.objects.all() if not hasattr(i,"thread") ]
 		for i in importers:
 			i.thread = threading.Timer(i.frequency, i.update).start()
 		return len(importers)
@@ -36,7 +36,7 @@ class SyncImporter(Importer):
 			f, n = File.objects.get_or_create(localname=unicode(f))
 			if n: f.save()
 			ms, n = MaterialStatus.objects.get_or_create(material=f,stream=self.stream)
-			if n: fs.save()
+			if n: ms.save()
 			materials_tmp.append([ms, True])
 		return materials_tmp
 
