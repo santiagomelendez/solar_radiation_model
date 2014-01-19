@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render, redirect
-from plumbing.models import Program, Material, Importer
+from plumbing.models import Program, Importer
 
 # Create your views here.
 
