@@ -1,4 +1,3 @@
-import sys
 # Only Celery settings for imagedownloader project.
 
 #import djcelery
