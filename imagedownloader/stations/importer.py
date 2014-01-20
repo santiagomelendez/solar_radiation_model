@@ -6,7 +6,7 @@ from xlrd import open_workbook, XL_CELL_EMPTY, XL_CELL_BLANK
 import csv
 from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
-from libs.console import *
+from libs.console import show
 import numpy as np
 from libs.statistics import error
 import pytz
@@ -48,6 +48,7 @@ def rows2netcdf(rows, filename, index):
 		slots = nc.getvar(root, 'slots')
 		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
 		instant_radiation = rows2slots(rows,2)
+		earth_failures = 0
 		i_e = 0
 		i_m = 0
 		while i_e < len(times) and i_m < len(instant_radiation):
@@ -61,21 +62,22 @@ def rows2netcdf(rows, filename, index):
 				if slots[i_e] < instant_radiation[i_m][0]:
 					# TODO: This should be completed with a 0 error from the estimation.
 					measurements[i_e, index,:] = np.array([0, 0])
-					show("Detected estimated time without earth measure.")
+					earth_failures += 1
 					i_e += 1
 				elif slots[i_e] > instant_radiation[i_m][0]:
 					i_m += 1
 				else:
 					value = instant_radiation[i_m][1][1]
-					row_in_slot = instant_radiation[i_m][1][2]
+					#row_in_slot = instant_radiation[i_m][1][2]
 					measurements[i_e, index,:] = np.array([value, value])
 					i_e += 1
 					i_m += 1
 		while i_e < len(times):
 			# TODO: This should be completed with a 0 error from the estimation.
 			measurements[i_e, index,:] = np.array([0, 0])
-			show("Detected estimated time without earth measure.")
+			earth_failures += 1
 			i_e += 1
+		show("Detected %i of %i estimated times without earth measure.\n" % (earth_failures, len(slots)))
 		error.rmse(root, index)
 		nc.close(root)
 
@@ -83,7 +85,7 @@ def get_val(sh,x,y):
 	try:
 		cell = sh.cell(y,x)
 		result = None if cell.ctype in [XL_CELL_EMPTY, XL_CELL_BLANK] else cell.value
-	except:
+	except Exception:
 		result = None
 	return result
 
@@ -139,8 +141,8 @@ def from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows):
 	rows = np.genfromtxt(input_filename,
 		delimiter = ',',
 		skiprows= skip_rows,
-		usecols=[0, channel],
-		converters = {0: lambda s: to_datetime(s[1:-1], utc_hour=int(utc_diff)), channel: lambda s: float(s)})
+		usecols=[timestamp_col, channel],
+		converters = {timestamp_col: lambda s: to_datetime(s[1:-1], utc_hour=int(utc_diff)), channel: lambda s: float(s)})
 	return rows
 
 if __name__ == "__main__":
@@ -157,6 +159,6 @@ if __name__ == "__main__":
 	else:
 		rows2netcdf(rows,output_filename,output_index)
 
-#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
-#python2.7 importer.py cut_positions.pkg.goes13.all.BAND_01.nc 0 2011UTC.csv 0 0 1 3
+#python stations/importer.py cut_positions.pkg.goes13.2012.M07.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
+#python stations/importer.py cut_positions.pkg.goes13.2012.M07.BAND_01.nc 0 2011UTC.csv 0 0 1 3
 
