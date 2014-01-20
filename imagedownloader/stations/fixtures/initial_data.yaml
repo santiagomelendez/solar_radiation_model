@@ -44,16 +44,14 @@
   fields:
     brand: 2
     name: "Black and white"
-    specifications: "Response Time < 60 s\nZero Offset a)± 0.5 Wm-2\nZero Offset b) ± 0.5 Wm-2\nNon-Stability ± 1%\nNon-Linearity ± 1%\nDirectional Response ± 30 Wm-2\nTemperature Response ± 2%\nTilt Response ± 5%\nTraceability * World Radiation Reference (WRR)\n\nSensitivity approx. 8 μV / Wm-2  
-Impedanceapprox. 350 Ω\nUncertainty * Calibration < 2%\nMeasurement (Instant) < 5 Wm-2  (Diffuse)\nMeasurement (Instant) < 15 Wm-2  (Global)\nMeasurement (Hourly) approx. 3-5%\nMeasurement (Daily) approx. 3%\nApplication: Network Measurements (Diffuse)"
+    specifications: "Response Time < 60 s\nZero Offset a)± 0.5 Wm-2\nZero Offset b) ± 0.5 Wm-2\nNon-Stability ± 1%\nNon-Linearity ± 1%\nDirectional Response ± 30 Wm-2\nTemperature Response ± 2%\nTilt Response ± 5%\nTraceability * World Radiation Reference (WRR)\n\nSensitivity approx. 8 μV / Wm-2\nImpedanceapprox. 350 Ω\nUncertainty * Calibration < 2%\nMeasurement (Instant) < 5 Wm-2  (Diffuse)\nMeasurement (Instant) < 15 Wm-2  (Global)\nMeasurement (Hourly) approx. 3-5%\nMeasurement (Daily) approx. 3%\nApplication: Network Measurements (Diffuse)"
 
 - model: stations.product
   pk: 5
   fields:
     brand: 3
     name: "LogBox-AA IP65 32K"
-    specifications: "Power: internal 3.6V lithium battery\nTwo universal analogue inputs: thermocouple types J, K, T, E, N, R, S and B, Pt100 RTD (2- or 3-wire), 4-20 mA, 0-50 mVdc, 0-10Vdc\nCapacity: 32k readings (log frequency programmable from 10s to 18hrs)\nInternal resolution: 4096 counts (12-bit)\nAccuracy: thermocouples J, K, T and N: 0.25% of range ±1°C; thermocouples E, R, S and B: 0.25% of range±3°C. PT100: 0.15% of range. Linear voltage or current: 0.15% of maximum range\nStart logging options: Immediate, Preset date/time, Palm PDA command, Stop logging options, When full
-Preset date/time, After a number of readings, Wraparound (overwrites first readings)\nBuilt-in sensor PSU switch automatically switches on power to external sensors when taking a reading, then switches power off (extends external sensor battery life)\nIncludes LogChart-II Microsoft Windows configuration and analysis software and PalmOS software\nAmbient temperature: -40°C to 70°C\nMaterial: ABC + PC case; polycarbonate film\nDimensions: 60 x 70 x 35 mm"
+    specifications: "Power: internal 3.6V lithium battery\nTwo universal analogue inputs: thermocouple types J, K, T, E, N, R, S and B, Pt100 RTD (2- or 3-wire), 4-20 mA, 0-50 mVdc, 0-10Vdc\nCapacity: 32k readings (log frequency programmable from 10s to 18hrs)\nInternal resolution: 4096 counts (12-bit)\nAccuracy: thermocouples J, K, T and N: 0.25% of range ±1°C; thermocouples E, R, S and B: 0.25% of range±3°C. PT100: 0.15% of range. Linear voltage or current: 0.15% of maximum range\nStart logging options: Immediate, Preset date/time, Palm PDA command, Stop logging options, When full\nPreset date/time, After a number of readings, Wraparound (overwrites first readings)\nBuilt-in sensor PSU switch automatically switches on power to external sensors when taking a reading, then switches power off (extends external sensor battery life)\nIncludes LogChart-II Microsoft Windows configuration and analysis software and PalmOS software\nAmbient temperature: -40°C to 70°C\nMaterial: ABC + PC case; polycarbonate film\nDimensions: 60 x 70 x 35 mm"
 
 - model: stations.product
   pk: 6
@@ -207,7 +205,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 11
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "9041651"
     description: ""
@@ -219,7 +217,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 12
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "9141555"
     description: ""
@@ -231,7 +229,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 13
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "1009010"
     description: ""
@@ -243,7 +241,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 14
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "9141555 - repetido"
     description: "Esta con la clave 12 ¿se encuentra tanto en Marcos Juarez como en Azul?"
@@ -255,7 +253,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 15
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "9056254"
     description: ""
@@ -267,7 +265,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 16
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "10068990"
     description: ""
@@ -279,7 +277,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 17
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 5
     serial_number: "8158330"
     description: ""
@@ -291,7 +289,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 18
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 6
     serial_number: "12433"
     description: ""
@@ -303,7 +301,7 @@ Preset date/time, After a number of readings, Wraparound (overwrites first readi
 - model: stations.device
   pk: 19
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 50
     product: 6
     serial_number: "unknown"
     description: ""

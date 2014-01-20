@@ -11,7 +11,7 @@ def rmse(root, index):
 	days.sort()
 	days_index = [d.day for d in set(days)]
 	days_amount = len(days_index)
-	d_dim = nc.getdim(root, 'diarying', days_amount)
+	nc.getdim(root, 'diarying', days_amount)
 	nc.sync(root)
 	measurements = nc.getvar(root, 'measurements')
 	estimated = nc.getvar(root, 'globalradiation')
@@ -22,7 +22,7 @@ def rmse(root, index):
 	error[:] = np.zeros(estimated.shape)
 	diary_error[:] = np.zeros((days_amount, estimated.shape[1], estimated.shape[2]))
 	nc.sync(root)
-	the_max = measurements[:].max()
+	#the_max = measurements[:].max()
 	error_diff[:, index, :] = measurements[:,index,:] - estimated[:,index,:]
 	error[:, index, :] = np.abs(error_diff[:, index, :])
 	nc.sync(root)
@@ -68,7 +68,7 @@ def mae(estimated, measured, station):
 	return np.absolute(t_diff).mean()
 
 filename = sys.argv[1] if len(sys.argv) == 2 else None
-if not filename == None:
+if not filename is None:
 	try:
 		index = int(sys.argv[2])
 		root,n = nc.open(filename)

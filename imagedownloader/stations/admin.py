@@ -1,7 +1,6 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
-from stations.models import *
-from django.forms import ModelForm
+from stations.models import Position, Station, Brand, Product, OpticFilter, SensorCalibration, Configuration, Measurement, Device, Sensor, Datalogger, ShadowBall, Tracker, InclinedSupport
 
 
 class BrandAdmin(admin.ModelAdmin):
