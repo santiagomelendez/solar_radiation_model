@@ -1,6 +1,6 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
-from plumbing.models import *
+from plumbing.models import TagManager, Stream, MaterialStatus, Material, Process, ProcessOrder, ComplexProcess, Program, File, CollectTimed, CollectChannel, FilterTimed, FilterChannel, FilterSolarElevation, AppendCountToRadiationCoefficient, Compact, SyncImporter
 from django.forms import ModelForm
 
 
@@ -36,10 +36,6 @@ class ProcessInlineForm(ModelForm,object):
 	class Meta(object):
 			model = ProcessOrder
 			fields = ['position','process']
-
-	def __init__(self, *args, **kwargs):
-		super(ProcessInlineForm, self).__init__(*args, **kwargs)
-		self.fields['process'].queryset = Process.objects.all() 
 
 
 class ProcessOrderInline(admin.TabularInline):
