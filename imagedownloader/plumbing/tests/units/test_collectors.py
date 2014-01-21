@@ -35,14 +35,14 @@ class TestCollectors(TestCase):
 		# exist on an abstract class.
 		with self.assertRaises(AttributeError) as err:
 			self.collect.get_key(self.stream.materials.all()[0])
-		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+		self.assertEquals(unicode(err.exception), u"'Collect' object has no attribute 'get_key'")
 
 	def test_get_keys(self):
 		# check if when this is sended to an abstract class should raise the same exception that
 		# with get_key.
 		with self.assertRaises(AttributeError) as err:
 			self.collect.get_keys(self.stream)
-		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+		self.assertEquals(unicode(err.exception), u"'Collect' object has no attribute 'get_key'")
 		# check if when a fake get_key method exists, a set of uniques keys is returned.
 		keys = self.other_collect.get_keys(self.stream)
 		self.assertEquals(len(keys), 2)
@@ -54,7 +54,7 @@ class TestCollectors(TestCase):
 		# with get_key.
 		with self.assertRaises(AttributeError) as err:
 			self.collect.init_empty_streams(self.stream)
-		self.assertEquals(err.exception.message, "'Collect' object has no attribute 'get_key'")
+		self.assertEquals(unicode(err.exception), u"'Collect' object has no attribute 'get_key'")
 		# check if when a fake get_key method exists, a set of uniques keys is returned.
 		streams = self.other_collect.init_empty_streams(self.stream)
 		self.assertEquals(len(streams.keys()), 2)
