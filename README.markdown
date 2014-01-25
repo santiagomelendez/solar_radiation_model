@@ -11,7 +11,7 @@ If you want to deploy this repository with some default settings, you should hav
 
 	$ make install-python27
 
-On any GNU/Linux or OSX system you only need to execute the next bash command to setting up all the requirements (GNUMakefile should be installed at this point).
+On any GNU/Linux or OSX system you only need to execute the next bash command to setting up all the requirements (GNUMakefile should have been installed to this point).
 
 	$ make sqlite3 deploy
 
