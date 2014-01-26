@@ -1,6 +1,8 @@
 from stations.models import OpticFilter, Brand, Product, Device, SensorCalibration, Position, Station, Configuration, Measurement
 from tastypie import fields
-from libs.tastypie_polymorphic import PolymorphicModelResource, ModelResource, SessionAuthentication
+from tastypie.authentication import SessionAuthentication
+from tastypie.resources import ModelResource
+from libs.tastypie_polymorphic import PolymorphicModelResource
 
 
 class BrandResource(ModelResource):
