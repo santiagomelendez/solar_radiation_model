@@ -15,7 +15,6 @@ class PolymorphicModelResource(ModelResource):
 		foreign_keys.remove('polymorphic_ctype_id')
 		ids = [ fk for fk in foreign_keys if not fk[-len('_ptr_id'):] == '_ptr_id' ]
 		extras = dict((k[:-3],self.deserialize(getattr(bundle.obj,k[:-3]))) for k in ids)
-		print extras
 		self.extend_key(bundle.data, self.get_class_name(bundle), extras)
 	def dehydrate(self, bundle):
 		bundle = super(PolymorphicModelResource,self).dehydrate(bundle)
