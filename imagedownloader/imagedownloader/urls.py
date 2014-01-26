@@ -1,24 +1,16 @@
 from django.conf.urls import patterns, include, url
-from plumbing.views import *
-
-# Uncomment the next two lines to enable the admin:
 from django.contrib import admin
+import plumbing, stations, requester
+
+# Api provide an easy way of automatically determining the URL conf.
+
 admin.autodiscover()
 
 urlpatterns = patterns('',
 	# Examples:
-	#url(r'^requester$', 'requester.views.index'),
-	#url(r'^requester/automatic$', AutomaticDownloadList.as_view()),
-	#url(r'^requester/order$', OrderList.as_view()),
-	#url(r'^requester/time_range$', TimeRangeList.as_view()),
-	#url(r'^requester/area$', AreaList.as_view()),
-	#url(r'^requester/channel$', ChannelList.as_view()),
-	#url(r'^requester/account$', AccountList.as_view()),
-	url(r'^plumbing$', 'plumbing.views.index'),
-	url(r'^plumbing/execute/(?P<program_id>\d+)/$', 'plumbing.views.execute'),
-	url(r'^plumbing/status$', 'plumbing.views.status'),
-	url(r'^plumbing/update$', 'plumbing.views.update'),
-	url(r'^stations/upload', 'stations.views.upload'),
+	url(r'^plumbing/', include('plumbing.urls')),
+	url(r'^stations/', include('stations.urls')),
+	#url(r'^requester/', include('stations.urls')),
 
 	# Uncomment the admin/doc line below to enable admin documentation:
 	url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

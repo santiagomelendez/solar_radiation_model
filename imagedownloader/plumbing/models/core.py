@@ -225,15 +225,18 @@ class ComplexProcess(Process):
 			streams = [ streams ]
 		return streams
 
+	def get_ordered_subprocesses(self):
+		return self.processes.all().order_by('used_by__position')
+
 	def do(self, stream):
-		ps = self.processes.all().order_by('used_by__position')
+		ps = self.get_ordered_subprocesses()
 		for subprocess in ps:
 			show("Running " + str(subprocess))
 			stream = self.encapsulate_in_array(stream)
 			tmp_results = []
 			for s in stream:
 				if not s.empty():
-					result = subprocess.type_cast().do(s)
+					result = subprocess.do(s)
 					subprocess.mark_with_tags(s)
 					tmp_results += self.encapsulate_in_array(result)
 			stream = tmp_results

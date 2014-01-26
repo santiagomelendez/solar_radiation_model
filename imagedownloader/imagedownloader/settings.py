@@ -136,14 +136,12 @@ INSTALLED_APPS = (
 	'polymorphic',
 	'django.contrib.contenttypes',
 	'south',
-	#'kombu.transport.django',
-	#'djcelery',
-	'requester',
-	'plumbing',
 	# Uncomment the next line to enable the admin:
 	'django.contrib.admin',
 	# Uncomment the next line to enable admin documentation:
 	'django.contrib.admindocs',
+	'requester',
+	'plumbing',
 	'stations',
 )
 
