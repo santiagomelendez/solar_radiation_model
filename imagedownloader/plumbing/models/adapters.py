@@ -1,27 +1,16 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import ComplexProcess, Stream, Adapter, MaterialStatus
+from core import ComplexProcess, Stream, MaterialStatus, Importer, Process
 from materials import File
 from datetime import datetime, timedelta
 import re
 from libs.file import netcdf as nc
 import os
-import threading
 import glob
-
-
-class Importer(Adapter):
-	class Meta(object):
-			app_label = 'plumbing'
-	frequency = models.IntegerField(default=15*60) # It is expressed in seconds
-
-	@classmethod
-	def setup_unloaded(klass):
-		importers = [ i for i in klass.objects.all() if not hasattr(i,"thread") ]
-		for i in importers:
-			i.thread = threading.Timer(i.frequency, i.update).start()
-		return len(importers)
+import calendar
+from libs import matrix
+import pytz
 
 
 class SyncImporter(Importer):
@@ -42,39 +31,6 @@ class SyncImporter(Importer):
 		return materials_tmp
 
 
-class Image(File):
-	class Meta(object):
-		app_label = 'plumbing'
-
-	def channel(self):
-		res = re.search('BAND_([0-9]*)\.', self.completepath())
-		return str(res.groups(0)[0]) if res else None
-
-	def satellite(self):
-		res = self.filename().split(".")
-		return str(res[0])
-
-	def datetime(self):
-		t_info = self.filename().split(".")
-		year = int(t_info[1])
-		days = int(t_info[2])
-		time = t_info[3]
-		date = datetime(year, 1, 1) + timedelta(days - 1)
-		return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
-
-	def latlon(self):
-		if self.channel() is None:
-			return None, None
-		root = nc.open(self.completepath())[0]
-		lat = nc.getvar(root, "lat")[:]
-		lon = nc.getvar(root, "lon")[:]
-		nc.close(root)
-		return lat, lon
-
-	def completepath(self):
-		return os.path.expanduser(os.path.normpath(self.localname))
-
-
 class Program(ComplexProcess):
 	class Meta(object):
 			app_label = 'plumbing'
@@ -90,3 +46,64 @@ class Program(ComplexProcess):
 
 	def execute(self):
 		self.do(self.stream)
+
+class Compact(Process):
+	class Meta(object):
+			app_label = 'plumbing'
+	extension = models.TextField()
+	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
+
+	def do(self, stream):
+		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
+		f = self.do_file(filename,stream)
+		ms = MaterialStatus(material=f,stream=self.resultant_stream)
+		ms.save()
+		return self.resultant_stream
+
+	def getdatetimenow(self):
+		return datetime.utcnow().replace(tzinfo=pytz.UTC)
+
+	def do_file(self, filename, stream):
+		# create compact file and initialize basic settings
+		root, is_new = nc.open(filename)
+		if is_new:
+			sample = nc.open(stream.files.all()[0].file.completepath())[0]
+			shape = sample.variables['data'].shape
+			nc.getdim(root,'northing', shape[1])
+			nc.getdim(root,'easting', shape[2])
+			nc.getdim(root,'timing')
+			v_lat = nc.getvar(root,'lat', 'f4', ('northing','easting',), 4)
+			v_lon = nc.getvar(root,'lon', 'f4', ('northing','easting',), 4)
+			v_lon[:] = nc.getvar(sample, 'lon')[:]
+			v_lat[:] = nc.getvar(sample, 'lat')[:]
+			nc.close(sample)
+			nc.sync(root)
+		self.do_var(root, 'data', stream)
+		# save the content inside the compact file
+		if not root is None: nc.close(root)
+		f = File(localname=filename)
+		f.save()
+		return f
+
+	def do_var(self, root, var_name, stream):
+		material_statuses = sorted(stream.unprocessed(), key=lambda ms: ms.material.filename())
+		shape = nc.getvar(root,'lat').shape
+		for ms in material_statuses:
+			# join the distributed content
+			v_ch   = nc.getvar(root,var_name, 'f4', ('timing','northing','easting',), 4)
+			v_ch_t = nc.getvar(root,var_name + '_time', 'f4', ('timing',))
+			try:
+				rootimg = nc.open(ms.material.completepath())[0]
+				data = (nc.getvar(rootimg, 'data'))[:]
+				# Force all the channels to the same shape
+				if not (data.shape[1:3] == shape):
+					print data.shape[1:3], shape
+					data = matrix.adapt(data, shape)
+				if v_ch.shape[1] == data.shape[1] and v_ch.shape[2] == data.shape[2]:
+					index = v_ch.shape[0]
+					v_ch[index,:] = data
+					v_ch_t[index] = calendar.timegm(ms.material.datetime().utctimetuple())
+				nc.close(rootimg)
+				nc.sync(root)
+			except RuntimeError:
+				print ms.material.completepath()

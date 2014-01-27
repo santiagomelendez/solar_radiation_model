@@ -6,6 +6,7 @@ import glob
 from libs.console import show
 from datetime import datetime
 import pytz
+import threading
 
 
 class TagManager(models.Model):
@@ -175,15 +176,6 @@ class ComplexProcess(Process):
 		return stream
 
 
-class Adapter(Process):
-	class Meta(object):
-		app_label = 'plumbing'
-	stream = models.ForeignKey(Stream)
-
-	def update(self):
-		raise Exception("Subclass responsability")
-
-
 class ProcessOrder(models.Model):
 	class Meta(object):
 		app_label = 'plumbing'
@@ -250,3 +242,25 @@ class Filter(Process):
 	def mark_with_tags(self, stream):
 		# Don't used because these process is transparent in the name
 		pass
+
+
+class Adapter(Process):
+	class Meta(object):
+		app_label = 'plumbing'
+	stream = models.ForeignKey(Stream)
+
+	def update(self):
+		raise Exception("Subclass responsability")
+
+
+class Importer(Adapter):
+	class Meta(object):
+			app_label = 'plumbing'
+	frequency = models.IntegerField(default=15*60) # It is expressed in seconds
+
+	@classmethod
+	def setup_unloaded(klass):
+		importers = [ i for i in klass.objects.all() if not hasattr(i,"thread") ]
+		for i in importers:
+			i.thread = threading.Timer(i.frequency, i.update).start()
+		return len(importers)

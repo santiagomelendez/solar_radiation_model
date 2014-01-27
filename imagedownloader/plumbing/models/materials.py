@@ -70,3 +70,36 @@ class File(Material):
 
 	def __unicode__(self):
 		return self.localname
+
+
+class Image(File):
+	class Meta(object):
+		app_label = 'plumbing'
+
+	def channel(self):
+		res = re.search('BAND_([0-9]*)\.', self.completepath())
+		return str(res.groups(0)[0]) if res else None
+
+	def satellite(self):
+		res = self.filename().split(".")
+		return str(res[0])
+
+	def datetime(self):
+		t_info = self.filename().split(".")
+		year = int(t_info[1])
+		days = int(t_info[2])
+		time = t_info[3]
+		date = datetime(year, 1, 1) + timedelta(days - 1)
+		return date.replace(hour=int(time[0:2]), minute=int(time[2:4]), second=int(time[4:6]))
+
+	def latlon(self):
+		if self.channel() is None:
+			return None, None
+		root = nc.open(self.completepath())[0]
+		lat = nc.getvar(root, "lat")[:]
+		lon = nc.getvar(root, "lon")[:]
+		nc.close(root)
+		return lat, lon
+
+	def completepath(self):
+		return os.path.expanduser(os.path.normpath(self.localname))
