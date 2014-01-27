@@ -1,5 +1,6 @@
 from django.db import models
-from core import Process, Stream, MaterialStatus, File
+from core import Process, Stream, MaterialStatus
+from materials import File
 from libs.file import netcdf as nc
 import calendar
 from libs import matrix
