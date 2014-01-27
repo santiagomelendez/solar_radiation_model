@@ -72,7 +72,7 @@
 - model: plumbing.process
   pk: 4
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year.Mmonth'
     description: 'Classify the files by year and by month.'
 
@@ -90,7 +90,7 @@
 - model: plumbing.process
   pk: 5
   fields:
-    polymorphic_ctype: 33
+    polymorphic_ctype: 34
     name: 'Channel classify'
     description: 'Aggregate images by channel number'
 
@@ -121,7 +121,7 @@
 - model: plumbing.process
   pk: 7
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year'
     description: 'Classify the files by year.'
 
@@ -139,7 +139,7 @@
 - model: plumbing.process
   pk: 8
   fields:
-    polymorphic_ctype: 32
+    polymorphic_ctype: 33
     name: 'year.Wweek'
     description: 'Classify the files by year and by week.'
 
