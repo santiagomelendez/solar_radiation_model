@@ -47,11 +47,15 @@
     name: 'Save'
     description: 'Compile all in a NetCDF4 file.'
 
+- model: plumbing.adapter
+  pk: 2
+  fields:
+    stream: 2
+
 - model: plumbing.compact
   pk: 2
   fields:
     extension: '.nc'
-    resultant_stream: 2
 
 - model: plumbing.process
   pk: 3

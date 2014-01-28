@@ -247,7 +247,7 @@ class Filter(Process):
 class Adapter(Process):
 	class Meta(object):
 		app_label = 'plumbing'
-	stream = models.ForeignKey(Stream)
+	stream = models.ForeignKey(Stream, null=True, default=None)
 
 	def update(self):
 		raise Exception("Subclass responsability")

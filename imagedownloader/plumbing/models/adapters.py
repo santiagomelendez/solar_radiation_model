@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import ComplexProcess, Stream, MaterialStatus, Importer, Process
+from core import ComplexProcess, Stream, MaterialStatus, Importer, Adapter
 from materials import File
 from datetime import datetime, timedelta
 import re
@@ -47,18 +47,17 @@ class Program(ComplexProcess):
 	def execute(self):
 		self.do(self.stream)
 
-class Compact(Process):
+class Compact(Adapter):
 	class Meta(object):
 			app_label = 'plumbing'
 	extension = models.TextField()
-	resultant_stream = models.ForeignKey(Stream, null=True, default=None)
 
 	def do(self, stream):
-		filename = "%spkg.%s.nc" % (self.resultant_stream.root_path,stream.tags.make_filename())
+		filename = "%spkg.%s.nc" % (self.stream.root_path,stream.tags.make_filename())
 		f = self.do_file(filename,stream)
-		ms = MaterialStatus(material=f,stream=self.resultant_stream)
+		ms = MaterialStatus(material=f,stream=self.stream)
 		ms.save()
-		return self.resultant_stream
+		return self.stream
 
 	def getdatetimenow(self):
 		return datetime.utcnow().replace(tzinfo=pytz.UTC)
