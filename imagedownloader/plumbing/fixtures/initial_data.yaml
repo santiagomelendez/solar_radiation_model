@@ -27,7 +27,7 @@
 - model: plumbing.process
   pk: 1
   fields:
-    polymorphic_ctype: 37
+    polymorphic_ctype: 43
     name: 'Filter nights and compact'
     description: 'Filter all images with solar elevation < 10 degrees.'
 
@@ -60,7 +60,7 @@
 - model: plumbing.process
   pk: 3
   fields:
-    polymorphic_ctype: 40
+    polymorphic_ctype: 38
     name: 'G13C1'
     description: 'Select GOES 13 Channel 1 (visible channel).'
 
