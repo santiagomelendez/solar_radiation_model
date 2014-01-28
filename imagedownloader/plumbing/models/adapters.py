@@ -3,10 +3,8 @@ sys.path.append(".")
 from django.db import models
 from core import ComplexProcess, Stream, MaterialStatus, Importer, Adapter
 from materials import File
-from datetime import datetime, timedelta
-import re
+from datetime import datetime
 from libs.file import netcdf as nc
-import os
 import glob
 import calendar
 from libs import matrix
@@ -46,6 +44,7 @@ class Program(ComplexProcess):
 
 	def execute(self):
 		self.do(self.stream)
+
 
 class Compact(Adapter):
 	class Meta(object):
