@@ -1,4 +1,4 @@
-from requester.models import FTPServerAccount, EmailAccount, Order, File, Request
+from requester.models import FTPServerAccount, EmailAccount, Order, File, Request, AutomaticDownload
 from requester.worker_manager import Job, print_exception
 import re
 import imaplib
@@ -243,7 +243,7 @@ class GOESRequest(Request,Job):
 		if self.do_selection(browser):
 			self.do_register_order(browser)
 			self.do_survey(browser)
-		background.browser_mgr.release(background)
+		background.browser_mgr.release()
 
 class QOSRequester(Job):
 	def __init__(self, automatic_download):

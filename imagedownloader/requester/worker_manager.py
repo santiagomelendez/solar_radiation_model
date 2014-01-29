@@ -122,7 +122,7 @@ class WorkerManager(object):
 			self.browser_mgr.bootup()
 			self.running = True
 			for worker in self._workers:
-				worker.start_working(self)
+				worker.start_working()
 		def stop_workers(self):
 			self.running = False
 			for worker in self._workers:
