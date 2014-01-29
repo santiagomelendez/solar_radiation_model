@@ -1,8 +1,6 @@
 from requester.models import AutomaticDownload
-from tastypie import fields
 from tastypie.authentication import SessionAuthentication
 from tastypie.resources import ModelResource
-from libs.tastypie_polymorphic import ModelResource
 
 
 class AutomaticDownloadResource(ModelResource):
