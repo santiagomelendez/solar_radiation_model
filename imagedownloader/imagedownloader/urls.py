@@ -10,7 +10,7 @@ urlpatterns = patterns('',
 	# Examples:
 	url(r'^plumbing/', include('plumbing.urls')),
 	url(r'^stations/', include('stations.urls')),
-	#url(r'^requester/', include('stations.urls')),
+	url(r'^requester/', include('requester.urls')),
 
 	# Uncomment the admin/doc line below to enable admin documentation:
 	url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
