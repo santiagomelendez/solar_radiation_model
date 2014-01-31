@@ -60,9 +60,11 @@ PYCONCAT=
 ifneq ($(PYVERSION),)
 	PYCONCAT=-
 endif
-PIP=pip
-PYTHON=python
-EASYINSTALL=easy_install
+PYTHON_PATH=/usr/bin/python$(PYVERSION)
+PIP=bin/pip
+PYTHON=bin/python
+FIRST_EASYINSTALL=easy_install
+EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=. bin/activate; 
 
@@ -134,43 +136,46 @@ libs-and-headers: $(LIBNETCDF) imagedownloader/aspects.py
 
 bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] $(VIRTUALENV)"
-	@ (sudo $(EASYINSTALL) virtualenv 2>&1) >> tracking.log
+	@ (sudo $(FIRST_EASYINSTALL) virtualenv 2>&1) >> tracking.log
 	@ echo "[ creating     ] $(VIRTUALENV) with no site packages"
-	@ ($(VIRTUALENV) . --no-site-packages 2>&1) >> tracking.log
+	@ ($(VIRTUALENV) --python=$(PYTHON_PATH) --no-site-packages . 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
 	@ echo "[ installing   ] numpy inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) numpy 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
-	@ ($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.txt 2>&1) >> tracking.log
+	@ ($(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1) >> tracking.log
 	@ touch bin/activate
 
 postgres-requirements:
 	@ echo "[ installing   ] $(PIP) requirements for postgres"
 	@ export PATH=${PATH}:$(POSTGRES_PATH)/ ; \
-		($(SOURCE_ACTIVATE) $(PIP) install -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
+		($(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
 		($(POSTGRES_PATH)/dropdb   $(dbname) -U $(user) 2>&1 ; \
 		$(POSTGRES_PATH)/createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
 
 db-migrate: $(DATABASE_REQUIREMENTS)
-	@ echo "[ migrating    ] setting up the database structure"
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py syncdb --noinput 2>&1) >> ../tracking.log
-	@ ($(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py migrate 2>&1) >> ../tracking.log
+	@ echo "[ migrating    ] setting up the database structure"	
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py syncdb --noinput 2>&1) >> ../tracking.log
+	@ ($(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py migrate 2>&1) >> ../tracking.log
 
 deploy: libs-and-headers bin/activate db-migrate
 
+show-version:
+	@ $(SOURCE_ACTIVATE) $(PYTHON) --version
+
 defaultsuperuser:
 	@ echo "For the 'dev' user please select a password"
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
 
 run:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runserver 8000
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runserver 8000
 
 runbackend:
-	$(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py runbackend 4
+	$(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runbackend 4
 
 test:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && $(PYTHON) manage.py test stations plumbing requester
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test stations plumbing requester
 
 test-coverage-travis-ci:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/,requester/models.py' manage.py test stations plumbing requester
