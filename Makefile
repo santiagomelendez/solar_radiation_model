@@ -56,14 +56,29 @@ ifeq ($(OS), Linux)
 		sudo passwd postgres ) && \
 		sudo ln -fs /usr/local/pgsql/lib/libpq.so.5 /usr/lib/libpq.so.5)
 endif
-PYCONCAT=
-ifneq ($(PYVERSION),)
-	PYCONCAT=-
+
+DEFAULT_VERSION=2.7.6
+export PYLARGEVERSION=$(PYVERSION)
+ifeq ($(PYLARGEVERSION),)
+	export PYLARGEVERSION=$(DEFAULT_VERSION)
 endif
-PYTHON_PATH=/usr/bin/python$(PYVERSION)
+PYCONCAT=-
+
+export DOTS=$(shell ./dots_amount $(PYLARGEVERSION))
+export PYSHORTVERSION=$${PYLARGEVERSION%.*}
+
+ifeq ($(DOTS),1)
+	PYSHORTVERSION=$(PYLARGEVERSION)
+endif
+
+export PYSHORTSUFIX_VER=$(PYCONCAT)$(PYSHORTVERSION)
+export PYLARGESUFIX_VER=$(PYCONCAT)$(PYLARGEVERSION)
+
+PYPREFIX_PATH=/usr/local
+PYTHONPATH=$(PYPREFIX_PATH)/bin/python$(PYSHORTVERSION)
+FIRST_EASYINSTALL=$(PYPREFIX_PATH)/bin/easy_install$(PYSHORTSUFIX_VER)
 PIP=bin/pip
 PYTHON=bin/python
-FIRST_EASYINSTALL=easy_install
 EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=. bin/activate; 
@@ -77,11 +92,13 @@ endif
 unattended:
 	@ (sudo ls 2>&1) >> tracking.log
 
-install-python27:
-	$(call get,Python-2.7,Python-2.7.tgz,http://www.python.org/ftp/python/2.7)
-	$(call compile,Python-2.7,,--prefix=/usr/local --with-threads --enable-shared)
-	$(call download,setuptools-0.6c11-py2.7.egg,http://pypi.python.org/packages/2.7/s/setuptools)
-	@ sudo sh setuptools-0.6c11-py2.7.egg
+Python$(PYLARGESUFIX_VER):
+	$(call get,Python$(PYLARGESUFIX_VER),Python$(PYLARGESUFIX_VER).tgz,http://www.python.org/ftp/python/$(PYLARGEVERSION))
+	$(call compile,Python$(PYLARGESUFIX_VER),,--prefix=$(PYPREFIX_PATH) --with-threads --enable-shared)
+
+$(PYTHONPATH): Python$(PYLARGESUFIX_VER)
+	@ $(call download,ez_setup.py,https://bitbucket.org/pypa/setuptools/raw/bootstrap)
+	@ (sudo $(PYTHONPATH) ez_setup.py 2>&1) >> tracking.log
 
 $(LIBSQLITE3):
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
@@ -134,17 +151,22 @@ imagedownloader/aspects.py:
 libs-and-headers: $(LIBNETCDF) imagedownloader/aspects.py
 	@ $(update_shared_libs)
 
-bin/activate: imagedownloader/requirements.txt
+bin/activate: $(PYTHONPATH) imagedownloader/requirements.txt
+	@ echo "[ using        ] $(PYTHONPATH)"
 	@ echo "[ installing   ] $(VIRTUALENV)"
 	@ (sudo $(FIRST_EASYINSTALL) virtualenv 2>&1) >> tracking.log
 	@ echo "[ creating     ] $(VIRTUALENV) with no site packages"
-	@ ($(VIRTUALENV) --python=$(PYTHON_PATH) --no-site-packages . 2>&1) >> tracking.log
+	@ ($(VIRTUALENV) --python=$(PYTHONPATH) --no-site-packages . 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
 	@ echo "[ installing   ] numpy inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) numpy 2>&1) >> tracking.log
+	@ echo "[ installing   ] h5py inside $(VIRTUALENV)"
+	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) h5py 2>&1) >> tracking.log
+	@ echo "[ installing   ] netCDF4 inside $(VIRTUALENV)"
+	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) netCDF4 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
-	@ ($(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1) >> tracking.log
+	@ (PATH=/usr/local/pgsql/bin:$(PATH); $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1) >> tracking.log
 	@ touch bin/activate
 
 postgres-requirements:
@@ -187,4 +209,4 @@ test-coverage: test-coverage-travis-ci test-coveralls
 
 clean: pg-stop
 	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
-	@ rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-2.7* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py
+	@ sudo rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py subversion
