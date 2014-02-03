@@ -64,7 +64,7 @@ ifeq ($(PYLARGEVERSION),)
 endif
 PYCONCAT=-
 
-export DOTS=$(shell ./dots_amount $(PYLARGEVERSION))
+export DOTS=$(shell sh ./dots_amount $(PYLARGEVERSION))
 export PYSHORTVERSION=$${PYLARGEVERSION%.*}
 
 ifeq ($(DOTS),1)
