@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*- 
 from plumbing.models import *
 from django.test import TestCase
-import re
 
 
 class TestMaterials(TestCase):
