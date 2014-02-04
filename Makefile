@@ -155,7 +155,7 @@ libs-and-headers: $(LIBNETCDF) $(PYTHONPATH) imagedownloader/aspects.py
 bin/activate: imagedownloader/requirements.txt
 	@ echo "[ using        ] $(PYTHONPATH)"
 	@ echo "[ installing   ] $(VIRTUALENV)"
-	@ sudo $(FIRST_EASYINSTALL) virtualenv 2>&1 #) >> tracking.log
+	@ (sudo $(FIRST_EASYINSTALL) virtualenv 2>&1) >> tracking.log
 	@ echo "[ creating     ] $(VIRTUALENV) with no site packages"
 	@ ($(PYTHONLIBS) $(VIRTUALENV) --python=$(PYTHONPATH) --no-site-packages . 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) inside $(VIRTUALENV)"
