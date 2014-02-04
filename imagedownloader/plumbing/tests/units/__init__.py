@@ -3,8 +3,8 @@ from test_collectorschannel import *
 from test_collectorstimed import *
 from test_complexprocesses import *
 from test_files import *
-from test_filestatuses import *
 from test_materials import *
+from test_materialstatuses import *
 from test_processes import *
 #from test_processmanagers import *
 from test_streams import *
