@@ -16,7 +16,7 @@ class TestTagManagers(TestCase):
 		# check if the __str__ method is defined to return the object pk, root_path and tags parameter.
 		result = u'[%s]' % self.loaded_tag_manager.tag_string
 		self.assertEquals(str(self.loaded_tag_manager), str(result))
-		self.assertEquals(str(tag_manager), str(u'[]'))
+		self.assertEquals(str(self.tag_manager), str(u'[]'))
 		# check if the __unicode__ method is defined to return the object pk, root_path and tags parameter.
 		self.assertEquals(unicode(self.loaded_tag_manager), result)
 		self.assertEquals(unicode(self.tag_manager), u'[]')
