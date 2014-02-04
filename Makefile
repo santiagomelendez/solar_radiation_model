@@ -65,7 +65,7 @@ endif
 PYCONCAT=-
 
 export DOTS=$(shell ./dots_amount.sh $(PYLARGEVERSION))
-export PYSHORTVERSION=$${PYLARGEVERSION%.*}
+export PYSHORTVERSION=$(shell ./short_version.sh $(PYLARGEVERSION))
 
 ifeq ($(DOTS),1)
 	PYSHORTVERSION=$(PYLARGEVERSION)
@@ -75,13 +75,14 @@ export PYSHORTSUFIX_VER=$(PYCONCAT)$(PYSHORTVERSION)
 export PYLARGESUFIX_VER=$(PYCONCAT)$(PYLARGEVERSION)
 
 PYPREFIX_PATH=/usr/local
+PYTHONLIBS=LD_LIBRARY_PATH=/usr/local/lib
 PYTHONPATH=$(PYPREFIX_PATH)/bin/python$(PYSHORTVERSION)
-FIRST_EASYINSTALL=$(PYPREFIX_PATH)/bin/easy_install$(PYSHORTSUFIX_VER)
+FIRST_EASYINSTALL=$(PYTHONLIBS) $(PYPREFIX_PATH)/bin/easy_install$(PYSHORTSUFIX_VER)
 PIP=bin/pip
 PYTHON=bin/python
 EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
-SOURCE_ACTIVATE=. bin/activate; 
+SOURCE_ACTIVATE=$(PYTHONLIBS) . bin/activate; 
 
 ifneq ($(filter-out postgres,$(MAKECMDGOALS)),$(MAKECMDGOALS))
 	DATABASE_REQUIREMENTS=postgres-requirements
@@ -94,11 +95,11 @@ unattended:
 
 Python$(PYLARGESUFIX_VER):
 	$(call get,Python$(PYLARGESUFIX_VER),Python$(PYLARGESUFIX_VER).tgz,http://www.python.org/ftp/python/$(PYLARGEVERSION))
-	$(call compile,Python$(PYLARGESUFIX_VER),,--prefix=$(PYPREFIX_PATH) --with-threads --enable-shared)
+	$(call compile,Python$(PYLARGESUFIX_VER),$(PYTHONLIBS),--prefix=$(PYPREFIX_PATH) --with-threads --enable-shared)
 
 $(PYTHONPATH): Python$(PYLARGESUFIX_VER)
 	@ $(call download,ez_setup.py,https://bitbucket.org/pypa/setuptools/raw/bootstrap)
-	@ (sudo $(PYTHONPATH) ez_setup.py 2>&1) >> tracking.log
+	@ (sudo $(PYTHONLIBS) $(PYTHONPATH) ez_setup.py 2>&1) >> tracking.log
 
 $(LIBSQLITE3):
 	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
@@ -148,15 +149,15 @@ imagedownloader/aspects.py:
 	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
-libs-and-headers: $(LIBNETCDF) imagedownloader/aspects.py
+libs-and-headers: $(LIBNETCDF) $(PYTHONPATH) imagedownloader/aspects.py
 	@ $(update_shared_libs)
 
-bin/activate: $(PYTHONPATH) imagedownloader/requirements.txt
+bin/activate: imagedownloader/requirements.txt
 	@ echo "[ using        ] $(PYTHONPATH)"
 	@ echo "[ installing   ] $(VIRTUALENV)"
-	@ (sudo $(FIRST_EASYINSTALL) virtualenv 2>&1) >> tracking.log
+	@ sudo $(FIRST_EASYINSTALL) virtualenv 2>&1 #) >> tracking.log
 	@ echo "[ creating     ] $(VIRTUALENV) with no site packages"
-	@ ($(VIRTUALENV) --python=$(PYTHONPATH) --no-site-packages . 2>&1) >> tracking.log
+	@ ($(PYTHONLIBS) $(VIRTUALENV) --python=$(PYTHONPATH) --no-site-packages . 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
 	@ echo "[ installing   ] numpy inside $(VIRTUALENV)"
