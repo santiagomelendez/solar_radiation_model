@@ -12,6 +12,15 @@ class TestTagManagers(TestCase):
 		self.tag_manager = TagManager.empty()
 		self.loaded_tag_manager = TagManager(tag_string="vegetable,food,red,spice")
 
+	def test_serialization(self):
+		# check if the __str__ method is defined to return the object pk, root_path and tags parameter.
+		result = u'[%s]' % self.loaded_tag_manager.tag_string
+		self.assertEquals(str(self.loaded_tag_manager), str(result))
+		self.assertEquals(str(tag_manager), str(u'[]'))
+		# check if the __unicode__ method is defined to return the object pk, root_path and tags parameter.
+		self.assertEquals(unicode(self.loaded_tag_manager), result)
+		self.assertEquals(unicode(self.tag_manager), u'[]')
+
 	def test_empty(self):
 		# check if empty() class method create and save an empty TagManager.
 		self.assertNotEquals(self.tag_manager.id, None)
