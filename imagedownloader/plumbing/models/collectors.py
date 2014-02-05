@@ -15,16 +15,17 @@ class CollectTimed(Collect):
 	slotly = models.BooleanField()
 	slots_by_day = models.IntegerField(default = 1)
 
-	def get_key(self, file_status):
+	def get_key(self, material_status):
 		r = ""
-		dt = file_status.material.datetime()
-		if self.yearly: r += str(dt.year)
-		if self.monthly: r += (".M" + str(dt.month).zfill(2))
-		if self.weekly: r += (".W" + str(dt.isocalendar()[1]).zfill(2))
-		if self.week_day: r += (".P" + str(dt.weekday()))
-		if self.daily: r += (".D" + str(dt.timetuple().tm_yday))
-		if self.hourly: r += (".H" + str(dt.hour).zfill(2))
-		if self.slotly: r += (".S" + str(getslots(dt.hour,self.slots_by_day/24)).zfill(2))
+		if hasattr(material_status.material,'datetime'):
+			dt = material_status.material.datetime()
+			if self.yearly: r += str(dt.year)
+			if self.monthly: r += (".M" + str(dt.month).zfill(2))
+			if self.weekly: r += (".W" + str(dt.isocalendar()[1]).zfill(2))
+			if self.week_day: r += (".P" + str(dt.weekday()))
+			if self.daily: r += (".D" + str(dt.timetuple().tm_yday))
+			if self.hourly: r += (".H" + str(dt.hour).zfill(2))
+			if self.slotly: r += (".S" + str(getslots(dt.hour,self.slots_by_day/24)).zfill(2))
 		return r
 
 
@@ -32,5 +33,13 @@ class CollectChannel(Collect):
 	class Meta(object):
 		app_label = 'plumbing'
 
-	def get_key(self, file_status):
-		return "BAND_"+str(file_status.material.channel()).zfill(2)
+	def init_empty_streams(self, stream):
+		resultant_stream = super(CollectChannel,self).init_empty_streams(stream)
+		for k in resultant_stream:
+			if hasattr(stream.materials.all()[0].material, 'satellite'):
+				resultant_stream[k].tags.insert_first(stream.materials.all()[0].material.satellite())
+		return resultant_stream
+
+	def get_key(self, material_status):
+		if not hasattr(material_status.material,'channel'): return ""
+		return "BAND_"+str(material_status.material.channel()).zfill(2)

@@ -17,7 +17,7 @@ class FilterChannel(Filter):
 		channels = self.channels.all()
 		chs = [ unicode(ch.in_file) for ch in channels ]
 		sat = channels[0].satellite
-		return material_status.material.channel() in chs and material_status.material.satellite() == sat.in_file
+		return hasattr(material_status.material,'channel') and material_status.material.channel() in chs and material_status.material.satellite() == sat.in_file
 
 
 class FilterTimed(Filter):
@@ -39,7 +39,8 @@ class FilterTimed(Filter):
 		return self.number - half_error <= self.number <= self.number + half_error
 
 	def should_be_cloned(self, material_status):
-		dt = material_status.file.datetime()
+		if not hasattr(material_status.material,'datetime'): return False
+		dt = material_status.material.datetime()
 		if self.yearly: return self.contains(dt.year)
 		if self.monthly: return self.contains(dt.month)
 		if self.weekly: return self.contains(dt.isocalendar()[1])
@@ -63,8 +64,9 @@ class FilterSolarElevation(Filter):
 		return solarelevation_min
 
 	def should_be_cloned(self, material_status):
+		if not hasattr(material_status.material, 'latlon'): return False
 		sub_lon = np.float(self.hourly_longitude)
-		lat,lon = material_status.file.latlon()
+		lat,lon = material_status.material.latlon()
 		lower_solar_elevation = np.float(self.minimum)
 		return self.solar_elevation(material_status.material, sub_lon, lat, lon) >= lower_solar_elevation
 
@@ -79,11 +81,11 @@ class AppendCountToRadiationCoefficient(Process):
 	def do(self, stream):
 		from libs.sat.goes import calibration
 		resultant_stream = stream.clone()
-		for fs in stream.files.all():
-			f = fs.file
-			if f.channel() == '01':
-				sat = f.satellite()
-				root = nc.open(f.completepath())[0]
+		for ms in stream.materials.all():
+			m = ms.material
+			if hasattr(m, 'channel') and hasattr(m, 'satellite') and m.channel() == '01':
+				sat = m.satellite()
+				root = nc.open(m.completepath())[0]
 				nc.getdim(root,'coefficient',1)
 				var = nc.getvar(root, 'counts_shift', 'f4', ('coefficient',), 4)
 				var[0] = calibration.counts_shift.coefficient(sat)
@@ -92,12 +94,12 @@ class AppendCountToRadiationCoefficient(Process):
 				var = nc.getvar(root, 'prelaunch', 'f4', ('coefficient',), 4)
 				var[0] = calibration.prelaunch.coefficient(sat)[0]
 				var = nc.getvar(root, 'postlaunch', 'f4', ('coefficient',), 4)
-				dt = f.datetime()
+				dt = m.datetime()
 				var[0] = calibration.postlaunch.coefficient(sat, dt.year, dt.month)
 				#data = np.float32(self.calibrated_coefficient) * ((data / np.float32(self.counts_shift)) - np.float32(self.space_measurement))
 				nc.close(root)
-			fs.processed=True
-			fs.save()
+			ms.processed=True
+			ms.save()
 		return resultant_stream
 
 	def mark_with_tags(self, stream):

@@ -54,8 +54,9 @@ class Compact(Adapter):
 	def do(self, stream):
 		filename = "%spkg.%s.nc" % (self.stream.root_path,stream.tags.make_filename())
 		f = self.do_file(filename,stream)
-		ms = MaterialStatus(material=f,stream=self.stream)
-		ms.save()
+		if f:
+			ms = MaterialStatus(material=f,stream=self.stream)
+			ms.save()
 		return self.stream
 
 	def getdatetimenow(self):
@@ -63,25 +64,28 @@ class Compact(Adapter):
 
 	def do_file(self, filename, stream):
 		# create compact file and initialize basic settings
-		root, is_new = nc.open(filename)
-		if is_new:
-			sample = nc.open(stream.files.all()[0].file.completepath())[0]
-			shape = sample.variables['data'].shape
-			nc.getdim(root,'northing', shape[1])
-			nc.getdim(root,'easting', shape[2])
-			nc.getdim(root,'timing')
-			v_lat = nc.getvar(root,'lat', 'f4', ('northing','easting',), 4)
-			v_lon = nc.getvar(root,'lon', 'f4', ('northing','easting',), 4)
-			v_lon[:] = nc.getvar(sample, 'lon')[:]
-			v_lat[:] = nc.getvar(sample, 'lat')[:]
-			nc.close(sample)
-			nc.sync(root)
-		self.do_var(root, 'data', stream)
-		# save the content inside the compact file
-		if not root is None: nc.close(root)
-		f = File(localname=filename)
-		f.save()
-		return f
+		if hasattr(stream.materials.all()[0].material,'completepath'):
+			root, is_new = nc.open(filename)
+			if is_new:
+				sample = nc.open(stream.materials.all()[0].material.completepath())[0]
+				shape = sample.variables['data'].shape
+				nc.getdim(root,'northing', shape[1])
+				nc.getdim(root,'easting', shape[2])
+				nc.getdim(root,'timing')
+				v_lat = nc.getvar(root,'lat', 'f4', ('northing','easting',), 4)
+				v_lon = nc.getvar(root,'lon', 'f4', ('northing','easting',), 4)
+				v_lon[:] = nc.getvar(sample, 'lon')[:]
+				v_lat[:] = nc.getvar(sample, 'lat')[:]
+				nc.close(sample)
+				nc.sync(root)
+			self.do_var(root, 'data', stream)
+			# save the content inside the compact file
+			if not root is None: nc.close(root)
+			f = File(localname=filename)
+			f.save()
+			return f
+		else:
+			return None
 
 	def do_var(self, root, var_name, stream):
 		material_statuses = sorted(stream.unprocessed(), key=lambda ms: ms.material.filename())

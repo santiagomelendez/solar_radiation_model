@@ -205,7 +205,6 @@ class Collect(Process):
 		resultant_stream = {}
 		for k in keys:
 			resultant_stream[k] = stream.clone()
-			resultant_stream[k].tags.insert_first(stream.materials.all()[0].material.satellite())
 		return resultant_stream
 
 	def do(self, stream):
@@ -232,7 +231,7 @@ class Filter(Process):
 
 	def do(self, stream):
 		resultant_stream = stream.clone()
-		for fs in stream.files.all():
+		for fs in stream.materials.all():
 			if self.should_be_cloned(fs):
 				fs.clone_for(resultant_stream)
 			fs.processed=True
