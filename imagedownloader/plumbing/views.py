@@ -23,7 +23,7 @@ def status(request):
 	return render(request, 'plumbing/status.html', {'programs': programs})
 
 def update(request):
-	new_importers = Importer.setup_unloaded()
+	new_importers = len(Importer.setup_unloaded())
 	template = loader.get_template('plumbing/update.html')
 	context = Context({
 		'new_importers': new_importers,

@@ -261,5 +261,6 @@ class Importer(Adapter):
 	def setup_unloaded(klass):
 		importers = [ i for i in klass.objects.all() if not hasattr(i,"thread") ]
 		for i in importers:
-			i.thread = threading.Timer(i.frequency, i.update).start()
-		return len(importers)
+			i.thread = threading.Timer(i.frequency, i.update)
+			i.thread.start()
+		return importers

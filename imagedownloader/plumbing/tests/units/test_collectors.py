@@ -12,7 +12,7 @@ class TestCollectors(TestCase):
 	def setUp(self):
 		self.collect = Collect.objects.create(name='abstract one')
 		self.other_collect = Collect.objects.create(name='abstract two')
-		self.other_collect.get_key = lambda file_status: "even" if (file_status.material.datetime()).month % 2 == 0 else "uneven"
+		self.other_collect.get_key = lambda material_status: "even" if (material_status.material.datetime()).month % 2 == 0 else "uneven"
 		self.stream = Stream(root_path="/var/service/data/GVAR_IMG/argentina/")
 		self.stream.save()
 		months = range(1,13)

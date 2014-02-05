@@ -32,16 +32,15 @@ class TestComplexProcesses(TestCase):
 			if previous:
 				self.assertTrue(previous.used_by_position >= p.used_by.position)
 
-	def test_do(self):
-		# wrap all the 'do' mehtods of children process.
-		self.called_subprocesses = 0
+	def wrap_subprocess(self):
+		# wrap all the 'do' mehtods of each subprocess, and register when a subprocesses is executed.
 		def fake_get_ordered_subprocesses(*args):
 			subprocesses = yield aspects.proceed(*args)
 			dos = [ po.do for po in subprocesses ]
 			def fake_do(*args):
 				input_stream = args[1]
-				self.called_subprocesses += 1
-				# patch the results of any process
+				self.called_subprocesses.append(args[0])
+				# patch the results of any process to go through all the subprocesses.
 				tmp_results = yield aspects.proceed(*args)
 				results = self.complex_process.encapsulate_in_array(tmp_results)
 				for r in results:
@@ -55,6 +54,16 @@ class TestComplexProcesses(TestCase):
 		# check if execute each subprocess and collect all the results by wrapping the subprocesses do method.
 		get_ordered_subprocesses = [ self.complex_process.get_ordered_subprocesses ]
 		aspects.with_wrap(fake_get_ordered_subprocesses, *get_ordered_subprocesses)
+
+	def test_do(self):
+		# wrap all the 'do' mehtods of children process.
+		self.called_subprocesses = []
+		self.wrap_subprocess()
 		resultant_stream = self.complex_process.do(self.stream)[0]
-		self.assertEquals(self.called_subprocesses, self.complex_process.processes.count())
+		# check if the amount of subprocesses called is consistent with the subprocess of the complex_process.
+		self.assertEquals(len(self.called_subprocesses), self.complex_process.processes.count())
+		# check if the order of each subprocess was right.
+		for i in range(len(self.called_subprocesses)):
+			self.assertEquals(self.called_subprocesses[i], self.complex_process.get_ordered_subprocesses()[i])
+		# check if the result contain all the materials of the input stream.
 		self.assertEquals(resultant_stream.materials.count(), self.stream.materials.count())
