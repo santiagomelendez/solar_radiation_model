@@ -30,8 +30,6 @@ def coord2geo(column, row, hrv):
 	
 	sys.stdout.write('Obtaining middle''s coodinates...\n')
 	sys.stdout.flush()
-	if not column: column = 0
-	if not row: row = 0
 	x = ((column - coff) * np.power(2,16)) / float(cfac)
 	y = ((row - loff) * np.power(2,16)) / float(lfac)
 	
@@ -78,6 +76,8 @@ def geo2coord(lat, lon, hrv):
 	
 	sys.stdout.write('Obtaining middle''s coodinates...\n')
 	sys.stdout.flush()
+	if not column: column = 0
+	if not row: row = 0
 	x = ((column - coff) * np.power(2,16)) / float(cfac)
 	y = ((row - loff) * np.power(2,16)) / float(lfac)
 	
