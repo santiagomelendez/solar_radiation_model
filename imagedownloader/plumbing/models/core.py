@@ -103,7 +103,7 @@ class Material(PolymorphicModel, object):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return unicode(Material.objects.get(pk=self.pk)).encode("utf-8")
+		return unicode(Material.objects.get(id=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'(created: %s, modified: %s)' % (unicode(self.created), unicode(self.modified))
@@ -130,7 +130,7 @@ class MaterialStatus(models.Model):
 		return cloned_material_status
 
 
-class Process(PolymorphicModel):
+class Process(PolymorphicModel,object):
 	class Meta(object):
 		app_label = 'plumbing'
 		verbose_name_plural = 'Processes'
@@ -139,7 +139,7 @@ class Process(PolymorphicModel):
 	description = models.TextField(db_index=True)
 
 	def __str__(self):
-		return unicode(Process.objects.get(pk=self.pk)).encode("utf-8")
+		return unicode(Process.objects.get(id=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s [%s]' % (self.__class__.__name__, self.name)

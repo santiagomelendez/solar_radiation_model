@@ -66,7 +66,7 @@ class Account(PolymorphicModel,object):
 		return u'%s, %s' % (self.password, unicode(self.created))
 
 	def __str__(self):
-		return unicode(Account.objects.get(pk=self.pk)).encode("utf-8")
+		return unicode(Account.objects.get(id=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s [%s]' % (self.__class__.__name__, self.identification())

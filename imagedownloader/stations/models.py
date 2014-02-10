@@ -44,7 +44,7 @@ class Device(PolymorphicModel):
 	description = models.TextField(db_index=True,default="")
 
 	def __str__(self):
-		return unicode(Device.objects.get(pk=self.pk)).encode("utf-8")
+		return unicode(Device.objects.get(id=self.id)).encode("utf-8")
 
 	def __unicode__(self):
 		return u'%s %s (%s)' % (self.__class__.__name__, unicode(self.product), self.serial_number)
