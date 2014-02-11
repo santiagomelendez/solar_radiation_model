@@ -23,6 +23,9 @@ class Area(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.name
 
 	def getlongitude(self,datetime=datetime.utcnow().replace(tzinfo=pytz.UTC)):
@@ -38,7 +41,10 @@ class UTCTimeRange(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return str(self.begin) + ' -> ' + str(self.end)
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s -> %s' (unicode(self.begin), unicode(self.end))
 
 	def step(self):
 		begin = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.begin is None else self.begin
@@ -121,6 +127,9 @@ class Satellite(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.name
 
 
@@ -134,7 +143,10 @@ class Channel(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
-		return self.name + ' ('+ str(self.satellite) + ')'
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s (%s)' % (self.name, unicode(self.satellite))
 
 
 class AutomaticDownload(models.Model):
@@ -152,6 +164,9 @@ class AutomaticDownload(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.title
 
 	def pending_requests(self):
@@ -206,7 +221,10 @@ class Request(models.Model):
 	aged = models.BooleanField(default=False)
 
 	def __str__(self):
-		return str(self.begin) + '->' + str(self.end) + ' (' + self.order.identification + ')'
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return u'%s->%s (%s)' % (unicode(self.begin), unicode(self.end), self.order.identification)
 
 	def get_channels(self):
 		return self.automatic_download.channels.all()
@@ -264,6 +282,9 @@ class Order(models.Model):
 	modified = models.DateTimeField(auto_now=True)
 
 	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
 		return self.identification
 
 	def pending_files(self):
@@ -327,6 +348,12 @@ class File(models.Model):
 	failures = models.IntegerField(default=0)
 	created = models.DateTimeField(auto_now_add=True)
 	modified = models.DateTimeField(auto_now=True)
+
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+
+	def __unicode__(self):
+		return self.localname
 
 	def channel(self):
 		res = re.search('BAND_([0-9]*)\.', self.completepath())

@@ -1,5 +1,6 @@
 import numpy as np
-from libs.console import *
+import sys
+from libs.console import show, show_progress
 
 try:
 	from pycuda.compiler import SourceModule

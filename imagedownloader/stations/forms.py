@@ -27,10 +27,10 @@ class DocumentForm(forms.Form,object):
 		return None if not label or not backup_name or len(rows) is 0 else configuration, end, rows, between, refresh_presision
 
 	def process_rows(self,request,configuration):
-		file = request.FILES['backup']
-		backup_name = configuration.get_backup_filename(file.name)
+		f = request.FILES['backup']
+		backup_name = configuration.get_backup_filename(f.name)
 		with open(backup_name, 'wb') as destination:
-			for chunk in file.chunks():
+			for chunk in f.chunks():
 				destination.write(chunk)
 		try:
 			return getattr(self, "t_%s_to_rows" % backup_name.split(".")[-1])(backup_name), backup_name

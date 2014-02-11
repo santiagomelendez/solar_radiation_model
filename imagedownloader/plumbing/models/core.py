@@ -2,7 +2,6 @@ import sys
 sys.path.append(".")
 from django.db import models
 from polymorphic import PolymorphicModel, PolymorphicManager
-import glob
 from libs.console import show
 from datetime import datetime
 import pytz

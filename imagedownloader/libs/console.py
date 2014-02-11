@@ -6,7 +6,7 @@ try:
 	import pyttsx
 	engine = pyttsx.init()
 except (OSError, ImportError):
-	class FakeTTSX:
+	class FakeTTSX(object):
 		def say(self, speech):
 			pass
 		def runAndWait(self):
