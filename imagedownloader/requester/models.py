@@ -44,7 +44,7 @@ class UTCTimeRange(models.Model):
 		return unicode(self).encode("utf-8")
 
 	def __unicode__(self):
-		return u'%s -> %s' (unicode(self.begin), unicode(self.end))
+		return u'%s -> %s' % (unicode(self.begin), unicode(self.end))
 
 	def step(self):
 		begin = datetime.utcnow().replace(tzinfo=pytz.UTC) if self.begin is None else self.begin

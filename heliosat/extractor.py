@@ -97,7 +97,7 @@ def nc_process_insert_img(rootgrp, index, dt, img, linketurbidity, hrv):
 		v_img_12[index,:] = img
 	else:
 		v_img_01 = nc_process_getvariable(rootgrp,'canal_01', 'f4', ('timing','northing','easting',),4)
-		v_img_02 = nc_process_getvariable(rootgrp,'canal_02', 'f4', ('timing','northing','easting',),4)
+		#v_img_02 = nc_process_getvariable(rootgrp,'canal_02', 'f4', ('timing','northing','easting',),4)
 		v_img_01[index,:] = img[0]
 		v_img_01[index,:] = img[1]
 	v_linketurbidity = nc_process_getvariable(rootgrp,'tlinke', 'f4', ('timing','northing','easting',),4)

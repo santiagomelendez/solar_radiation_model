@@ -2,7 +2,6 @@
 
 import numpy as np
 import msg_navigation
-import sys
 import pickle
 from netCDF4 import Dataset
 from pyproj import Proj
@@ -26,8 +25,8 @@ def generate_lat_lon(shape, hrv):
 
 def nc_save_lat_lon(lat, lon, name):
 	rootgrp = Dataset(name + '.nc','w',format='NETCDF4')
-	d_north = rootgrp.createDimension('northing', lat.shape[0])
-	d_east = rootgrp.createDimension('easting', lat.shape[1])
+	rootgrp.createDimension('northing', lat.shape[0])
+	rootgrp.createDimension('easting', lat.shape[1])
 	v_lat = rootgrp.createVariable('latitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
 	v_lon = rootgrp.createVariable('longitudes', 'f4', ('northing','easting',), zlib=True, least_significant_digit=4)
 	v_lat[:] = lat

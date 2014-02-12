@@ -6,7 +6,7 @@ import domain_process as dp
 import msg_navigation as msg
 import numpy as np
 from datetime import datetime
-from matplotlib.dates import date2num
+#from matplotlib.dates import date2num
 
 #import matplotlib.pyplot as plt
 #from mpl_toolkits.axes_grid1 import AxesGrid
@@ -198,7 +198,7 @@ def getsolarelevation(dt,lat,omega):
 
 def getsecondmin(albedo):
 	min1_albedo = np.ma.masked_array(albedo, albedo == np.amin(albedo, axis=0))
-	return np.amin(albedo, axis=0)
+	return np.amin(min1_albedo, axis=0)
 
 def getcloudindex(apparentalbedo, groundalbedo, cloudalbedo):
 	return (apparentalbedo - groundalbedo)/(cloudalbedo - groundalbedo)
