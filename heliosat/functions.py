@@ -58,7 +58,8 @@ def getexcentricity(gamma):
 	return 1.000110 + 0.034221 * np.cos(gamma) + 0.001280 * np.sin(gamma) + 0.000719 * np.cos(2 * gamma) + 0.000077 * np.sin(2 * gamma)
 
 def getdeclination(gamma):
-	return 0.006918 - 0.399912 * np.cos(gamma) + 0.070257 * np.sin(gamma) - 0.006758 * np.cos(2 * gamma) + 0.000907 * np.sin(2 * gamma) - 0.002697 * np.cos(3 * gamma) + 0.00148 * np.sin(3 * gamma)
+	return 0.006918 - 0.399912 * np.cos(gamma) + 0.070257 * np.sin(gamma) - 0.006758 * np.cos(2 * gamma) \
+	+ 0.000907 * np.sin(2 * gamma) - 0.002697 * np.cos(3 * gamma) + 0.00148 * np.sin(3 * gamma)
 
 def gettimeequation(gamma):
 	return (0.000075 + 0.001868 * np.cos(gamma) - 0.032077 * np.sin(gamma) - 0.014615 * np.cos(2 * gamma) - 0.040849 * np.sin(2 * gamma)) * (12 /np.pi)
@@ -90,7 +91,8 @@ def getopticaldepth(opticalpath):
 	tmp = np.zeros(opticalpath.shape) + 1.0
 	highslopebeam = opticalpath <= 20
 	lowslopebeam = opticalpath > 20
-	tmp[highslopebeam] = 1/(6.625928 + 1.92969 * opticalpath[highslopebeam] - 0.170073 * np.power(opticalpath[highslopebeam],2) + 0.011517 * np.power(opticalpath[highslopebeam],3) - 0.000285 * np.power(opticalpath[highslopebeam],4))
+	tmp[highslopebeam] = 1/(6.625928 + 1.92969 * opticalpath[highslopebeam] - 0.170073 * np.power(opticalpath[highslopebeam],2) \
+	+ 0.011517 * np.power(opticalpath[highslopebeam],3) - 0.000285 * np.power(opticalpath[highslopebeam],4))
 	tmp[lowslopebeam] = 1/(10.4 + 0.718 * opticalpath[lowslopebeam])
 	return tmp
 	#return np.where(opticalpath > 20, \
