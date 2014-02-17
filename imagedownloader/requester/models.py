@@ -179,7 +179,7 @@ class AutomaticDownload(models.Model):
 	def step(self):
 		return self.time_range.step()
 
-	def get_next_request_range(self, begin_0=None, end_0=None):
+	def get_next_request_range(self, end_0=None):
 		begins = [ r.end for r in self.request_set.all() ]
 		begins.append(self.time_range.begin)
 		if not end_0 is None:

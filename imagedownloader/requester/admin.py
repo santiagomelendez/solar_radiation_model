@@ -1,6 +1,6 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
-from requester.models import *
+from requester.models import Account, FTPServerAccount, WebServerAccount, EmailAccount, Area, UTCTimeRange, GOESRequest, Satellite, Channel, Order, File, AutomaticDownload
 
 
 class AreaAdmin(admin.ModelAdmin):

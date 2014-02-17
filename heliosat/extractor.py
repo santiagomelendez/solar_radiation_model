@@ -6,7 +6,7 @@ import domain_process as dp
 import processfiles as pf
 import h5py
 from functions import gettstdatetime, getdatetimefromint, getintfromdatetime, getclearsky, getcloudindex, \
-	getsecondmin, getsolarelevation, getdatetimefromint, getslots, getcloudalbedo, geteffectivealbedo, getapparentalbedo, \
+	getsecondmin, getsolarelevation, getslots, getcloudalbedo, geteffectivealbedo, getapparentalbedo, \
 	gettransmitance, getopticaldepth, getcorrectedelevation, getopticalpath, getelevation, getalbedo, getatmosphericradiance, \
 	getsatellitalzenitangle, getglobalirradiance, getdiffuseirradiance, getbeamirradiance, getexcentricity, getzenitangle, \
 	gethourlyangle, getdecimalhour, gettsthour, gettimeequation, getdeclination, gettotaldays, getjulianday, getdailyangle

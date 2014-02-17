@@ -61,7 +61,7 @@ class IMAPNotificationChecker(Job):
 		notifications = []
 		try:
 			for num in data[0].split():
-				typ, msg_data = self._connection.fetch(num, '(RFC822)')
+				msg_data = self._connection.fetch(num, '(RFC822)')[1]
 				for response_part in msg_data:
 					if isinstance(response_part, tuple):
 						msg = email.message_from_string(response_part[1])
@@ -72,7 +72,7 @@ class IMAPNotificationChecker(Job):
 							scraped_data=self.scrap_body(payload)
 							order_id = result.group(1)
 							notifications.append((order_id, scraped_data))
-				typ = self._connection.store(num, '+FLAGS', r'(\Seen)')[0]
+				self._connection.store(num, '+FLAGS', r'(\Seen)')
 		finally:
 			pass
 		return notifications
@@ -174,6 +174,10 @@ class GOESRequest(Request,Job):
 	erase6 = '\b\b\b\b\b\b'
 	erase8 = '\b\b\b\b\b\b\b\b'
 	erase10 ='\b\b\b\b\b\b\b\b\b\b'
+	def __str__(self):
+		return unicode(self).encode("utf-8")
+	def __unicode__(self):
+		return u'%s->%s (%s)' % (unicode(self.begin), unicode(self.end), self.order.identification)
 	def do_login(self, browser, server):
 		login_button = browser.find_link_by_partial_text('Login')
 		print login_button
@@ -259,7 +263,7 @@ class QOSRequester(Job):
 		is_full = incomming >= self._automatic.max_simultaneous_request
 		print len(self._jobs), incomming, self._automatic.max_simultaneous_request
 		return is_full
-	def can_proceed(self,begin_0=None,end_0=None):
+	def can_proceed(self,end_0=None):
 		t_begin, t_end = self._automatic.get_next_request_range(end_0=end_0)
 		begin = min(t_begin, t_end)
 		end = max(t_begin, t_end)
