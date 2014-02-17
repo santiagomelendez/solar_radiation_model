@@ -1,4 +1,4 @@
-from requester.models import FTPServerAccount, EmailAccount, Order, File, Request, AutomaticDownload
+from requester.models.core import FTPServerAccount, EmailAccount, Order, File, Request, AutomaticDownload
 from requester.worker_manager import Job, print_exception
 import re
 import imaplib
