@@ -193,7 +193,7 @@ class Collect(Process):
 	class Meta(object):
 		app_label = 'plumbing'
 
-	def get_key(self, file_status):
+	def get_key(self, material_status):
 		raise AttributeError("'Collect' object has no attribute 'get_key'")
 
 	def get_keys(self, stream):
