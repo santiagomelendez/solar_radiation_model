@@ -167,12 +167,12 @@ bin/activate: imagedownloader/requirements.txt
 	@ echo "[ installing   ] netCDF4 inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) netCDF4 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
-	@ (PATH=/usr/local/pgsql/bin:$(PATH); $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1) >> tracking.log
+	@ (PATH="/usr/local/pgsql/bin:$(PATH)"; $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1) >> tracking.log
 	@ touch bin/activate
 
 postgres-requirements:
 	@ echo "[ installing   ] $(PIP) requirements for postgres"
-	@ export PATH=${PATH}:$(POSTGRES_PATH)/ ; \
+	@ export PATH="${PATH}:$(POSTGRES_PATH)/" ; \
 		($(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
 		($(POSTGRES_PATH)/dropdb   $(dbname) -U $(user) 2>&1 ; \
 		$(POSTGRES_PATH)/createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
