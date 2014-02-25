@@ -28,3 +28,4 @@ django-sslify==0.2.2
 defusedxml==0.4.1
 lxml==2.3.6
 django-tastypie==0.11.0
+factopy==0.0.2

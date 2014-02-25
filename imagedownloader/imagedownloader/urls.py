@@ -1,5 +1,6 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
+import factopy
 import plumbing, stations, requester
 
 # Api provide an easy way of automatically determining the URL conf.
@@ -8,6 +9,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
 	# Examples:
+	url(r'^factopy/', include('factopy.urls')),
 	url(r'^plumbing/', include('plumbing.urls')),
 	url(r'^stations/', include('stations.urls')),
 	url(r'^requester/', include('requester.urls')),
