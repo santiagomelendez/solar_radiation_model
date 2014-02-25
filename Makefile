@@ -94,7 +94,7 @@ unattended:
 	@ (sudo ls 2>&1) >> tracking.log
 
 Python$(PYLARGESUFIX_VER):
-	$(call get,Python$(PYLARGESUFIX_VER),Python$(PYLARGESUFIX_VER).tgz,http://www.python.org/ftp/python/$(PYLARGEVERSION))
+	$(call get,Python$(PYLARGESUFIX_VER),Python$(PYLARGESUFIX_VER).tgz,http://legacy.python.org/ftp/python/$(PYLARGEVERSION))
 	$(call compile,Python$(PYLARGESUFIX_VER),$(PYTHONLIBS),--prefix=$(PYPREFIX_PATH) --with-threads --enable-shared)
 
 $(PYTHONPATH): Python$(PYLARGESUFIX_VER)
