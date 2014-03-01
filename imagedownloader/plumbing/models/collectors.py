@@ -1,5 +1,5 @@
 from django.db import models
-from core import Collect
+from factopy.models import Collect
 from libs.geometry.jaen import getslots
 
 

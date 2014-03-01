@@ -1,37 +1,35 @@
-- model: plumbing.tagmanager
+- model: factopy.tagmanager
   pk: 1
   fields:
     tag_string: ""
 
-- model: plumbing.tagmanager
+- model: factopy.tagmanager
   pk: 2
   fields:
     tag_string: ""
 
-- model: plumbing.stream
+- model: factopy.stream
   pk: 1
   fields:
-    root_path: "/home/eloy/data/GVAR_IMG/bsas_test/"
     tags: 1
     created: "2013-01-01T00:00+00:00"
     modified: "2013-01-01T00:00+00:00"
 
-- model: plumbing.stream
+- model: factopy.stream
   pk: 2
   fields:
-    root_path: "/home/eloy/data/GVAR_IMG/packages/bsas/"
     tags: 2
     created: "2013-01-01T00:00+00:00"
     modified: "2013-01-01T00:00+00:00"
 
-- model: plumbing.process
+- model: factopy.process
   pk: 1
   fields:
-    polymorphic_ctype: 54
+    polymorphic_ctype: 43
     name: 'Filter nights and compact'
     description: 'Filter all images with solar elevation < 10 degrees.'
 
-- model: plumbing.complexprocess
+- model: factopy.complexprocess
   pk: 1
   fields: {}
 
@@ -40,14 +38,14 @@
   fields:
     stream: 1
 
-- model: plumbing.process
+- model: factopy.process
   pk: 2
   fields:
-    polymorphic_ctype: 55
+    polymorphic_ctype: 44
     name: 'Save'
     description: 'Compile all in a NetCDF4 file.'
 
-- model: plumbing.adapter
+- model: factopy.adapt
   pk: 2
   fields:
     stream: 2
@@ -57,14 +55,14 @@
   fields:
     extension: '.nc'
 
-- model: plumbing.process
+- model: factopy.process
   pk: 3
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 38
     name: 'G13C1'
     description: 'Select GOES 13 Channel 1 (visible channel).'
 
-- model: plumbing.filter
+- model: factopy.filter
   pk: 3
   fields: {}
 
@@ -73,14 +71,14 @@
   fields:
     channels: [1]
 
-- model: plumbing.process
+- model: factopy.process
   pk: 4
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 36
     name: 'year.Mmonth'
     description: 'Classify the files by year and by month.'
 
-- model: plumbing.collect
+- model: factopy.collect
   pk: 4
   fields: {}
 
@@ -91,14 +89,14 @@
     monthly: True
     weekly: False
 
-- model: plumbing.process
+- model: factopy.process
   pk: 5
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 37
     name: 'Channel classify'
     description: 'Aggregate images by channel number'
 
-- model: plumbing.collect
+- model: factopy.collect
   pk: 5
   fields: {}
 
@@ -106,14 +104,14 @@
   pk: 5
   fields: {}
 
-- model: plumbing.process
+- model: factopy.process
   pk: 6
   fields:
-    polymorphic_ctype: 51
+    polymorphic_ctype: 40
     name: 'Filter night''s images'
     description: 'Only pass the images with a solar elevation >= 10 degrees.'
 
-- model: plumbing.filter
+- model: factopy.filter
   pk: 6
   fields: {}
 
@@ -122,14 +120,14 @@
   fields:
     minimum: '10.00'
 
-- model: plumbing.process
+- model: factopy.process
   pk: 7
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 36
     name: 'year'
     description: 'Classify the files by year.'
 
-- model: plumbing.collect
+- model: factopy.collect
   pk: 7
   fields: {}
 
@@ -140,14 +138,14 @@
     monthly: False
     weekly: False
 
-- model: plumbing.process
+- model: factopy.process
   pk: 8
   fields:
-    polymorphic_ctype: 47
+    polymorphic_ctype: 36
     name: 'year.Wweek'
     description: 'Classify the files by year and by week.'
 
-- model: plumbing.collect
+- model: factopy.collect
   pk: 8
   fields: {}
 
@@ -158,35 +156,35 @@
     monthly: False
     weekly: True
 
-- model: plumbing.processorder
+- model: factopy.processorder
   pk: 1
   fields:
     position: 1
     process: 3
     complex_process: 1
 
-- model: plumbing.processorder
+- model: factopy.processorder
   pk: 2
   fields:
     position: 2
     process: 4
     complex_process: 1
 
-- model: plumbing.processorder
+- model: factopy.processorder
   pk: 3
   fields:
     position: 3
     process: 5
     complex_process: 1
 
-- model: plumbing.processorder
+- model: factopy.processorder
   pk: 4
   fields:
     position: 4
     process: 6
     complex_process: 1
 
-- model: plumbing.processorder
+- model: factopy.processorder
   pk: 5
   fields:
     position: 5

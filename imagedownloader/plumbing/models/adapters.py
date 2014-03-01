@@ -1,7 +1,8 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from core import ComplexProcess, Stream, MaterialStatus, Importer, Adapter
+from factopy.models import ComplexProcess, MaterialStatus, Importer, Adapt, Stream
+#from plumbing import Stream
 from materials import File
 from datetime import datetime
 from libs.file import netcdf as nc
@@ -46,7 +47,7 @@ class Program(ComplexProcess):
 		self.do(self.stream)
 
 
-class Compact(Adapter):
+class Compact(Adapt):
 	class Meta(object):
 			app_label = 'plumbing'
 	extension = models.TextField()

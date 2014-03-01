@@ -1,5 +1,5 @@
 from django.db import models
-from core import Material
+from factopy.models import Material
 import os
 import re
 import calendar

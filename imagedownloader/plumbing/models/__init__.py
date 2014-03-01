@@ -1,4 +1,3 @@
-from core import *
 from materials import *
 from collectors import *
 from filters import *

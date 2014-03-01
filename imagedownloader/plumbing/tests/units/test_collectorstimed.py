@@ -14,11 +14,12 @@ class TestCollectorsTimed(TestCase):
 		self.years_collect = CollectTimed.objects.filter(id=7)[0]
 		self.months_collect = CollectTimed.objects.filter(id=4)[0]
 		self.weeks_collect = CollectTimed.objects.filter(id=8)[0]
-		self.stream = Stream(root_path="/var/service/data/GVAR_IMG/argentina/")
+		self.root_path="/var/service/data/GVAR_IMG/argentina/"
+		self.stream = Stream()
 		self.stream.save()
 		self.days_tuples = [ (str(y),str(d*10)) for y in range(2012,2016) for d in range(1,365/10) ]
 		random.shuffle(self.days_tuples)
-		self.files = [ File.objects.get_or_create(localname="%s%s/goes13.%s.%s.160927.BAND_01.nc" % (self.stream.root_path,dt[0],dt[0],dt[1]))[0] for dt in self.days_tuples]
+		self.files = [ File.objects.get_or_create(localname="%s%s/goes13.%s.%s.160927.BAND_01.nc" % (self.root_path,dt[0],dt[0],dt[1]))[0] for dt in self.days_tuples]
 		for f in self.files:
 			f.save()
 			fs = MaterialStatus.objects.get_or_create(material=f,stream=self.stream,processed=False)[0]

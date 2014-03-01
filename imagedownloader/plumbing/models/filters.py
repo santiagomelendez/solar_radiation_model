@@ -1,7 +1,7 @@
 from django.db import models
 from requester.models import Channel
 from decimal import Decimal
-from core import Process, Filter
+from factopy.models import Process, Filter
 import numpy as np
 from libs.geometry import jaen as geo
 from libs.file import netcdf as nc
