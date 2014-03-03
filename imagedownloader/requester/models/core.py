@@ -428,4 +428,4 @@ class File(models.Model):
 			self.order.save()
 
 
-from requester.models_goes import *
+from requester.models.models_goes import *
