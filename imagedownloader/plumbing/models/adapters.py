@@ -3,7 +3,7 @@ sys.path.append(".")
 from django.db import models
 from factopy.models import ComplexProcess, MaterialStatus, Importer, Adapt, Stream
 #from plumbing import Stream
-from materials import File
+from requester.models import File
 from datetime import datetime
 from libs.file import netcdf as nc
 import glob

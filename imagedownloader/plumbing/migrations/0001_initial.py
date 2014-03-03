@@ -8,16 +8,9 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding model 'File'
-        db.create_table(u'plumbing_file', (
-            (u'material_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['factopy.Material'], unique=True, primary_key=True)),
-            ('localname', self.gf('django.db.models.fields.TextField')(default='', unique=True, db_index=True)),
-        ))
-        db.send_create_signal('plumbing', ['File'])
-
         # Adding model 'Image'
         db.create_table(u'plumbing_image', (
-            (u'file_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['plumbing.File'], unique=True, primary_key=True)),
+            (u'file_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.File'], unique=True, primary_key=True)),
         ))
         db.send_create_signal('plumbing', ['Image'])
 
@@ -107,9 +100,6 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
-        # Deleting model 'File'
-        db.delete_table(u'plumbing_file')
-
         # Deleting model 'Image'
         db.delete_table(u'plumbing_image')
 
@@ -198,9 +188,9 @@ class Migration(SchemaMigration):
         },
         'factopy.stream': {
             'Meta': {'object_name': 'Stream'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 1, 0, 0)'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 3, 0, 0)'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 1, 0, 0)'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 3, 0, 0)'}),
             'tags': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'stream'", 'to': "orm['factopy.TagManager']"})
         },
         'factopy.tagmanager': {
@@ -233,11 +223,6 @@ class Migration(SchemaMigration):
             u'adapt_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Adapt']", 'unique': 'True', 'primary_key': 'True'}),
             'extension': ('django.db.models.fields.TextField', [], {})
         },
-        'plumbing.file': {
-            'Meta': {'object_name': 'File', '_ormbases': ['factopy.Material']},
-            'localname': ('django.db.models.fields.TextField', [], {'default': "''", 'unique': 'True', 'db_index': 'True'}),
-            u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'})
-        },
         'plumbing.filterchannel': {
             'Meta': {'object_name': 'FilterChannel', '_ormbases': ['factopy.Filter']},
             'channels': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['requester.Channel']", 'db_index': 'True', 'symmetrical': 'False'}),
@@ -264,8 +249,8 @@ class Migration(SchemaMigration):
             'yearly': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
         },
         'plumbing.image': {
-            'Meta': {'object_name': 'Image', '_ormbases': ['plumbing.File']},
-            u'file_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['plumbing.File']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'Image', '_ormbases': ['requester.File']},
+            u'file_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.File']", 'unique': 'True', 'primary_key': 'True'})
         },
         'plumbing.program': {
             'Meta': {'object_name': 'Program', '_ormbases': ['factopy.ComplexProcess']},
@@ -284,6 +269,32 @@ class Migration(SchemaMigration):
             'password': ('django.db.models.fields.TextField', [], {}),
             'polymorphic_ctype': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'polymorphic_requester.account_set'", 'null': 'True', 'to': u"orm['contenttypes.ContentType']"})
         },
+        'requester.area': {
+            'Meta': {'object_name': 'Area'},
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'east_longitude': ('django.db.models.fields.DecimalField', [], {'max_digits': '5', 'decimal_places': '2'}),
+            'hourly_longitude': ('django.db.models.fields.DecimalField', [], {'default': "'0.00'", 'max_digits': '5', 'decimal_places': '2'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'name': ('django.db.models.fields.TextField', [], {}),
+            'north_latitude': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
+            'south_latitude': ('django.db.models.fields.DecimalField', [], {'max_digits': '4', 'decimal_places': '2'}),
+            'west_longitude': ('django.db.models.fields.DecimalField', [], {'max_digits': '5', 'decimal_places': '2'})
+        },
+        'requester.automaticdownload': {
+            'Meta': {'object_name': 'AutomaticDownload'},
+            'area': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Area']"}),
+            'channels': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['requester.Channel']", 'symmetrical': 'False'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'email_server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.EmailAccount']"}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'max_simultaneous_request': ('django.db.models.fields.IntegerField', [], {}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'paused': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'root_path': ('django.db.models.fields.TextField', [], {}),
+            'time_range': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.UTCTimeRange']"}),
+            'title': ('django.db.models.fields.TextField', [], {'db_index': 'True'})
+        },
         'requester.channel': {
             'Meta': {'object_name': 'Channel'},
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
@@ -292,6 +303,47 @@ class Migration(SchemaMigration):
             'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'name': ('django.db.models.fields.TextField', [], {'db_index': 'True'}),
             'satellite': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Satellite']"})
+        },
+        'requester.emailaccount': {
+            'Meta': {'object_name': 'EmailAccount', '_ormbases': ['requester.Account']},
+            u'account_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Account']", 'unique': 'True', 'primary_key': 'True'}),
+            'hostname': ('django.db.models.fields.TextField', [], {}),
+            'port': ('django.db.models.fields.IntegerField', [], {}),
+            'username': ('django.db.models.fields.EmailField', [], {'max_length': '75'})
+        },
+        'requester.file': {
+            'Meta': {'object_name': 'File', '_ormbases': ['factopy.Material']},
+            'begin_download': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'db_index': 'True'}),
+            'downloaded': ('django.db.models.fields.BooleanField', [], {'default': 'False', 'db_index': 'True'}),
+            'end_download': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'db_index': 'True'}),
+            'failures': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
+            'localname': ('django.db.models.fields.TextField', [], {'default': "''", 'unique': 'True', 'db_index': 'True'}),
+            u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'}),
+            'order': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Order']", 'null': 'True'}),
+            'remotename': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'size': ('django.db.models.fields.IntegerField', [], {'null': 'True'})
+        },
+        'requester.ftpserveraccount': {
+            'Meta': {'object_name': 'FTPServerAccount', '_ormbases': ['requester.ServerAccount']},
+            'hostname': ('django.db.models.fields.TextField', [], {}),
+            u'serveraccount_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.ServerAccount']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'requester.order': {
+            'Meta': {'object_name': 'Order', '_ormbases': ['factopy.Material']},
+            'downloaded': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'empty_flag': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'identification': ('django.db.models.fields.TextField', [], {'db_index': 'True'}),
+            u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'}),
+            'request': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Request']", 'unique': 'True'}),
+            'server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.FTPServerAccount']", 'null': 'True'})
+        },
+        'requester.request': {
+            'Meta': {'object_name': 'Request', '_ormbases': ['factopy.Material']},
+            'aged': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'automatic_download': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.AutomaticDownload']"}),
+            'begin': ('django.db.models.fields.DateTimeField', [], {'db_index': 'True'}),
+            'end': ('django.db.models.fields.DateTimeField', [], {'db_index': 'True'}),
+            u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.satellite': {
             'Meta': {'object_name': 'Satellite'},
@@ -307,6 +359,14 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'ServerAccount', '_ormbases': ['requester.Account']},
             u'account_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Account']", 'unique': 'True', 'primary_key': 'True'}),
             'username': ('django.db.models.fields.TextField', [], {})
+        },
+        'requester.utctimerange': {
+            'Meta': {'object_name': 'UTCTimeRange'},
+            'begin': ('django.db.models.fields.DateTimeField', [], {}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
+            'end': ('django.db.models.fields.DateTimeField', [], {}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'})
         },
         'requester.webserveraccount': {
             'Meta': {'object_name': 'WebServerAccount', '_ormbases': ['requester.ServerAccount']},

@@ -75,7 +75,7 @@
 - model: stations.device
   pk: 1
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 1
     serial_number: 90953
     description: ""
@@ -88,7 +88,7 @@
 - model: stations.device
   pk: 2
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 2
     serial_number: 690236
     description: ""
@@ -101,7 +101,7 @@
 - model: stations.device
   pk: 3
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 2
     serial_number: 700683
     description: ""
@@ -114,7 +114,7 @@
 - model: stations.device
   pk: 4
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 2
     serial_number: "287/3"
     description: ""
@@ -127,7 +127,7 @@
 - model: stations.device
   pk: 5
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 2
     serial_number: "690276"
     description: ""
@@ -140,7 +140,7 @@
 - model: stations.device
   pk: 6
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 3
     serial_number: "25484"
     description: ""
@@ -153,7 +153,7 @@
 - model: stations.device
   pk: 7
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 3
     serial_number: "25483"
     description: ""
@@ -166,7 +166,7 @@
 - model: stations.device
   pk: 8
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 3
     serial_number: 14272
     description: ""
@@ -179,7 +179,7 @@
 - model: stations.device
   pk: 9
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 4
     serial_number: "20566"
     description: ""
@@ -192,7 +192,7 @@
 - model: stations.device
   pk: 10
   fields:
-    polymorphic_ctype: 48
+    polymorphic_ctype: 47
     product: 4
     serial_number: 23774
     description: ""
@@ -205,7 +205,7 @@
 - model: stations.device
   pk: 11
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "9041651"
     description: ""
@@ -217,7 +217,7 @@
 - model: stations.device
   pk: 12
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "9141555"
     description: ""
@@ -229,7 +229,7 @@
 - model: stations.device
   pk: 13
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "1009010"
     description: ""
@@ -241,7 +241,7 @@
 - model: stations.device
   pk: 14
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "9141555 - repetido"
     description: "Esta con la clave 12 ¿se encuentra tanto en Marcos Juarez como en Azul?"
@@ -253,7 +253,7 @@
 - model: stations.device
   pk: 15
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "9056254"
     description: ""
@@ -265,7 +265,7 @@
 - model: stations.device
   pk: 16
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "10068990"
     description: ""
@@ -277,7 +277,7 @@
 - model: stations.device
   pk: 17
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 5
     serial_number: "8158330"
     description: ""
@@ -289,7 +289,7 @@
 - model: stations.device
   pk: 18
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 6
     serial_number: "12433"
     description: ""
@@ -301,7 +301,7 @@
 - model: stations.device
   pk: 19
   fields:
-    polymorphic_ctype: 49
+    polymorphic_ctype: 48
     product: 6
     serial_number: "unknown"
     description: ""
@@ -313,7 +313,7 @@
 - model: stations.device
   pk: 20
   fields:
-    polymorphic_ctype: 59
+    polymorphic_ctype: 49
     product: 7
     serial_number: "unknown2"
     description: ""

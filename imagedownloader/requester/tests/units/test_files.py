@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*- 
-from plumbing.models import *
+from requester.models import File
 from django.test import TestCase
 from datetime import datetime
 import pytz
