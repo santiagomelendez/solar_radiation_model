@@ -426,6 +426,3 @@ class File(models.Model):
 			self.save()
 			self.order.downloaded = False
 			self.order.save()
-
-
-from requester.models.models_goes import *
