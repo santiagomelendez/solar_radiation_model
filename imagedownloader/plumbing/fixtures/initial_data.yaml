@@ -25,7 +25,7 @@
 - model: factopy.process
   pk: 1
   fields:
-    polymorphic_ctype: 41
+    polymorphic_ctype: 42
     name: 'Filter nights and compact'
     description: 'Filter all images with solar elevation < 10 degrees.'
 
@@ -41,7 +41,7 @@
 - model: factopy.process
   pk: 2
   fields:
-    polymorphic_ctype: 42
+    polymorphic_ctype: 43
     name: 'Save'
     description: 'Compile all in a NetCDF4 file.'
 
@@ -58,7 +58,7 @@
 - model: factopy.process
   pk: 3
   fields:
-    polymorphic_ctype: 36
+    polymorphic_ctype: 37
     name: 'G13C1'
     description: 'Select GOES 13 Channel 1 (visible channel).'
 
@@ -74,7 +74,7 @@
 - model: factopy.process
   pk: 4
   fields:
-    polymorphic_ctype: 34
+    polymorphic_ctype: 35
     name: 'year.Mmonth'
     description: 'Classify the files by year and by month.'
 
@@ -92,7 +92,7 @@
 - model: factopy.process
   pk: 5
   fields:
-    polymorphic_ctype: 35
+    polymorphic_ctype: 36
     name: 'Channel classify'
     description: 'Aggregate images by channel number'
 
@@ -107,7 +107,7 @@
 - model: factopy.process
   pk: 6
   fields:
-    polymorphic_ctype: 38
+    polymorphic_ctype: 39
     name: 'Filter night''s images'
     description: 'Only pass the images with a solar elevation >= 10 degrees.'
 
@@ -123,7 +123,7 @@
 - model: factopy.process
   pk: 7
   fields:
-    polymorphic_ctype: 34
+    polymorphic_ctype: 35
     name: 'year'
     description: 'Classify the files by year.'
 
@@ -141,7 +141,7 @@
 - model: factopy.process
   pk: 8
   fields:
-    polymorphic_ctype: 34
+    polymorphic_ctype: 35
     name: 'year.Wweek'
     description: 'Classify the files by year and by week.'
 

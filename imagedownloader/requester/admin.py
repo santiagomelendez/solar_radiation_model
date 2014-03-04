@@ -7,6 +7,7 @@ from factopy.admin import MaterialAdmin, ProcessAdmin, MaterialChildAdmin, Proce
 
 MaterialAdmin.child_models += (
 	(File, MaterialChildAdmin),
+	(GOESRequest, MaterialChildAdmin),
 	(Request, MaterialChildAdmin),
 	(Order, MaterialChildAdmin),
 )

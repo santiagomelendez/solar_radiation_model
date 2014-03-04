@@ -157,7 +157,7 @@ class File(Material):
 		return self.datetime() < obj.datetime()
 
 	def filename(self):
-		return self.localname.split(u'/')[-1]
+		return self.localname.split('/')[-1]
 
 	def completepath(self):
 		return os.path.expanduser(os.path.normpath(self.localname))

@@ -172,6 +172,8 @@ class FTPFileDownloader(Job):
 		self.disconnect()
 
 class GOESRequest(Request,Job):
+	class Meta(object):
+		app_label = 'requester'
 	erase6 = '\b\b\b\b\b\b'
 	erase8 = '\b\b\b\b\b\b\b\b'
 	erase10 ='\b\b\b\b\b\b\b\b\b\b'
@@ -300,7 +302,7 @@ class QOSRequester(Job):
 class QOSManager(object):
 	class QOSManager__impl(Job):
 		def __init__(self):
-			self._priority = 1
+			self.priority = 1
 			self._requesters = {}
 			self._checkers = {}
 			self._downloading = {}

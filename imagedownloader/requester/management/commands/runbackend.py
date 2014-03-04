@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
-from requester.models_goes import QOSManager
-from requester.worker_manager import WorkerManager
+from requester.models import QOSManager
+from requester.models.worker_manager import WorkerManager
 import sys
 
 

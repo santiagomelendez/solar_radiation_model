@@ -153,6 +153,12 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(u'requester_automaticdownload_channels', ['automaticdownload_id', 'channel_id'])
 
+        # Adding model 'GOESRequest'
+        db.create_table(u'requester_goesrequest', (
+            (u'request_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Request'], unique=True, primary_key=True)),
+        ))
+        db.send_create_signal('requester', ['GOESRequest'])
+
 
     def backwards(self, orm):
         # Deleting model 'Request'
@@ -196,6 +202,9 @@ class Migration(SchemaMigration):
 
         # Removing M2M table for field channels on 'AutomaticDownload'
         db.delete_table('requester_automaticdownload_channels')
+
+        # Deleting model 'GOESRequest'
+        db.delete_table(u'requester_goesrequest')
 
 
     models = {
@@ -279,6 +288,10 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'FTPServerAccount', '_ormbases': ['requester.ServerAccount']},
             'hostname': ('django.db.models.fields.TextField', [], {}),
             u'serveraccount_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.ServerAccount']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'requester.goesrequest': {
+            'Meta': {'object_name': 'GOESRequest', '_ormbases': ['requester.Request']},
+            u'request_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Request']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.order': {
             'Meta': {'object_name': 'Order', '_ormbases': ['factopy.Material']},
