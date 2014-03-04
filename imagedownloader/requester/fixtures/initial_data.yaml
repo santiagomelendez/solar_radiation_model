@@ -26,14 +26,14 @@
   pk: 1
   fields:
     polymorphic_ctype: 28
-    password: pass
+    password: noaaadmin
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
 - model: requester.serveraccount
   pk: 1
   fields:
-    username: gersolar.de
+    username: noaa.gvarim
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
@@ -46,7 +46,7 @@
   pk: 2
   fields:
     polymorphic_ctype: 26
-    password: pass
+    password: noaaadmin
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
@@ -55,7 +55,7 @@
   fields:
     hostname: imap.gmail.com
     port: 993
-    username: gersolar.dev@gmail.com
+    username: noaa.gvarimg@gmail.com
 
 - model: requester.satellite
   pk: 1
