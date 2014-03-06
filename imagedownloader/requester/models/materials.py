@@ -1,20 +1,20 @@
 from django.db import models
 from factopy.models import Material
+from models_goes import FTPServerAccount
 from datetime import datetime, timedelta
 import pytz  # 3rd party
 import os
 from django.db.models import Min, Max
-from decimal import Decimal
-from netCDF4 import Dataset
 from libs.console import total_seconds
 import re
 import calendar
+from adapters import NOAAAdapt
 
 
 class Request(Material):
 	class Meta(object):
 		app_label = 'requester'
-	automatic_download = models.ForeignKey('AutomaticDownload',db_index=True)
+	adapt = models.ForeignKey('NOAAAdapt',db_index=True)
 	begin = models.DateTimeField(db_index=True)
 	end = models.DateTimeField(db_index=True)
 	aged = models.BooleanField(default=False)
@@ -26,20 +26,20 @@ class Request(Material):
 		return u'%s->%s (%s)' % (unicode(self.begin), unicode(self.end), self.order.identification)
 
 	def get_channels(self):
-		return self.automatic_download.channels.all()
+		return self.adapt.channels.all()
 
 	def get_satellite(self):
 		return self.get_channels()[0].satellite
 
 	def get_request_server(self):
 		# For each request one server is used (the same satellite is shared by all the channels)
-		return self.get_satellite().request_server
+		return self.adapt().request_server
 
 	def get_area(self):
-		return self.automatic_download.area
+		return self.adapt.area
 
 	def get_email_server(self):
-		return self.automatic_download.email_server
+		return self.adapt.email_server
 
 	def get_timerange(self):
 		return (self.begin, self.end)
@@ -229,7 +229,7 @@ class File(Material):
 
 class Image(File):
 	class Meta(object):
-		app_label = 'plumbing'
+		app_label = 'requester'
 
 	def satellite(self):
 		sats = Satellite.objects.find(in_file = self.satellite())

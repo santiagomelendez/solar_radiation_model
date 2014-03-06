@@ -1,5 +1,5 @@
-from requester.models.core import FTPServerAccount, EmailAccount, Order, Request, AutomaticDownload
-from requester.models.materials import File
+from adapters import NOAAAdapt
+from core import EmailAccount, FTPServerAccount
 from requester.models.worker_manager import Job, print_exception
 import re
 import imaplib
@@ -171,7 +171,9 @@ class FTPFileDownloader(Job):
 		self.download()
 		self.disconnect()
 
-class GOESRequest(Request,Job):
+from factopy.models import Process
+
+class GOESRequest(Process,Job):
 	class Meta(object):
 		app_label = 'requester'
 	erase6 = '\b\b\b\b\b\b'
@@ -270,7 +272,7 @@ class QOSRequester(Job):
 		t_begin, t_end = self._automatic.get_next_request_range(end_0=end_0)
 		begin = min(t_begin, t_end)
 		end = max(t_begin, t_end)
-		time_range = self._automatic.time_range
+		time_range = self._automatic
 		range_begin = min(time_range.begin, time_range.end)
 		range_end = max(time_range.begin, time_range.end)
 		inside_range = begin >= range_begin and end <= range_end
@@ -290,7 +292,7 @@ class QOSRequester(Job):
 		# Make many requests at once (taking care of the pending_orders and the jobs).
 		while should_create:
 			print "\033[34;1mAdding to the queue a new GOESRequest...\033[0m"
-			req = GOESRequest(automatic_download=self._automatic, begin=begin, end=end)
+			req = GOESRequest(adapt=self._automatic, begin=begin, end=end)
 			self.put_job(req,background) # , priority=7))
 			should_create, begin, end = self.can_proceed(end_0=end)
 	def run(self,background):
@@ -320,7 +322,7 @@ class QOSManager(object):
 			return self._downloading[file_object.id]
 		def initialize_new_requester(self,background):
 			print "Checking new automatic downloads..."
-			news = [ self.get_requester(ad) for ad in AutomaticDownload.objects.all() if not ad in self._requesters ]
+			news = [ self.get_requester(ad) for ad in NOAAAdapt.objects.all() if not ad in self._requesters ]
 			for requester in news:
 				background.put_job(requester)
 			print "Finish checking new automatic downloads..."
