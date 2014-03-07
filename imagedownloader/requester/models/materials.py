@@ -1,6 +1,6 @@
 from django.db import models
 from factopy.models import Material
-from models_goes import FTPServerAccount
+from processes import FTPServerAccount
 from datetime import datetime, timedelta
 import pytz  # 3rd party
 import os
