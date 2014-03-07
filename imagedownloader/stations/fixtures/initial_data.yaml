@@ -1,7 +1,7 @@
 - model: stations.brand
   pk: 1
   fields:
-    name: "Kip&Zonen"
+    name: "Kipp&Zonen"
 
 - model: stations.brand
   pk: 2
