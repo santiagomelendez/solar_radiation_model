@@ -45,10 +45,10 @@ class Request(Material):
 		return (self.begin, self.end)
 
 	def get_order(self):
-		orders = Order.objects.filter(request=self)
+		orders = [] #Order.objects.filter(request=self)
 		if len(orders) == 0:
 			self.save()
-			order = Order()
+			order = {} # Order()
 			order.request = self
 			order.identification = ''
 			order.save()
@@ -69,7 +69,7 @@ class Request(Material):
 		return self.order.total_time()
 
 
-class Order(Material):
+"""class Order(Material):
 	class Meta(object):
 		app_label = 'requester'
 	request = models.OneToOneField('Request',db_index=True)
@@ -129,14 +129,14 @@ class Order(Material):
 		return self.request.get_timerange()[0].year
 
 	def julian_day(self):
-		return min(self.request.get_timerange()[0].timetuple()[7],self.request.get_timerange()[1].timetuple()[7])
+		return min(self.request.get_timerange()[0].timetuple()[7],self.request.get_timerange()[1].timetuple()[7])"""
 
 
 class File(Material):
 	class Meta(object):
 		app_label = 'requester'
 	localname = models.TextField(unique = True, db_index=True, default="")
-	order = models.ForeignKey('Order', db_index=True, null=True)
+	#order = models.ForeignKey('Order', db_index=True, null=True)
 	remotename = models.TextField(null=True)
 	size = models.IntegerField(null=True)
 	downloaded = models.BooleanField(db_index=True)

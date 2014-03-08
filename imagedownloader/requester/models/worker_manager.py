@@ -22,16 +22,6 @@ def print_exception():
 	lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
 	print ''.join('!! ' + line for line in lines)
 
-class Job(object):
-	def __init__(self, priority=4):
-		self.priority = priority
-		self.ready = False
-	def __cmp__(self, other):
-		return cmp(self.priority, other.priority)
-	def run(self, background):
-		pass
-	def cleanup(self):
-		pass
 
 class Worker(object):
 	def __init__(self, the_id, manager):

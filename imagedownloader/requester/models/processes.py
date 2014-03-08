@@ -1,6 +1,7 @@
+from django.db import models
 from adapters import NOAAAdapt
 from core import EmailAccount, FTPServerAccount
-from requester.models.worker_manager import Job, print_exception
+from requester.models.worker_manager import print_exception
 import re
 import imaplib
 import email
@@ -9,23 +10,42 @@ from libs.console import show
 import os
 from datetime import datetime
 import pytz
+from factopy.models import Process
 
 
-class IMAPNotificationChecker(Job):
-	def __init__(self, server):
-		super(IMAPNotificationChecker, self).__init__(5)
-		self._server = server
+class Job(Process,object):
+	class Meta(object):
+		app_label = 'requester'
+	"""def __init__(self, priority=4):
+		self.priority = priority
+		self.ready = False"""
+	def __cmp__(self, other):
+		return cmp(self.priority, other.priority)
+	def run(self, background):
+		pass
+	def cleanup(self):
+		pass
+
+
+class NOAAEMailChecker(Job):
+	class Meta(object):
+		app_label = 'requester'
+	server = models.ForeignKey('EmailAccount')
+
+	"""def __init__(self, server):
+		super(NOAAEMailChecker, self).__init__(5)"""
 	def __del__(self):
 		self.disconnect()
 	def connect(self):
-		self._connection = imaplib.IMAP4_SSL(str(self._server.hostname), self._server.port)
-		self._connection.login(self._server.username, self._server.password)
+		self._connection = imaplib.IMAP4_SSL(str(self.server.hostname), self.server.port)
+		self._connection.login(self.server.username, self.server.password)
 	def disconnect(self):
-		try:
-			self._connection.close()
-		except Exception:
-			print_exception()
-		self._connection.logout()
+		if hasattr(self,'_connection'):
+			try:
+				self._connection.close()
+			except Exception:
+				print_exception()
+			self._connection.logout()
 	def extract_body(self,payload):
 		if isinstance(payload,str):
 			return payload
@@ -94,31 +114,38 @@ class IMAPNotificationChecker(Job):
 					f.save()
 		self.disconnect()
 	def run(self,background):
-		print 'Checking mail... (' + str(self._server) + ')'
+		print 'Checking mail... (' + str(self.server) + ')'
 		try:
 			self.create_new_orders()
 		except Exception as e:
 			print 'Error ', e
 			print_exception()
-		print 'Finish checking mail... (' + str(self._server) + ')'
-		background.wait('IMAPNotificationChecker'+str(self._server), 5*60)
+		print 'Finish checking mail... (' + str(self.server) + ')'
+		background.wait('NOAAEMailChecker'+str(self.server), 5*60)
 		background.put_job(self)
 
 
-class FTPFileDownloader(Job):
-	def __init__(self, file_identification):
-		super(FTPFileDownloader,self).__init__(10)
-		self._file_id = file_identification
+class NOAAFTPDownloader(Job):
+	class Meta(object):
+		app_label = 'requester'
+	service = models.ForeignKey('FTPServerAccount', null=True)
+	file = models.ForeignKey('File', null=True)
+
+	"""def __init__(self):
+		super(NOAAFTPDownloader,self).__init__(10)
 		self.size = 0
-		self.stalled_times = 0
+		self.stalled_times = 0"""
 	def __del__(self):
 		self.disconnect()
 	def get_file_object(self):
-		return File.objects.get(pk=self._file_id)
+		# TODO: factopy.models.Stream should implement a get_material method
+		self.file = self.stream.get_material()
+		self.save()
+		return self.file
 	def connect(self):
-		service = (self.get_file_object()).order.server
-		if not service is None:
-			self._ftp = FTP(host=service.hostname, user=service.username, passwd=service.password)
+		#service = (self.get_file_object()).order.server
+		if not self.service is None:
+			self._ftp = FTP(host=self.service.hostname, user=self.service.username, passwd=self.service.password)
 	def disconnect(self):
 		if hasattr(self, '_ftp'):
 			if not self._ftp.sock is None:
@@ -171,14 +198,14 @@ class FTPFileDownloader(Job):
 		self.download()
 		self.disconnect()
 
-from factopy.models import Process
 
-class GOESRequest(Process,Job):
+class GOESRequest(Job):
 	class Meta(object):
 		app_label = 'requester'
 	erase6 = '\b\b\b\b\b\b'
 	erase8 = '\b\b\b\b\b\b\b\b'
 	erase10 ='\b\b\b\b\b\b\b\b\b\b'
+
 	def __str__(self):
 		return unicode(self).encode("utf-8")
 	def __unicode__(self):
@@ -254,12 +281,16 @@ class GOESRequest(Process,Job):
 			self.do_survey(browser)
 		background.browser_mgr.release()
 
+
 class QOSRequester(Job):
-	def __init__(self, automatic_download):
+	class Meta(object):
+		app_label = 'requester'
+
+	"""def __init__(self, automatic_download):
 		super(QOSRequester, self).__init__(2)
 		self._automatic = automatic_download
 		self._jobs = []
-		self._file_downloader = {}
+		self._file_downloader = {}"""
 	def put_job(self, job,background):
 		self._jobs.append(job)
 		background.put_job(job)
@@ -303,22 +334,25 @@ class QOSRequester(Job):
 
 class QOSManager(object):
 	class QOSManager__impl(Job):
-		def __init__(self):
+		class Meta(object):
+			app_label = 'requester'
+
+		"""def __init__(self):
 			self.priority = 1
 			self._requesters = {}
 			self._checkers = {}
-			self._downloading = {}
+			self._downloading = {}"""
 		def get_requester(self, ad):
 			if not ad in self._requesters:
 				self._requesters[ad] = QOSRequester(ad)
 			return self._requesters[ad]
 		def get_checker(self, server):
 			if not server in self._checkers:
-				self._checkers[server] = IMAPNotificationChecker(server)
+				self._checkers[server] = NOAAEMailChecker(server)
 			return self._checkers[server]
 		def get_downloader(self, file_object):
 			if not file_object.id in self._downloading:
-				self._downloading[file_object.id] = FTPFileDownloader(file_object.id)
+				self._downloading[file_object.id] = NOAAFTPDownloader(file_object.id)
 			return self._downloading[file_object.id]
 		def initialize_new_requester(self,background):
 			print "Checking new automatic downloads..."

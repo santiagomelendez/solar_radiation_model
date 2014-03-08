@@ -204,6 +204,34 @@
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
+- model: factopy.tagmanager
+  pk: 4
+  fields:
+    tag_string: ""
+
+- model: factopy.stream
+  pk: 4
+  fields:
+    tags: 4
+    created: "2013-01-01T00:00+00:00"
+    modified: "2013-01-01T00:00+00:00"
+
+- model: factopy.process
+  pk: 10
+  fields:
+    polymorphic_ctype: 30
+    name: "NOAA e-mail checker"
+    description: "NOAA GVAR_IMG e-mail checker"
+
+- model: requester.job
+  pk: 10
+  fields: {}
+
+- model: requester.noaaemailchecker
+  pk: 10
+  fields:
+    server: 2
+
 - model: requester.noaaadapt_channels
   pk: 11
   fields:

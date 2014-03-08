@@ -109,11 +109,44 @@ class Migration(SchemaMigration):
         ))
         db.create_unique(u'requester_noaaadapt_channels', ['noaaadapt_id', 'channel_id'])
 
-        # Adding model 'GOESRequest'
-        db.create_table(u'requester_goesrequest', (
+        # Adding model 'Job'
+        db.create_table(u'requester_job', (
             (u'process_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['factopy.Process'], unique=True, primary_key=True)),
         ))
+        db.send_create_signal('requester', ['Job'])
+
+        # Adding model 'NOAAEMailChecker'
+        db.create_table(u'requester_noaaemailchecker', (
+            (u'job_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Job'], unique=True, primary_key=True)),
+            ('server', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.EmailAccount'])),
+        ))
+        db.send_create_signal('requester', ['NOAAEMailChecker'])
+
+        # Adding model 'NOAAFTPDownloader'
+        db.create_table(u'requester_noaaftpdownloader', (
+            (u'job_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Job'], unique=True, primary_key=True)),
+            ('service', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.FTPServerAccount'], null=True)),
+            ('file', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.File'], null=True)),
+        ))
+        db.send_create_signal('requester', ['NOAAFTPDownloader'])
+
+        # Adding model 'GOESRequest'
+        db.create_table(u'requester_goesrequest', (
+            (u'job_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Job'], unique=True, primary_key=True)),
+        ))
         db.send_create_signal('requester', ['GOESRequest'])
+
+        # Adding model 'QOSRequester'
+        db.create_table(u'requester_qosrequester', (
+            (u'job_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Job'], unique=True, primary_key=True)),
+        ))
+        db.send_create_signal('requester', ['QOSRequester'])
+
+        # Adding model 'QOSManager__impl'
+        db.create_table(u'requester_qosmanager__impl', (
+            (u'job_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Job'], unique=True, primary_key=True)),
+        ))
+        db.send_create_signal('requester', ['QOSManager__impl'])
 
         # Adding model 'Request'
         db.create_table(u'requester_request', (
@@ -125,22 +158,10 @@ class Migration(SchemaMigration):
         ))
         db.send_create_signal('requester', ['Request'])
 
-        # Adding model 'Order'
-        db.create_table(u'requester_order', (
-            (u'material_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['factopy.Material'], unique=True, primary_key=True)),
-            ('request', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['requester.Request'], unique=True)),
-            ('server', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.FTPServerAccount'], null=True)),
-            ('identification', self.gf('django.db.models.fields.TextField')(db_index=True)),
-            ('downloaded', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('empty_flag', self.gf('django.db.models.fields.BooleanField')(default=False)),
-        ))
-        db.send_create_signal('requester', ['Order'])
-
         # Adding model 'File'
         db.create_table(u'requester_file', (
             (u'material_ptr', self.gf('django.db.models.fields.related.OneToOneField')(to=orm['factopy.Material'], unique=True, primary_key=True)),
             ('localname', self.gf('django.db.models.fields.TextField')(default='', unique=True, db_index=True)),
-            ('order', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['requester.Order'], null=True)),
             ('remotename', self.gf('django.db.models.fields.TextField')(null=True)),
             ('size', self.gf('django.db.models.fields.IntegerField')(null=True)),
             ('downloaded', self.gf('django.db.models.fields.BooleanField')(default=False, db_index=True)),
@@ -188,14 +209,26 @@ class Migration(SchemaMigration):
         # Removing M2M table for field channels on 'NOAAAdapt'
         db.delete_table('requester_noaaadapt_channels')
 
+        # Deleting model 'Job'
+        db.delete_table(u'requester_job')
+
+        # Deleting model 'NOAAEMailChecker'
+        db.delete_table(u'requester_noaaemailchecker')
+
+        # Deleting model 'NOAAFTPDownloader'
+        db.delete_table(u'requester_noaaftpdownloader')
+
         # Deleting model 'GOESRequest'
         db.delete_table(u'requester_goesrequest')
 
+        # Deleting model 'QOSRequester'
+        db.delete_table(u'requester_qosrequester')
+
+        # Deleting model 'QOSManager__impl'
+        db.delete_table(u'requester_qosmanager__impl')
+
         # Deleting model 'Request'
         db.delete_table(u'requester_request')
-
-        # Deleting model 'Order'
-        db.delete_table(u'requester_order')
 
         # Deleting model 'File'
         db.delete_table(u'requester_file')
@@ -233,9 +266,9 @@ class Migration(SchemaMigration):
         },
         'factopy.stream': {
             'Meta': {'object_name': 'Stream'},
-            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 6, 0, 0)'}),
+            'created': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 8, 0, 0)'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 6, 0, 0)'}),
+            'modified': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime(2014, 3, 8, 0, 0)'}),
             'tags': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'stream'", 'to': "orm['factopy.TagManager']"})
         },
         'factopy.tagmanager': {
@@ -287,7 +320,6 @@ class Migration(SchemaMigration):
             'failures': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'localname': ('django.db.models.fields.TextField', [], {'default': "''", 'unique': 'True', 'db_index': 'True'}),
             u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'}),
-            'order': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.Order']", 'null': 'True'}),
             'remotename': ('django.db.models.fields.TextField', [], {'null': 'True'}),
             'size': ('django.db.models.fields.IntegerField', [], {'null': 'True'})
         },
@@ -297,12 +329,16 @@ class Migration(SchemaMigration):
             u'serveraccount_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.ServerAccount']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.goesrequest': {
-            'Meta': {'object_name': 'GOESRequest', '_ormbases': ['factopy.Process']},
-            u'process_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Process']", 'unique': 'True', 'primary_key': 'True'})
+            'Meta': {'object_name': 'GOESRequest', '_ormbases': ['requester.Job']},
+            u'job_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Job']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.image': {
             'Meta': {'object_name': 'Image', '_ormbases': ['requester.File']},
             u'file_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.File']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'requester.job': {
+            'Meta': {'object_name': 'Job', '_ormbases': ['factopy.Process']},
+            u'process_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Process']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.noaaadapt': {
             'Meta': {'object_name': 'NOAAAdapt', '_ormbases': ['factopy.Adapt']},
@@ -320,14 +356,24 @@ class Migration(SchemaMigration):
             'root_path': ('django.db.models.fields.TextField', [], {}),
             'title': ('django.db.models.fields.TextField', [], {'db_index': 'True'})
         },
-        'requester.order': {
-            'Meta': {'object_name': 'Order', '_ormbases': ['factopy.Material']},
-            'downloaded': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'empty_flag': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
-            'identification': ('django.db.models.fields.TextField', [], {'db_index': 'True'}),
-            u'material_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['factopy.Material']", 'unique': 'True', 'primary_key': 'True'}),
-            'request': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Request']", 'unique': 'True'}),
-            'server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.FTPServerAccount']", 'null': 'True'})
+        'requester.noaaemailchecker': {
+            'Meta': {'object_name': 'NOAAEMailChecker', '_ormbases': ['requester.Job']},
+            u'job_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Job']", 'unique': 'True', 'primary_key': 'True'}),
+            'server': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.EmailAccount']"})
+        },
+        'requester.noaaftpdownloader': {
+            'Meta': {'object_name': 'NOAAFTPDownloader', '_ormbases': ['requester.Job']},
+            'file': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.File']", 'null': 'True'}),
+            u'job_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Job']", 'unique': 'True', 'primary_key': 'True'}),
+            'service': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['requester.FTPServerAccount']", 'null': 'True'})
+        },
+        'requester.qosmanager__impl': {
+            'Meta': {'object_name': 'QOSManager__impl', '_ormbases': ['requester.Job']},
+            u'job_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Job']", 'unique': 'True', 'primary_key': 'True'})
+        },
+        'requester.qosrequester': {
+            'Meta': {'object_name': 'QOSRequester', '_ormbases': ['requester.Job']},
+            u'job_ptr': ('django.db.models.fields.related.OneToOneField', [], {'to': "orm['requester.Job']", 'unique': 'True', 'primary_key': 'True'})
         },
         'requester.request': {
             'Meta': {'object_name': 'Request', '_ormbases': ['factopy.Material']},

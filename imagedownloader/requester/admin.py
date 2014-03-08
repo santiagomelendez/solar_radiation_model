@@ -2,19 +2,21 @@ from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from requester.models import Area, Satellite, Channel
 from requester.models import NOAAAdapt
-from requester.models import Account, FTPServerAccount, WebServerAccount, EmailAccount, GOESRequest
-from requester.models.materials import File, Request, Order
+from requester.models import Account, FTPServerAccount, WebServerAccount, EmailAccount, GOESRequest, NOAAEMailChecker, NOAAFTPDownloader
+from requester.models.materials import File, Request #, Order
 from factopy.admin import MaterialAdmin, ProcessAdmin, MaterialChildAdmin, ProcessChildAdmin, ComplexProcessChildAdmin
 
 MaterialAdmin.child_models += (
 	(File, MaterialChildAdmin),
 	(Request, MaterialChildAdmin),
-	(Order, MaterialChildAdmin),
+	#(Order, MaterialChildAdmin),
 )
 
 ProcessAdmin.child_models += (
 	(NOAAAdapt, ProcessChildAdmin),
 	(GOESRequest, ProcessChildAdmin),
+	(NOAAEMailChecker, ProcessChildAdmin),
+	(NOAAFTPDownloader, ProcessChildAdmin),
 )
 
 class AreaAdmin(admin.ModelAdmin):
