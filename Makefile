@@ -1,5 +1,5 @@
 OS:=$(shell uname -s)
-download = [ ! -f $(1) ] && echo "[ downloading  ] $(1)" && curl -O $(2)/$(1) || echo "[ downloaded   ] $(1)"
+download = [ ! -f $(1) ] && echo "[ downloading  ] $(1)" && curl -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.149 Safari/537.36" -O $(2)/$(1) || echo "[ downloaded   ] $(1)"
 unpack = [ ! -d $(2) ] && echo "[ unpacking    ] $(1)" && tar xzf $(1) || echo "[ unpacked     ] $(1)"
 
 define get
