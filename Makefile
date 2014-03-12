@@ -192,7 +192,7 @@ defaultsuperuser:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py createsuperuser --username=dev --email=dev@dev.com
 
 run:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runserver 8000
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runserver 0.0.0.0:8000
 
 runbackend:
 	$(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runbackend 4
