@@ -211,3 +211,5 @@ test-coverage: test-coverage-travis-ci test-coveralls
 clean: pg-stop
 	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
 	@ sudo rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python ez_setup.py get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py subversion
+	@ cd /usr/local/bin && sudo rm -rf python* sqlite3
+	@ cd /usr/local/lib && sudo rm -rf libpython* libhdf5* libnetcdf* libsqlite3* python*
