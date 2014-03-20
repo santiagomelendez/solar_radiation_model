@@ -174,7 +174,7 @@ postgres-requirements:
 	@ echo "[ installing   ] $(PIP) requirements for postgres"
 	@ export PATH="${PATH}:$(POSTGRES_PATH)/" ; \
 		($(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.postgres.txt --upgrade 2>&1 && \
-		($(POSTGRES_PATH)/dropdb   $(dbname) -U $(user) 2>&1 ; \
+		($(POSTGRES_PATH)/dropdb   $(dbname) -U $(user) --if-exists 2>&1 ; \
 		$(POSTGRES_PATH)/createdb $(dbname) -U $(user) 2>&1)) >> tracking.log
 
 db-migrate: $(DATABASE_REQUIREMENTS)
