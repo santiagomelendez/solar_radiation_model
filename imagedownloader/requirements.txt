@@ -3,8 +3,6 @@ Django==1.5
 IPy==0.75
 PyVirtualDisplay==0.1.1
 PyYAML==3.10
-South==0.7.6
-psycopg2==2.5.2
 decorator==3.4.0
 #distribute==0.6.27
 django-model-utils==1.2.0

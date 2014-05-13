@@ -6,13 +6,13 @@ from libs.geometry.jaen import getslots
 class CollectTimed(Collect):
 	class Meta(object):
 		app_label = 'plumbing'
-	yearly = models.BooleanField()
-	monthly = models.BooleanField()
-	weekly = models.BooleanField()
-	week_day = models.BooleanField()
-	daily = models.BooleanField()
-	hourly = models.BooleanField()
-	slotly = models.BooleanField()
+	yearly = models.BooleanField(default=False)
+	monthly = models.BooleanField(default=False)
+	weekly = models.BooleanField(default=False)
+	week_day = models.BooleanField(default=False)
+	daily = models.BooleanField(default=False)
+	hourly = models.BooleanField(default=False)
+	slotly = models.BooleanField(default=False)
 	slots_by_day = models.IntegerField(default = 1)
 
 	def get_key(self, material_status):
