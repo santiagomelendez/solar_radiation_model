@@ -13,7 +13,6 @@ netcdf*
 Python*
 aspects.py
 bin
-ez_setup.py
 include
 lib
 python-aspects*
