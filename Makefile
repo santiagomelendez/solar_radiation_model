@@ -139,8 +139,8 @@ postgres: $(LIBPOSTGRES) pg-start
 	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
 $(LIBHDF5):
-	$(call get,hdf5-1.8.12,hdf5-1.8.12.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
-	$(call compile,hdf5-1.8.12,,--prefix=/usr/local --enable-shared --enable-hl,install)
+	$(call get,hdf5-1.8.13,hdf5-1.8.13.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
+	$(call compile,hdf5-1.8.13,,--prefix=/usr/local --enable-shared --enable-hl,install)
 
 $(LIBNETCDF): $(LIBHDF5)
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
