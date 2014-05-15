@@ -12,20 +12,24 @@ dtypes[numpy.dtype('int32')] = 'i4'
 class NCObject(object):
 
     @classmethod
-    def open(self, pattern=''):
-        if pattern.find('*') == -1:
-            o = File(pattern)
+    def open(self, pattern):
+        if pattern.__class__ is str and '*' not in pattern:
+            o = File(pattern=pattern)
         else:
-            o = Package(pattern)
+            if pattern.__class__ is list:
+                o = Package(files=pattern)
+            else:
+                o = Package(pattern=pattern)
         o.load()
         return o
 
-    def __init__(self, pattern):
+    def __init__(self, pattern='', files=[]):
         super(NCObject, self).__init__()
         self.pattern = pattern
-        self.files = glob(pattern)
-        if not self.files:
-            self.files = [pattern]
+        if len(files):
+            self.files = files
+        else:
+            self.files = glob(pattern)
         self.files.sort()
         self.is_new = not os.path.exists(pattern)
 
