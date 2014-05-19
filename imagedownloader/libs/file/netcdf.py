@@ -37,7 +37,8 @@ class NCObject(object):
 class File(NCObject):
 
     def load(self):
-        filename = self.files[0]
+        filename = self.pattern if (len(self.files) == 0 and
+                                    len(self.pattern)) else self.files[0]
         try:
             self.roots = [(Dataset(filename, mode='w', format='NETCDF4')
                           if self.is_new else Dataset(filename, mode='a',
