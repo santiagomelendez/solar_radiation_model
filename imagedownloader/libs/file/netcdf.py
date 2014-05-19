@@ -79,19 +79,15 @@ class File(NCObject):
 
     def clonevar(self, varname, new_varname, extra_dimensions=[]):
         var = self.variables[varname] if varname.__class__ is str else varname
-        dims = [{'name': str(d), 'size': len(d)} for d in var.dimensions]
+        dims = list(var.dimensions)
         for ed in extra_dimensions:
-            dims_name = [d['name'] for d in dims]
-            if ed not in dims_name:
-                dims.insert(0, {'name': ed, 'size': None})
-        for d in dims:
-            self.getdim(d['name'], d['size'])
+            if ed not in dims:
+                dims.insert(0, ed)
         try:
             digit = var.least_significant_digit
         except AttributeError:
             digit = 0
-        var_clone = self.getvar(new_varname, dtypes[var.dtype],
-                                [d['name'] for d in dims], digit)
+        var_clone = self.getvar(new_varname, dtypes[var.dtype], dims, digit)
         var_clone[:] = np.zeros(var_clone.shape)
         return var_clone
 
