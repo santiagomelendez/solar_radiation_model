@@ -113,7 +113,7 @@ class File(NCObject):
         return obj_clone, is_new
 
     def sync(self):
-        self.root.close()
+        self.root.sync()
 
     def close(self):
         self.root.close()
