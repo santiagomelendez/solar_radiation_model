@@ -7,6 +7,8 @@ from glob import glob
 dtypes = {}
 dtypes[numpy.dtype('float32')] = 'f4'
 dtypes[numpy.dtype('int32')] = 'i4'
+dtypes[numpy.dtype('int8')] = 'i1'
+dtypes[numpy.dtype('S1')] = 'S1'
 
 
 class NCObject(object):
@@ -65,17 +67,20 @@ class File(NCObject):
             d = self.dimensions[name]
         return d
 
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0):
+    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
+               fill_value=None):
         try:
             v = self.variables[name]
         except KeyError:
             if digits > 0:
                 v = self.root.createVariable(name, vtype,
                                              dimensions, zlib=True,
-                                             least_significant_digit=digits)
+                                             least_significant_digit=digits,
+                                             fill_value=fill_value)
             else:
                 v = self.root.createVariable(name, vtype, dimensions,
-                                             zlib=True)
+                                             zlib=True,
+                                             fill_value=fill_value)
         return v
 
     def clonevar(self, varname, new_varname, extra_dimensions=[]):
@@ -114,7 +119,10 @@ class File(NCObject):
         self.root.close()
 
     def pack(self, var):
-        return var[:]
+        var = var[:]
+        if 'S' in str(var.dtype):
+            var = np.vstack([var.tostring()])
+        return var
 
 
 class Package(NCObject):
@@ -125,7 +133,8 @@ class Package(NCObject):
     def getdim(self, name, size=None):
         return [r.getdim(name, size) for r in self.roots]
 
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0):
+    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
+               fill_value=None):
         vars = [r.getvar(name, vtype, dimensions, digits)[:]
                 for r in self.roots]
         return vars
@@ -152,7 +161,6 @@ class Package(NCObject):
         variables = [str(v) for v in self.roots[0].variables.keys()
                      if v not in avoided]
         variables.sort()
-        variables.remove('auditTrail')
         for v in variables:
             var_ref = self.roots[0].getvar(v)
             var = getvar(self, v)
@@ -162,11 +170,14 @@ class Package(NCObject):
 
     def pack(self, var):
         s = var[0].shape
-        if len(s) > 0 and s[0] > 1:
-            res = [var]
-        else:
-            res = var
-        return np.vstack(res)
+        if len(s) > 0:
+            if 'S' in str(var[0].dtype):
+                res = [v.tostring() for v in var]
+            elif s[0] > 1:
+                res = [var]
+            else:
+                res = var
+            return np.vstack(res)
 
 
 def open(pattern):
@@ -178,8 +189,8 @@ def getdim(obj, name, size=None):
     return obj.getdim(name, size)
 
 
-def getvar(obj, name, vtype='f4', dimensions=(), digits=0):
-    return obj.pack(obj.getvar(name, vtype, dimensions, digits))
+def getvar(obj, name, vtype='f4', dimensions=(), digits=0, fill_value=None):
+    return obj.pack(obj.getvar(name, vtype, dimensions, digits, fill_value))
 
 
 def sync(obj):
