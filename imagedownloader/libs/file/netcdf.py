@@ -133,6 +133,70 @@ class File(NCObject):
         self.root.close()
 
 
+class Package(NCObject):
+
+    def load(self):
+        self.roots = [NCObject.open(filename) for filename in self.files]
+
+    @property
+    def is_new(self):
+        return all(self._is_new)
+
+    @property
+    def variables(self):
+        return [v for r in self.roots for v in r.variables]
+
+    @property
+    def read_only(self):
+        return all([r.read_only for r in self.roots])
+
+    def getdim(self, name, size=None):
+        return [r.getdim(name, size) for r in self.roots]
+
+    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
+               fill_value=None):
+        vars = DistributedNCVariable(
+            name,
+            [r.getvar(name, vtype, dimensions, digits)[:]
+             for r in self.roots])
+        return vars
+
+    def sync(self):
+        [r.sync() for r in self.roots]
+
+    def close(self):
+        [r.close() for r in self.roots]
+
+    def clonevar(self, var, new_varname):
+        return DistributedNCVariable(
+            new_varname,
+            [r.clonevar(var, new_varname) for r in self.roots])
+
+    def clone(self, filename, avoided=[]):
+        obj_clone = NCObject.open(filename)
+        if not obj_clone.is_new:
+            os.remove(filename)
+        obj_clone.getdim('time')
+        for d in self.roots[0].dimensions:
+            if d != 'time':
+                dim = self.getdim(d)
+                obj_clone.getdim(str(d), len(dim[0]))
+        # The first file set the variables origin
+        variables = [str(v) for v in self.roots[0].variables.keys()
+                     if v not in avoided]
+        variables.sort()
+        for v in variables:
+            var_ref = self.roots[0].getvar(v)
+            var = self.getvar(v).pack()
+            var_clone = obj_clone.clonevar(var_ref, v, ['time'])
+            try:
+                var_clone[:] = var[:]
+            except Exception, e:
+                print e
+        obj_clone.sync()
+        return obj_clone, obj_clone.is_new
+
+
 class NCVariable(object):
 
     def __init__(self, name, variables):
@@ -212,70 +276,6 @@ class DistributedNCVariable(NCVariable):
             v = self.variables[i]
             v[idx] = l[i]
         self.sync()
-
-
-class Package(NCObject):
-
-    def load(self):
-        self.roots = [NCObject.open(filename) for filename in self.files]
-
-    @property
-    def is_new(self):
-        return all(self._is_new)
-
-    @property
-    def variables(self):
-        return [v for r in self.roots for v in r.variables]
-
-    @property
-    def read_only(self):
-        return all([r.read_only for r in self.roots])
-
-    def getdim(self, name, size=None):
-        return [r.getdim(name, size) for r in self.roots]
-
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
-               fill_value=None):
-        vars = DistributedNCVariable(
-            name,
-            [r.getvar(name, vtype, dimensions, digits)[:]
-             for r in self.roots])
-        return vars
-
-    def sync(self):
-        [r.sync() for r in self.roots]
-
-    def close(self):
-        [r.close() for r in self.roots]
-
-    def clonevar(self, var, new_varname):
-        return DistributedNCVariable(
-            new_varname,
-            [r.clonevar(var, new_varname) for r in self.roots])
-
-    def clone(self, filename, avoided=[]):
-        obj_clone = NCObject.open(filename)
-        if not obj_clone.is_new:
-            os.remove(filename)
-        obj_clone.getdim('time')
-        for d in self.roots[0].dimensions:
-            if d != 'time':
-                dim = self.getdim(d)
-                obj_clone.getdim(str(d), len(dim[0]))
-        # The first file set the variables origin
-        variables = [str(v) for v in self.roots[0].variables.keys()
-                     if v not in avoided]
-        variables.sort()
-        for v in variables:
-            var_ref = self.roots[0].getvar(v)
-            var = self.getvar(v).pack()
-            var_clone = obj_clone.clonevar(var_ref, v, ['time'])
-            try:
-                var_clone[:] = var[:]
-            except Exception, e:
-                print e
-        obj_clone.sync()
-        return obj_clone, obj_clone.is_new
 
 
 def open(pattern):
