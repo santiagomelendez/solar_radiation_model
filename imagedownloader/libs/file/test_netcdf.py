@@ -64,6 +64,8 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(root.read_only)
         # check if close an existent file.
         nc.close(root)
+        with self.assertRaisesRegexp(RuntimeError, u'NetCDF: Not a valid ID'):
+            nc.close(root)
 
     def test_open_close_new_file(self):
         # delete the filename from the system
@@ -79,6 +81,8 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(root.read_only)
         # check if close the created file.
         nc.close(root)
+        with self.assertRaisesRegexp(RuntimeError, u'NetCDF: Not a valid ID'):
+            nc.close(root)
 
     def test_open_close_readonly_file(self):
         # delete the filename from the system
@@ -94,6 +98,8 @@ class TestNetcdf(unittest.TestCase):
         self.assertTrue(root.read_only)
         # check if close the readonly file.
         nc.close(root)
+        with self.assertRaisesRegexp(RuntimeError, u'NetCDF: Not a valid ID'):
+            nc.close(root)
 
     def test_open_close_multiple_files(self):
         # check if open the pattern selection using using a package instance.
@@ -105,6 +111,8 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(root.read_only)
         # check if close the package with all the files.
         nc.close(root)
+        with self.assertRaisesRegexp(RuntimeError, u'NetCDF: Not a valid ID'):
+            nc.close(root)
 
 
 if __name__ == '__main__':

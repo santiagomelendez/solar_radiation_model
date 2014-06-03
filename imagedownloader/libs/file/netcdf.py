@@ -54,6 +54,12 @@ class NCObject(object):
                     name, vtype, dimensions, digits, fill_value))
         return self.variables[name]
 
+    def sync(self):
+        return [r.sync() for r in self.roots]
+
+    def close(self):
+        return [r.close() for r in self.roots]
+
 
 class NCFile(NCObject):
 
@@ -129,12 +135,6 @@ class NCFile(NCObject):
             var_clone[:] = var[:]
         return obj_clone, is_new
 
-    def sync(self):
-        self.roots[0].sync()
-
-    def close(self):
-        self.roots[0].close()
-
 
 class NCPackage(NCObject):
 
@@ -165,12 +165,6 @@ class NCPackage(NCObject):
             [r.getvar(name, vtype, dimensions, digits)[:]
              for r in self.roots])
         return vars
-
-    def sync(self):
-        [r.sync() for r in self.roots]
-
-    def close(self):
-        [r.close() for r in self.roots]
 
     def clonevar(self, var, new_varname):
         return DistributedNCVariable(
