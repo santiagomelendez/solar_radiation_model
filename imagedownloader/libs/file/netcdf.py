@@ -14,39 +14,53 @@ dtypes[numpy.dtype('S1')] = 'S1'
 class NCObject(object):
 
     @classmethod
-    def open(self, pattern):
-        if pattern.__class__ is str and '*' not in pattern:
-            o = File(pattern=pattern)
-        else:
-            if pattern.__class__ is list:
-                o = Package(files=pattern)
-            else:
-                o = Package(pattern=pattern)
+    def open(self, files_or_pattern):
+        files, pattern = self.distill(files_or_pattern)
+        o = self.choice_type(files)
+        o.pattern = pattern
         o.load()
         return o
 
-    def __init__(self, pattern='', files=[]):
-        super(NCObject, self).__init__()
-        self.pattern = pattern
-        if len(files):
-            self.files = files
+    @classmethod
+    def choice_type(self, files):
+        return Package(files) if len(files) > 1 else File(files)
+
+    @classmethod
+    def distill(self, files_or_pattern):
+        if files_or_pattern.__class__ is list:
+            files = files_or_pattern
+            pattern = ''
         else:
-            self.files = glob(pattern)
+            files = glob(files_or_pattern)
+            pattern = files_or_pattern
+        if not len(files):
+            files = [files_or_pattern]
+            pattern = files_or_pattern
+        return files, pattern
+
+    def __init__(self, files):
+        super(NCObject, self).__init__()
+        self.files = files
         self.files.sort()
-        self.is_new = not os.path.exists(pattern)
+        self._is_new = [not os.path.exists(f) for f in self.files]
 
 
 class File(NCObject):
 
     def load(self):
-        filename = self.pattern if (len(self.files) == 0 and
-                                    len(self.pattern)) else self.files[0]
+        filename = self.files[0]
+        self.read_only = True
         try:
             self.roots = [(Dataset(filename, mode='w', format='NETCDF4')
                           if self.is_new else Dataset(filename, mode='a',
                                                       format='NETCDF4'))]
+            self.read_only = False
         except Exception:
             self.roots = [Dataset(filename, mode='r', format='NETCDF4')]
+
+    @property
+    def is_new(self):
+        return self._is_new[0]
 
     @property
     def root(self):
@@ -81,10 +95,10 @@ class File(NCObject):
                 v = self.root.createVariable(name, vtype, dimensions,
                                              zlib=True,
                                              fill_value=fill_value)
-        return v
+        return SingleNCVariable(name, [v])
 
     def clonevar(self, varname, new_varname, extra_dimensions=[]):
-        var = self.variables[varname] if varname.__class__ is str else varname
+        var = self.getvar(varname) if varname.__class__ is str else varname
         dims = list(var.dimensions)
         for ed in extra_dimensions:
             if ed not in dims:
@@ -118,11 +132,86 @@ class File(NCObject):
     def close(self):
         self.root.close()
 
-    def pack(self, var):
-        var = var[:]
-        if 'S' in str(var.dtype):
-            var = np.vstack([var.tostring()])
-        return var
+
+class NCVariable(object):
+
+    def __init__(self, name, variables):
+        self.name = name
+        self.variables = variables
+
+    @property
+    def shape(self):
+        return self.pack().shape
+
+    @property
+    def dimensions(self):
+        return self.pack().dimensions
+
+    @property
+    def least_significant_digit(self):
+        v = self.pack()
+        return (v.least_significant_digit
+                if hasattr(v, 'least_significant_digit') else 0)
+
+    @property
+    def dtype(self):
+        return self.pack().dtype
+
+    def __getitem__(self, indexes):
+        return self.pack().__getitem__(indexes)
+
+    def __getattr__(self, name):
+        print self.__class__, self.name, name
+
+    def sync(self):
+        for v in self.variables:
+            v.group().sync()
+
+
+class SingleNCVariable(NCVariable):
+
+    def pack(self):
+        # var = var[:]
+        # if 'S' in str(var.dtype):
+        #    var = np.vstack([var.tostring()])
+        return self.variables[0]
+
+    def __setitem__(self, indexes, changes):
+        return self.pack().__setitem__(indexes, changes)
+
+
+class DistributedNCVariable(NCVariable):
+
+    def pack(self):
+        s = self.variables[0].shape
+        if len(s) > 0:
+            if 'S' in str(self.variables[0].dtype):
+                res = [v.tostring() for v in self.variables]
+            elif s[0] > 1:
+                res = [self.variables]
+            else:
+                res = self.variables
+            return np.vstack(res)
+
+    def __setitem__(self, indexes, change):
+        try:
+            l = np.vsplit(change, change.shape[0])
+        except Exception, e:
+            print e
+            # TODO: vsplit slice object should avoid change.shape[0]
+        ifnone = lambda a, b: b if a is None else a
+        item = indexes
+        idx = indexes
+        if isinstance(indexes, tuple):
+            item = indexes[0]
+            idx = tuple([slice(None)] + list(indexes[1:]))
+        filtered = list(range(ifnone(item.start, 0),
+                              ifnone(item.stop, change.shape[0]),
+                              ifnone(item.step, 1)))
+        for i in filtered:
+            v = self.variables[i]
+            v[idx] = l[i]
+        self.sync()
 
 
 class Package(NCObject):
@@ -130,13 +219,27 @@ class Package(NCObject):
     def load(self):
         self.roots = [NCObject.open(filename) for filename in self.files]
 
+    @property
+    def is_new(self):
+        return all(self._is_new)
+
+    @property
+    def variables(self):
+        return [v for r in self.roots for v in r.variables]
+
+    @property
+    def read_only(self):
+        return all([r.read_only for r in self.roots])
+
     def getdim(self, name, size=None):
         return [r.getdim(name, size) for r in self.roots]
 
     def getvar(self, name, vtype='f4', dimensions=(), digits=0,
                fill_value=None):
-        vars = [r.getvar(name, vtype, dimensions, digits)[:]
-                for r in self.roots]
+        vars = DistributedNCVariable(
+            name,
+            [r.getvar(name, vtype, dimensions, digits)[:]
+             for r in self.roots])
         return vars
 
     def sync(self):
@@ -146,7 +249,9 @@ class Package(NCObject):
         [r.close() for r in self.roots]
 
     def clonevar(self, var, new_varname):
-        return [r.clonevar(var, new_varname) for r in self.roots]
+        return DistributedNCVariable(
+            new_varname,
+            [r.clonevar(var, new_varname) for r in self.roots])
 
     def clone(self, filename, avoided=[]):
         obj_clone = NCObject.open(filename)
@@ -163,21 +268,14 @@ class Package(NCObject):
         variables.sort()
         for v in variables:
             var_ref = self.roots[0].getvar(v)
-            var = getvar(self, v)
+            var = self.getvar(v).pack()
             var_clone = obj_clone.clonevar(var_ref, v, ['time'])
-            var_clone[:] = var[:]
+            try:
+                var_clone[:] = var[:]
+            except Exception, e:
+                print e
+        obj_clone.sync()
         return obj_clone, obj_clone.is_new
-
-    def pack(self, var):
-        s = var[0].shape
-        if len(s) > 0:
-            if 'S' in str(var[0].dtype):
-                res = [v.tostring() for v in var]
-            elif s[0] > 1:
-                res = [var]
-            else:
-                res = var
-            return np.vstack(res)
 
 
 def open(pattern):
@@ -190,7 +288,7 @@ def getdim(obj, name, size=None):
 
 
 def getvar(obj, name, vtype='f4', dimensions=(), digits=0, fill_value=None):
-    return obj.pack(obj.getvar(name, vtype, dimensions, digits, fill_value))
+    return obj.getvar(name, vtype, dimensions, digits, fill_value)
 
 
 def sync(obj):
