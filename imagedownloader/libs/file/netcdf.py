@@ -135,20 +135,20 @@ class File(NCObject):
 
 class Package(NCObject):
 
-    def load(self):
-        self.roots = [NCObject.open(filename) for filename in self.files]
-
     @property
     def is_new(self):
         return all(self._is_new)
 
-    @property
-    def variables(self):
-        return [v for r in self.roots for v in r.variables]
+    def load(self):
+        self.roots = [NCObject.open(filename) for filename in self.files]
 
     @property
     def read_only(self):
         return all([r.read_only for r in self.roots])
+
+    @property
+    def variables(self):
+        return [v for r in self.roots for v in r.variables]
 
     def getdim(self, name, size=None):
         return [r.getdim(name, size) for r in self.roots]
