@@ -23,7 +23,7 @@ class NCObject(object):
 
     @classmethod
     def choice_type(self, files):
-        return Package(files) if len(files) > 1 else File(files)
+        return NCPackage(files) if len(files) > 1 else NCFile(files)
 
     @classmethod
     def distill(self, files_or_pattern):
@@ -55,7 +55,7 @@ class NCObject(object):
         return self.variables[name]
 
 
-class File(NCObject):
+class NCFile(NCObject):
 
     @property
     def is_new(self):
@@ -91,11 +91,11 @@ class File(NCObject):
 
     @property
     def dimensions(self):
-        return self.root.dimensions
+        return self.roots[0].dimensions
 
     def getdim(self, name, size=None):
         if name not in self.dimensions:
-            d = self.root.createDimension(name, size)
+            d = self.roots[0].createDimension(name, size)
         else:
             d = self.dimensions[name]
         return d
@@ -130,13 +130,13 @@ class File(NCObject):
         return obj_clone, is_new
 
     def sync(self):
-        self.root.sync()
+        self.roots[0].sync()
 
     def close(self):
-        self.root.close()
+        self.roots[0].close()
 
 
-class Package(NCObject):
+class NCPackage(NCObject):
 
     @property
     def is_new(self):

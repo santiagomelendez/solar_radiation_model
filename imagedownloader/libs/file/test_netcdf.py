@@ -54,44 +54,57 @@ class TestNetcdf(unittest.TestCase):
     def tearDown(self):
         [ref.close() for ref in self.refs]
 
-    def test_open_existent_file(self):
+    def test_open_close_existent_file(self):
         # check if open an existent file.
         root, is_new = nc.open('unittest00.nc')
-        self.assertFalse(is_new)
+        self.assertEquals(root.files, ['unittest00.nc'])
+        self.assertEquals(root.pattern, 'unittest00.nc')
         self.assertEquals(len(root.roots), 1)
+        self.assertFalse(is_new)
         self.assertFalse(root.read_only)
+        # check if close an existent file.
+        nc.close(root)
 
-    def test_open_new_file(self):
+    def test_open_close_new_file(self):
         # delete the filename from the system
         filename = 'unittest-1.nc'
         if os.path.isfile(filename):
             os.remove(filename)
         # check if create and open a new file.
         root, is_new = nc.open(filename)
-        self.assertTrue(is_new)
+        self.assertEquals(root.files, ['unittest-1.nc'])
+        self.assertEquals(root.pattern, 'unittest-1.nc')
         self.assertEquals(len(root.roots), 1)
+        self.assertTrue(is_new)
         self.assertFalse(root.read_only)
+        # check if close the created file.
+        nc.close(root)
 
-    def test_open_readonly_file(self):
+    def test_open_close_readonly_file(self):
         # delete the filename from the system
         filename = 'readonly.nc'
         if os.path.isfile(filename):
             os.chmod(filename, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         # check if create and open a new file.
         root, is_new = nc.open(filename)
-        self.assertFalse(is_new)
+        self.assertEquals(root.files, ['readonly.nc'])
+        self.assertEquals(root.pattern, 'readonly.nc')
         self.assertEquals(len(root.roots), 1)
+        self.assertFalse(is_new)
         self.assertTrue(root.read_only)
+        # check if close the readonly file.
+        nc.close(root)
 
-    def test_open_multiple_files(self):
+    def test_open_close_multiple_files(self):
         # check if open the pattern selection using using a package instance.
         root, is_new = nc.open('unittest0*.nc')
-        self.assertFalse(is_new)
+        self.assertEquals(root.files, ['unittest0%i.nc' % i for i in range(5)])
+        self.assertEquals(root.pattern, 'unittest0*.nc')
         self.assertEquals(len(root.roots), 5)
+        self.assertFalse(is_new)
         self.assertFalse(root.read_only)
-
-    def test(self):
-        pass
+        # check if close the package with all the files.
+        nc.close(root)
 
 
 if __name__ == '__main__':
