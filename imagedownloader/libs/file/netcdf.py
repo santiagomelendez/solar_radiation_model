@@ -42,10 +42,24 @@ class NCObject(object):
         super(NCObject, self).__init__()
         self.files = files
         self.files.sort()
+        self.variables = {}
         self._is_new = [not os.path.exists(f) for f in self.files]
+
+    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
+               fill_value=None):
+        if name not in self.variables.keys():
+            self.variables[name] = self.variable_wrapper(
+                name,
+                self.obtain_variable(
+                    name, vtype, dimensions, digits, fill_value))
+        return self.variables[name]
 
 
 class File(NCObject):
+
+    @property
+    def is_new(self):
+        return self._is_new[0]
 
     def load(self):
         filename = self.files[0]
@@ -57,22 +71,27 @@ class File(NCObject):
             self.read_only = False
         except Exception:
             self.roots = [Dataset(filename, mode='r', format='NETCDF4')]
+        self.variable_wrapper = SingleNCVariable
 
-    @property
-    def is_new(self):
-        return self._is_new[0]
+    def obtain_variable(self, name, vtype='f4', dimensions=(), digits=0,
+                        fill_value=None):
+        root = self.roots[0]
+        return (root.variables[name] if name in root.variables.keys()
+                else self.create_variable(name, vtype, dimensions,
+                                          digits, fill_value))
 
-    @property
-    def root(self):
-        return self.roots[0]
+    def create_variable(self, name, vtype='f4', dimensions=(), digits=0,
+                        fill_value=None):
+        root = self.roots[0]
+        if digits > 0:
+            extras = {'least_significant_digit': digits}
+        return [root.createVariable(name, vtype, dimensions,
+                                    zlib=True,
+                                    fill_value=fill_value, *extras)]
 
     @property
     def dimensions(self):
         return self.root.dimensions
-
-    @property
-    def variables(self):
-        return self.root.variables
 
     def getdim(self, name, size=None):
         if name not in self.dimensions:
@@ -80,22 +99,6 @@ class File(NCObject):
         else:
             d = self.dimensions[name]
         return d
-
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
-               fill_value=None):
-        try:
-            v = self.variables[name]
-        except KeyError:
-            if digits > 0:
-                v = self.root.createVariable(name, vtype,
-                                             dimensions, zlib=True,
-                                             least_significant_digit=digits,
-                                             fill_value=fill_value)
-            else:
-                v = self.root.createVariable(name, vtype, dimensions,
-                                             zlib=True,
-                                             fill_value=fill_value)
-        return SingleNCVariable(name, [v])
 
     def clonevar(self, varname, new_varname, extra_dimensions=[]):
         var = self.getvar(varname) if varname.__class__ is str else varname
@@ -141,14 +144,16 @@ class Package(NCObject):
 
     def load(self):
         self.roots = [NCObject.open(filename) for filename in self.files]
+        self.variable_wrapper = DistributedNCVariable
 
     @property
     def read_only(self):
         return all([r.read_only for r in self.roots])
 
-    @property
-    def variables(self):
-        return [v for r in self.roots for v in r.variables]
+    def obtain_variable(self, name, vtype='f4', dimensions=(), digits=0,
+                        fill_value=None):
+        return [f.getvar(name, vtype, dimensions, digits, fill_value)
+                for f in self.roots]
 
     def getdim(self, name, size=None):
         return [r.getdim(name, size) for r in self.roots]

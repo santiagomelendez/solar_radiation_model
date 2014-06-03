@@ -60,7 +60,6 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(is_new)
         self.assertEquals(len(root.roots), 1)
         self.assertFalse(root.read_only)
-        self.assertEquals(len(root.variables), 4)
 
     def test_open_new_file(self):
         # delete the filename from the system
@@ -72,7 +71,6 @@ class TestNetcdf(unittest.TestCase):
         self.assertTrue(is_new)
         self.assertEquals(len(root.roots), 1)
         self.assertFalse(root.read_only)
-        self.assertEquals(len(root.variables), 0)
 
     def test_open_readonly_file(self):
         # delete the filename from the system
@@ -84,7 +82,6 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(is_new)
         self.assertEquals(len(root.roots), 1)
         self.assertTrue(root.read_only)
-        self.assertEquals(len(root.variables), 0)
 
     def test_open_multiple_files(self):
         # check if open the pattern selection using using a package instance.
@@ -92,7 +89,6 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(is_new)
         self.assertEquals(len(root.roots), 5)
         self.assertFalse(root.read_only)
-        self.assertEquals(len(root.variables), 20)
 
     def test(self):
         pass
