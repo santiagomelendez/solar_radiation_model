@@ -2,6 +2,7 @@ from netCDF4 import Dataset, numpy
 import numpy as np
 import os
 from glob import glob
+from compiler.ast import flatten
 
 
 dtypes = {}
@@ -48,8 +49,9 @@ class NCObject(object):
     @property
     def dimensions(self):
         dicts = [r.dimensions for r in self.roots]
-        return {k: [d.get(k) for d in dicts]
-                for k in {k for d in dicts for k in d}}
+        keys = {k for d in dicts for k in d}
+        return {k: flatten([d.get(k) for d in dicts])
+                for k in keys}
 
     def has_dimension(self, name):
         return all([name in r.dimensions.keys() for r in self.roots])
@@ -298,7 +300,8 @@ def getdim(obj, name, size=None):
     """
     Return the dimension list of a NCFile or NCPackage instance.
     """
-    return obj.getdim(name, size)
+    dim = obj.getdim(name, size)
+    return dim
 
 
 def getvar(obj, name, vtype='f4', dimensions=(), digits=0, fill_value=None):
