@@ -114,6 +114,30 @@ class TestNetcdf(unittest.TestCase):
         with self.assertRaisesRegexp(RuntimeError, u'NetCDF: Not a valid ID'):
             nc.close(root)
 
+    def test_get_existing_dim_single_file(self):
+        # check if get the dimension in a single file.
+        root = nc.open('unittest00.nc')[0]
+        self.assertEquals(len(nc.getdim(root, 'time')), 1)
+
+    def test_get_not_existing_dim_single_file(self):
+        # check if get the dimension in a single file.
+        root = nc.open('unittest00.nc')[0]
+        self.assertFalse(root.has_dimension('the_12th_dimension'))
+        self.assertEquals(len(nc.getdim(root, 'the_12th_dimension', 123)), 1)
+        self.assertTrue(root.has_dimension('the_12th_dimension'))
+
+    def test_get_existing_dim_multiple_file(self):
+        # check if get the dimension in a single file.
+        root = nc.open('unittest0*.nc')[0]
+        self.assertEquals(len(nc.getdim(root, 'time')), 5)
+
+    def test_get_not_existing_dim_multiple_file(self):
+        # check if get the dimension in a single file.
+        root = nc.open('unittest0*.nc')[0]
+        self.assertFalse(root.has_dimension('the_12th_dimension'))
+        self.assertEquals(len(nc.getdim(root, 'the_12th_dimension', 123)), 5)
+        self.assertTrue(root.has_dimension('the_12th_dimension'))
+
 
 if __name__ == '__main__':
         unittest.main()

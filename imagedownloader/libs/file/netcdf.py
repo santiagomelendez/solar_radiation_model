@@ -45,6 +45,20 @@ class NCObject(object):
         self.variables = {}
         self._is_new = [not os.path.exists(f) for f in self.files]
 
+    @property
+    def dimensions(self):
+        dicts = [r.dimensions for r in self.roots]
+        return {k: [d.get(k) for d in dicts]
+                for k in {k for d in dicts for k in d}}
+
+    def has_dimension(self, name):
+        return all([name in r.dimensions.keys() for r in self.roots])
+
+    def getdim(self, name, size=None):
+        return (self.obtain_dimension(name)
+                if self.has_dimension(name)
+                else self.create_dimension(name, size))
+
     def getvar(self, name, vtype='f4', dimensions=(), digits=0,
                fill_value=None):
         if name not in self.variables.keys():
@@ -79,6 +93,12 @@ class NCFile(NCObject):
             self.roots = [Dataset(filename, mode='r', format='NETCDF4')]
         self.variable_wrapper = SingleNCVariable
 
+    def obtain_dimension(self, name):
+        return [r.dimensions[name] for r in self.roots]
+
+    def create_dimension(self, name, size):
+        return [r.createDimension(name, size) for r in self.roots]
+
     def obtain_variable(self, name, vtype='f4', dimensions=(), digits=0,
                         fill_value=None):
         root = self.roots[0]
@@ -94,17 +114,6 @@ class NCFile(NCObject):
         return [root.createVariable(name, vtype, dimensions,
                                     zlib=True,
                                     fill_value=fill_value, *extras)]
-
-    @property
-    def dimensions(self):
-        return self.roots[0].dimensions
-
-    def getdim(self, name, size=None):
-        if name not in self.dimensions:
-            d = self.roots[0].createDimension(name, size)
-        else:
-            d = self.dimensions[name]
-        return d
 
     def clonevar(self, varname, new_varname, extra_dimensions=[]):
         var = self.getvar(varname) if varname.__class__ is str else varname
@@ -150,13 +159,16 @@ class NCPackage(NCObject):
     def read_only(self):
         return all([r.read_only for r in self.roots])
 
+    def obtain_dimension(self, name):
+        return self.dimensions[name]
+
+    def create_dimension(self, name, size):
+        return [r.create_dimension(name, size) for r in self.roots]
+
     def obtain_variable(self, name, vtype='f4', dimensions=(), digits=0,
                         fill_value=None):
         return [f.getvar(name, vtype, dimensions, digits, fill_value)
                 for f in self.roots]
-
-    def getdim(self, name, size=None):
-        return [r.getdim(name, size) for r in self.roots]
 
     def getvar(self, name, vtype='f4', dimensions=(), digits=0,
                fill_value=None):
@@ -283,6 +295,9 @@ def open(pattern):
 
 
 def getdim(obj, name, size=None):
+    """
+    Return the dimension list of a NCFile or NCPackage instance.
+    """
     return obj.getdim(name, size)
 
 
