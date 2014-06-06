@@ -64,10 +64,9 @@ class NCObject(object):
     def getvar(self, name, vtype='f4', dimensions=(), digits=0,
                fill_value=None):
         if name not in self.variables.keys():
-            self.variables[name] = self.variable_wrapper(
-                name,
-                self.obtain_variable(
-                    name, vtype, dimensions, digits, fill_value))
+            vars = self.obtain_variable(name, vtype, dimensions,
+                                        digits, fill_value)
+            self.variables[name] = self.variable_wrapper(name, vars)
         return self.variables[name]
 
     def sync(self):
@@ -110,41 +109,41 @@ class NCFile(NCObject):
 
     def create_variable(self, name, vtype='f4', dimensions=(), digits=0,
                         fill_value=None):
-        root = self.roots[0]
+        build = self.roots[0].createVariable
+        options = {'zlib': True,
+                   'fill_value': fill_value}
         if digits > 0:
-            extras = {'least_significant_digit': digits}
-        return [root.createVariable(name, vtype, dimensions,
-                                    zlib=True,
-                                    fill_value=fill_value, *extras)]
+            options['least_significant_digit'] = digits
+        return [build(name, vtype, dimensions, *options)]
 
-    def clonevar(self, varname, new_varname, extra_dimensions=[]):
-        var = self.getvar(varname) if varname.__class__ is str else varname
-        dims = list(var.dimensions)
-        for ed in extra_dimensions:
-            if ed not in dims:
-                dims.insert(0, ed)
-        try:
-            digit = var.least_significant_digit
-        except AttributeError:
-            digit = 0
-        var_clone = self.getvar(new_varname, dtypes[var.dtype], dims, digit)
-        var_clone[:] = np.zeros(var_clone.shape)
-        return var_clone
+    # def clonevar(self, varname, new_varname, extra_dimensions=[]):
+    #    var = self.getvar(varname) if varname.__class__ is str else varname
+    #    dims = list(var.dimensions)
+    #    for ed in extra_dimensions:
+    #        if ed not in dims:
+    #            dims.insert(0, ed)
+    #    try:
+    #        digit = var.least_significant_digit
+    #    except AttributeError:
+    #        digit = 0
+    #    var_clone = self.getvar(new_varname, dtypes[var.dtype], dims, digit)
+    #    var_clone[:] = np.zeros(var_clone.shape)
+    #    return var_clone
 
-    def clone(self, filename, avoided):
-        if avoided is None:
-            avoided = []
-        variables = [str(v) for v in self.variables.keys()
-                     if v not in avoided]
-        obj_clone, is_new = NCObject.open(filename)
-        for d in self.dimensions:
-            dim = self.getdim(d)
-            obj_clone.getdim(d, len(dim))
-        for v in variables:
-            var = self.getvar(v)
-            var_clone = obj_clone.clonevar(var, v)
-            var_clone[:] = var[:]
-        return obj_clone, is_new
+    # def clone(self, filename, avoided):
+    #    if avoided is None:
+    #        avoided = []
+    #    variables = [str(v) for v in self.variables.keys()
+    #                 if v not in avoided]
+    #    obj_clone, is_new = NCObject.open(filename)
+    #    for d in self.dimensions:
+    #        dim = self.getdim(d)
+    #        obj_clone.getdim(d, len(dim))
+    #    for v in variables:
+    #        var = self.getvar(v)
+    #        var_clone = obj_clone.clonevar(var, v)
+    #        var_clone[:] = var[:]
+    #    return obj_clone, is_new
 
 
 class NCPackage(NCObject):
@@ -169,52 +168,48 @@ class NCPackage(NCObject):
 
     def obtain_variable(self, name, vtype='f4', dimensions=(), digits=0,
                         fill_value=None):
-        return [f.getvar(name, vtype, dimensions, digits, fill_value)
-                for f in self.roots]
+        return [r.getvar(name, vtype, dimensions, digits, fill_value)
+                for r in self.roots]
 
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
-               fill_value=None):
-        vars = DistributedNCVariable(
-            name,
-            [r.getvar(name, vtype, dimensions, digits)[:]
-             for r in self.roots])
-        return vars
+    # def clonevar(self, var, new_varname):
+    #    return DistributedNCVariable(
+    #        new_varname,
+    #        [r.clonevar(var, new_varname) for r in self.roots])
 
-    def clonevar(self, var, new_varname):
-        return DistributedNCVariable(
-            new_varname,
-            [r.clonevar(var, new_varname) for r in self.roots])
-
-    def clone(self, filename, avoided=[]):
-        obj_clone = NCObject.open(filename)
-        if not obj_clone.is_new:
-            os.remove(filename)
-        obj_clone.getdim('time')
-        for d in self.roots[0].dimensions:
-            if d != 'time':
-                dim = self.getdim(d)
-                obj_clone.getdim(str(d), len(dim[0]))
-        # The first file set the variables origin
-        variables = [str(v) for v in self.roots[0].variables.keys()
-                     if v not in avoided]
-        variables.sort()
-        for v in variables:
-            var_ref = self.roots[0].getvar(v)
-            var = self.getvar(v).pack()
-            var_clone = obj_clone.clonevar(var_ref, v, ['time'])
-            try:
-                var_clone[:] = var[:]
-            except Exception, e:
-                print e
-        obj_clone.sync()
-        return obj_clone, obj_clone.is_new
+    # def clone(self, filename, avoided=[]):
+    #    obj_clone = NCObject.open(filename)
+    #    if not obj_clone.is_new:
+    #        os.remove(filename)
+    #    obj_clone.getdim('time')
+    #    for d in self.roots[0].dimensions:
+    #        if d != 'time':
+    #            dim = self.getdim(d)
+    #            obj_clone.getdim(str(d), len(dim[0]))
+    #    # The first file set the variables origin
+    #    variables = [str(v) for v in self.roots[0].variables.keys()
+    #                 if v not in avoided]
+    #    variables.sort()
+    #    for v in variables:
+    #        var_ref = self.roots[0].getvar(v)
+    #        var = self.getvar(v).pack()
+    #        var_clone = obj_clone.clonevar(var_ref, v, ['time'])
+    #        try:
+    #            var_clone[:] = var[:]
+    #        except Exception, e:
+    #            print e
+    #    obj_clone.sync()
+    #    return obj_clone, obj_clone.is_new
 
 
 class NCVariable(object):
 
     def __init__(self, name, variables):
         self.name = name
-        self.variables = variables
+        self.variables = (variables
+                          if variables.__class__ is list else [variables])
+
+    def __eq__(self, obj):
+        return (self.pack() == obj).all()
 
     @property
     def shape(self):
@@ -238,7 +233,8 @@ class NCVariable(object):
         return self.pack().__getitem__(indexes)
 
     def __getattr__(self, name):
-        print self.__class__, self.name, name
+        print 'Unhandled [class: %s, instance: %s, attr: %s]' % (
+            self.__class__, self.name, name)
 
     def sync(self):
         for v in self.variables:
@@ -247,51 +243,37 @@ class NCVariable(object):
 
 class SingleNCVariable(NCVariable):
 
+    def group(self):
+        return self.variables[0].group()
+
     def pack(self):
-        # var = var[:]
-        # if 'S' in str(var.dtype):
-        #    var = np.vstack([var.tostring()])
-        return self.variables[0]
+        vars = self.variables[0]
+        if self.variables[0].shape[0] > 1:
+            vars = np.vstack([self.variables])
+        return vars
 
     def __setitem__(self, indexes, changes):
-        return self.pack().__setitem__(indexes, changes)
+        return self.variables[0].__setitem__(indexes, changes)
 
 
 class DistributedNCVariable(NCVariable):
 
     def pack(self):
-        s = self.variables[0].shape
-        if len(s) > 0:
-            if 'S' in str(self.variables[0].dtype):
-                res = [v.tostring() for v in self.variables]
-            elif s[0] > 1:
-                res = [self.variables]
-            else:
-                res = self.variables
-            return np.vstack(res)
+        return np.vstack([v.pack() for v in self.variables])
 
     def __setitem__(self, indexes, change):
-        try:
-            l = np.vsplit(change, change.shape[0])
-        except Exception, e:
-            print e
-            # TODO: vsplit slice object should avoid change.shape[0]
-        ifnone = lambda a, b: b if a is None else a
-        item = indexes
-        idx = indexes
-        if isinstance(indexes, tuple):
-            item = indexes[0]
-            idx = tuple([slice(None)] + list(indexes[1:]))
-        filtered = list(range(ifnone(item.start, 0),
-                              ifnone(item.stop, change.shape[0]),
-                              ifnone(item.step, 1)))
-        for i in filtered:
-            v = self.variables[i]
-            v[idx] = l[i]
+        pack = self.pack()
+        pack.__setitem__(indexes, change)
+        vars = np.vsplit(pack, pack.shape[0])
+        for i in range(len(vars)):
+            self.variables[i][:] = vars[i]
         self.sync()
 
 
 def open(pattern):
+    """
+    Open a root descriptor to work with one or multiple NetCDF files.
+    """
     obj = NCObject.open(pattern)
     return obj, obj.is_new
 
@@ -305,20 +287,30 @@ def getdim(obj, name, size=None):
 
 
 def getvar(obj, name, vtype='f4', dimensions=(), digits=0, fill_value=None):
+    """
+    Return the numpy matrix of a variable from aNCFile or NCPackage instance.
+    """
     return obj.getvar(name, vtype, dimensions, digits, fill_value)
 
 
 def sync(obj):
+    """
+    Force the root descriptor to synchronize writing the buffers to the disk.
+    """
     obj.sync()
 
 
 def close(obj):
+    """
+    Close the root descriptor and write the buffer to the disk.
+    """
     obj.close()
 
-
+"""
 def clonevar(obj, var, new_varname):
     return obj.clonevar(var, new_varname)
 
 
 def clone(obj, filename, avoided=[]):
     return obj.clone(filename, avoided)
+"""

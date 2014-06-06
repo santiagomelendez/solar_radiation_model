@@ -3,6 +3,7 @@ from netCDF4 import Dataset
 from libs.file import netcdf as nc
 import os
 import stat
+import numpy as np
 
 
 class TestNetcdf(unittest.TestCase):
@@ -17,31 +18,59 @@ class TestNetcdf(unittest.TestCase):
         ref.createDimension('auditSize', 80)
         ref.createDimension('xc', 200)
         ref.createDimension('yc', 100)
-        ref.createDimension('time', 1)
-        ref.createVariable(
+        ref.createDimension('time')
+        var = ref.createVariable(
             'time',
             'i4',
             dimensions=('time',),
             zlib=True,
             fill_value=0)
-        ref.createVariable(
+        var[0] = 1
+        var = ref.createVariable(
             'lat',
             'f4',
             dimensions=('yc', 'xc'),
             zlib=True,
             fill_value=0.0)
-        ref.createVariable(
+        var[:] = 1
+        var = ref.createVariable(
             'lon',
             'f4',
             dimensions=('yc', 'xc'),
             zlib=True,
             fill_value=0.0)
-        ref.createVariable(
+        var[:] = 1
+        var = ref.createVariable(
             'data',
             'f4',
             dimensions=('time', 'yc', 'xc'),
             zlib=True,
             fill_value=0.0)
+        var[0, :] = 1
+        audit = np.array([['1', '4', '0', '0', '1', ' ', '2', '3', '2', '3',
+                           '5', '2', ' ', 'I', 'M', 'G', 'C', 'O', 'P', 'Y',
+                           ' ', 'D', 'E', 'L', 'I', 'V', 'E', 'R', 'Y', '/',
+                           'I', 'N', '1', '2', '6', '7', '8', '3', '3', '1',
+                           '9', '4', '.', '1', ' ', 'D', 'E', 'L', 'I', 'V',
+                           'E', 'R', 'Y', '/', 'N', 'C', '1', '2', '6', '7',
+                           '8', '3', '3', '1', '9', '4', '.', '1', ' ', 'L',
+                           'I', 'N', 'E', 'L', 'E', '=', '1', '1', '0', '1'],
+                          [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+                           ' ', ' ', ' ', '0', ' ', '1', '6', '8', '5', '2',
+                           ' ', 'I', ' ', 'P', 'L', 'A', 'C', 'E', '=', 'U',
+                           'L', 'E', 'F', 'T', ' ', 'B', 'A', 'N', 'D', '=',
+                           '1', ' ', 'D', 'O', 'C', '=', 'Y', 'E', 'S', ' ',
+                           'M', 'A', 'G', '=', '-', '1', ' ', '-', '1', ' ',
+                           'S', 'I', 'Z', 'E', '=', '1', '0', '6', '7', ' ',
+                           '2', '1', '6', '6', ' ', ' ', ' ', ' ', ' ', ' ']])
+        self.auditTrail = audit
+        var = ref.createVariable(
+            'auditTrail',
+            'S1',
+            dimensions=('auditCount', 'auditSize'),
+            zlib=True,
+            fill_value=0.0)
+        var[:] = self.auditTrail
         return ref
 
     def setUp(self):
@@ -140,19 +169,104 @@ class TestNetcdf(unittest.TestCase):
         self.assertFalse(root.has_dimension('the_12th_dimension'))
         self.assertEquals(len(nc.getdim(root, 'the_12th_dimension', 123)), 5)
         self.assertTrue(root.has_dimension('the_12th_dimension'))
-        nc.sync(root)
+        nc.close(root)
 
     def test_get_existing_var_single_file(self):
-        pass
+        # check if get the variable in a single file.
+        root = nc.open('unittest00.nc')[0]
+        self.assertNotIn('data', root.variables)
+        var = nc.getvar(root, 'data')
+        self.assertEquals(var.shape, (1, 100, 200))
+        self.assertIn('data', root.variables)
+        nc.close(root)
 
     def test_get_non_existing_var_single_file(self):
-        pass
+        # check if get the variable in a single file.
+        root = nc.open('unittest00.nc')[0]
+        self.assertNotIn('new_variable', root.variables)
+        var = nc.getvar(root, 'new_variable',
+                        'f4', ('time', 'yc', 'xc'),
+                        digits=3, fill_value=0.0)
+        self.assertEquals(var.shape, (1, 100, 200))
+        self.assertIn('new_variable', root.variables)
+        nc.close(root)
 
     def test_get_existing_var_multiple_file(self):
-        pass
+        # check if get the variable with multiples files.
+        root = nc.open('unittest0*.nc')[0]
+        self.assertNotIn('data', root.variables)
+        var = nc.getvar(root, 'data')
+        self.assertEquals(var.shape, (5, 100, 200))
+        self.assertIn('data', root.variables)
+        nc.close(root)
 
-    def test_get_non__existing_var_multiple_file(self):
-        pass
+    def test_get_non_existing_var_multiple_file(self):
+        # check if get the variable with multiples files.
+        root = nc.open('unittest0*.nc')[0]
+        self.assertNotIn('new_variable', root.variables)
+        var = nc.getvar(root, 'new_variable',
+                        'f4', ('time', 'yc', 'xc'),
+                        digits=3, fill_value=0.0)
+        self.assertEquals(var.shape, (5, 100, 200))
+        self.assertIn('new_variable', root.variables)
+        nc.close(root)
+
+    def test_single_file_var_operations(self):
+        # check if get and set the numpy matrix.
+        root = nc.open('unittest00.nc')[0]
+        var = nc.getvar(root, 'data')
+        self.assertEquals(var[:].__class__, np.ndarray)
+        tmp = var[:]
+        var[:] = var[:] + 1
+        nc.close(root)
+        # check if value was saved into the file.
+        root = nc.open('unittest00.nc')[0]
+        var = nc.getvar(root, 'data')
+        self.assertTrue(var, tmp + 1)
+        nc.close(root)
+
+    def test_multiple_file_var_operations(self):
+        # check if get and set the numpy matrix.
+        root = nc.open('unittest0*.nc')[0]
+        var = nc.getvar(root, 'data')
+        self.assertEquals(var[:].__class__, np.ndarray)
+        tmp = var[:]
+        var[:] = var[:] + 1
+        nc.close(root)
+        # check if value was saved into the file.
+        root = nc.open('unittest0*.nc')[0]
+        var = nc.getvar(root, 'data')
+        self.assertTrue(var, tmp + 1)
+        nc.close(root)
+
+    def test_character_variables_in_single_file(self):
+        # check if get and set the numpy string matrix in single files.
+        root = nc.open('unittest00.nc')[0]
+        var = nc.getvar(root, 'auditTrail')
+        self.assertEquals(var.shape, (1, 2, 80))
+        self.assertEquals(var, self.auditTrail)
+        self.auditTrail[:].data[0:6] = 'CHANGE'
+        var[0, 0:6] = np.array(list('CHANGE'))
+        self.assertEquals(var, self.auditTrail)
+        nc.close(root)
+
+    def test_character_variables_in_multiple_file(self):
+        # check if get and set the numpy string matrix in multiple files.
+        root = nc.open('unittest0*.nc')[0]
+        var = nc.getvar(root, 'auditTrail')
+        self.assertEquals(var.shape, (5, 2, 80))
+        result = np.vstack([[self.auditTrail] for i in range(5)])
+        self.assertEquals(str(var[:].data), str(result.data))
+        for i in range(5):
+            result[i, i % 2].data[0:6] = 'CHANGE'
+            var[i, i % 2, 0:6] = np.array(list('CHANGE'))
+        self.assertEquals(var, result)
+        nc.close(root)
+        # check if was writed to each file.
+        root = nc.open('unittest0*.nc')[0]
+        var = nc.getvar(root, 'auditTrail')
+        self.assertEquals(var, result)
+        nc.close(root)
 
 
 if __name__ == '__main__':
