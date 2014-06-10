@@ -268,6 +268,19 @@ class TestNetcdf(unittest.TestCase):
         self.assertEquals(var, result)
         nc.close(root)
 
+    def test_get_var_copy_from_source(self):
+        root = nc.open('unittest0*.nc')[0]
+        if os.path.isfile('unittest_destiny.nc'):
+            os.remove('unittest_destiny.nc')
+        root_d = nc.open('unittest_destiny.nc')[0]
+        # check if getvar copy a variable from a complex file to a simple file.
+        var_source = nc.getvar(root, 'data')
+        var = nc.getvar(root_d, 'data_copy', source=var_source)
+        self.assertEquals(var, var_source)
+        # check if getvar copy a variable from a simple file to a complex file.
+        var_distributed = nc.getvar(root, 'data_copy', source=var)
+        self.assertEquals(var, var_distributed)
+
 
 if __name__ == '__main__':
         unittest.main()
