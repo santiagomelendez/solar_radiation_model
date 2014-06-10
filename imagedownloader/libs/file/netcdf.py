@@ -88,7 +88,6 @@ class NCObject(object):
         options = {'fill_value': 0.0}
         if vtype == 'f4':
             options['digits'] = source.least_significant_digit
-        print options
         var = self.getvar(name, vtype, dimensions, **options)
         var[:] = source[:]
 
@@ -131,7 +130,6 @@ class NCFile(NCObject):
                    'fill_value': fill_value}
         if digits > 0:
             options['least_significant_digit'] = digits
-            # print name, vtype, dimensions, options
         return [build(name, vtype, dimensions, **options)]
 
 
@@ -169,7 +167,7 @@ class NCVariable(object):
                           if variables.__class__ is list else [variables])
 
     def __eq__(self, obj):
-        return (self.pack() == obj).all()
+        return (self.pack() == obj[:]).all()
 
     @property
     def shape(self):
@@ -197,6 +195,7 @@ class NCVariable(object):
     def __getattr__(self, name):
         print 'Unhandled [class: %s, instance: %s, attr: %s]' % (
             self.__class__, self.name, name)
+        import ipdb; ipdb.set_trace()
 
     def sync(self):
         for v in self.variables:
