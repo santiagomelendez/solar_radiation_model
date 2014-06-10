@@ -282,6 +282,18 @@ class TestNetcdf(unittest.TestCase):
         # check if getvar copy a variable from a simple file to a complex file.
         var_distributed = nc.getvar(root, 'data_copy', source=var)
         self.assertEquals(var, var_distributed)
+        # check if getvar copy changing the vtype to a simple file.
+        var_int = nc.getvar(root_d, 'data_int', 'i4', source=var_source)
+        self.assertEquals(var_source.vtype, 'f4')
+        self.assertEquals(var_int.vtype, 'i4')
+        diff = var_source[:] - var_int[:]
+        self.assertTrue((diff < 1).all())
+        # check if getvar copy changing the vtype to a multiple file.
+        var_distributed_int = nc.getvar(root, 'data_int', 'i4', source=var)
+        self.assertEquals(var_distributed.vtype, 'f4')
+        self.assertEquals(var_distributed_int.vtype, 'i4')
+        diff = var_distributed[:] - var_distributed_int[:]
+        self.assertTrue((diff < 1).all())
 
 
 if __name__ == '__main__':

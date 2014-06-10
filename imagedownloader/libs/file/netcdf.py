@@ -65,10 +65,10 @@ class NCObject(object):
                 if self.has_dimension(name)
                 else self.create_dimension(name, size))
 
-    def getvar(self, name, vtype='f4', dimensions=(), digits=0,
+    def getvar(self, name, vtype='', dimensions=(), digits=0,
                fill_value=None, source=None):
         if source:
-            self.copy_in(name, source)
+            self.copy_in(name, vtype, source)
         if name not in self.variables.keys():
             vars = self.obtain_variable(name, vtype, dimensions,
                                         digits, fill_value)
@@ -81,18 +81,18 @@ class NCObject(object):
     def close(self):
         return [r.close() for r in self.roots]
 
-    def copy_in(self, name, source):
+    def copy_in(self, name, vtype, source):
         # create dimensions if not exists.
         dims = source.dimensions
         gt1_or_none = lambda x: len(x) if len(x) > 1 else None
         [self.getdim(d, gt1_or_none(dims[d])) for d in dims]
         dimensions = tuple(reversed([str(k)
                                      for k in source.dimensions.keys()]))
-        vtype = dtypes[np.dtype(source.dtype)]
+        vt = vtype if vtype else source.vtype
         options = {'fill_value': 0.0}
-        if vtype == 'f4':
+        if vt == 'f4':
             options['digits'] = source.least_significant_digit
-        var = self.getvar(name, vtype, dimensions, **options)
+        var = self.getvar(name, vt, dimensions, **options)
         var[:] = source[:]
 
 
@@ -185,6 +185,10 @@ class NCVariable(object):
     def dtype(self):
         return self.variables[0].dtype
 
+    @property
+    def vtype(self):
+        return dtypes[np.dtype(self.dtype)]
+
     def __getitem__(self, indexes):
         return self.pack().__getitem__(indexes)
 
@@ -243,7 +247,7 @@ def getdim(obj, name, size=None):
     return dim
 
 
-def getvar(obj, name, vtype='f4', dimensions=(), digits=0, fill_value=None,
+def getvar(obj, name, vtype='', dimensions=(), digits=0, fill_value=None,
            source=None):
     """
     Return the numpy matrix of a variable from a NCFile or NCPackage instance.
