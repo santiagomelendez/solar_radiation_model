@@ -82,6 +82,7 @@ class TestNetcdf(unittest.TestCase):
 
     def tearDown(self):
         [ref.close() for ref in self.refs]
+        self.ro_ref.close()
 
     def test_open_close_existent_file(self):
         # check if open an existent file.
@@ -215,6 +216,7 @@ class TestNetcdf(unittest.TestCase):
         # check if get and set the numpy matrix.
         root = nc.open('unittest00.nc')[0]
         var = nc.getvar(root, 'data')
+        self.assertEquals(var.__class__, nc.SingleNCVariable)
         self.assertEquals(var[:].__class__, np.ndarray)
         tmp = var[:]
         var[:] = var[:] + 1
@@ -256,7 +258,7 @@ class TestNetcdf(unittest.TestCase):
         var = nc.getvar(root, 'auditTrail')
         self.assertEquals(var.shape, (5, 2, 80))
         result = np.vstack([[self.auditTrail] for i in range(5)])
-        self.assertEquals(str(var[:].data), str(result.data))
+        self.assertEquals(var, result)
         for i in range(5):
             result[i, i % 2].data[0:6] = 'CHANGE'
             var[i, i % 2, 0:6] = np.array(list('CHANGE'))

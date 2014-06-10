@@ -47,6 +47,10 @@ class NCObject(object):
         self._is_new = [not os.path.exists(f) for f in self.files]
 
     @property
+    def is_new(self):
+        return all(self._is_new)
+
+    @property
     def dimensions(self):
         dicts = [r.dimensions for r in self.roots]
         keys = {k for d in dicts for k in d}
@@ -94,10 +98,6 @@ class NCObject(object):
 
 class NCFile(NCObject):
 
-    @property
-    def is_new(self):
-        return self._is_new[0]
-
     def load(self):
         filename = self.files[0]
         self.read_only = True
@@ -134,10 +134,6 @@ class NCFile(NCObject):
 
 
 class NCPackage(NCObject):
-
-    @property
-    def is_new(self):
-        return all(self._is_new)
 
     def load(self):
         self.roots = [NCObject.open(filename) for filename in self.files]
