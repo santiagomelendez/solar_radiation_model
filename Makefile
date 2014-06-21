@@ -84,6 +84,7 @@ PYTHON=bin/python
 EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=$(PYTHONLIBS) . bin/activate; 
+HDF5VER=1.8.12
 
 ifneq ($(filter-out postgres,$(MAKECMDGOALS)),$(MAKECMDGOALS))
 	DATABASE_REQUIREMENTS=postgres-requirements
@@ -139,8 +140,8 @@ postgres: $(LIBPOSTGRES) pg-start
 	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
 $(LIBHDF5):
-	$(call get,hdf5-1.8.13,hdf5-1.8.13.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
-	$(call compile,hdf5-1.8.13,,--prefix=/usr/local --enable-shared --enable-hl,install)
+	$(call get,hdf5-$(HDF5VER),hdf5-$(HDF5VER).tar.gz,http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-$(HDF5VER)/src)
+	$(call compile,hdf5-$(HDF5VER),,--prefix=/usr/local --enable-shared --enable-hl,install)
 
 $(LIBNETCDF): $(LIBHDF5)
 	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
@@ -163,10 +164,10 @@ bin/activate: imagedownloader/requirements.txt
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
 	@ echo "[ installing   ] numpy inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) numpy 2>&1) >> tracking.log
-	@ echo "[ installing   ] h5py inside $(VIRTUALENV)"
-	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) h5py 2>&1) >> tracking.log
-	@ echo "[ installing   ] netCDF4 inside $(VIRTUALENV)"
-	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) netCDF4 2>&1) >> tracking.log
+	#@ echo "[ installing   ] h5py inside $(VIRTUALENV)"
+	#@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) h5py 2>&1) >> tracking.log
+	#@ echo "[ installing   ] netCDF4 inside $(VIRTUALENV)"
+	#@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) netCDF4 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ PATH="$(POSTGRES_PATH):$(PATH)"; $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1 | grep Downloading
 	@ touch bin/activate
