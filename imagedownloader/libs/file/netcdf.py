@@ -2,7 +2,16 @@ from netCDF4 import Dataset, numpy
 import numpy as np
 import os
 from glob import glob
-from compiler.ast import flatten
+
+
+def flatten(x):
+    result = []
+    for el in x:
+        if hasattr(el, "__iter__") and not isinstance(el, str):
+            result.extend(flatten(el))
+        else:
+            result.append(el)
+    return result
 
 
 dtypes = {}

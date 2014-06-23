@@ -1,6 +1,6 @@
 import unittest
 from netCDF4 import Dataset
-from libs.file import netcdf as nc
+import netcdf as nc
 import os
 import stat
 import numpy as np
