@@ -25,7 +25,7 @@
 - model: requester.account
   pk: 1
   fields:
-    polymorphic_ctype: 26
+    polymorphic_ctype: 23
     password: noaaadmin
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
@@ -45,7 +45,7 @@
 - model: requester.account
   pk: 2
   fields:
-    polymorphic_ctype: 24
+    polymorphic_ctype: 21
     password: noaaadmin
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
@@ -165,32 +165,19 @@
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
-- model: factopy.tagmanager
-  pk: 3
-  fields:
-    tag_string: ""
-
-- model: factopy.stream
-  pk: 3
-  fields:
-    tags: 3
-    created: "2013-01-01T00:00+00:00"
-    modified: "2013-01-01T00:00+00:00"
-
 - model: factopy.process
-  pk: 9
+  pk: 8
   fields:
-    polymorphic_ctype: 28
+    polymorphic_ctype: 25
     name: "NOAA Adapter"
     description: "NOAA GVAR_IMG Adapter"
 
 - model: factopy.adapt
-  pk: 9
-  fields:
-    stream: 3
+  pk: 8
+  fields: {}
 
 - model: requester.noaaadapt
-  pk: 9
+  pk: 8
   fields:
     title: "BS: 2013->2014 G13"
     area: 2
@@ -204,28 +191,30 @@
     created: "2013-01-01T00:00:00+00:00"
     modified: "2013-01-01T00:00:00+00:00"
 
-- model: factopy.tagmanager
-  pk: 4
-  fields:
-    tag_string: ""
-
 - model: factopy.stream
-  pk: 4
+  pk: 8
   fields:
-    tags: 4
+    feed: 8
     created: "2013-01-01T00:00+00:00"
     modified: "2013-01-01T00:00+00:00"
 
 - model: factopy.process
-  pk: 10
+  pk: 9
   fields:
-    polymorphic_ctype: 30
+    polymorphic_ctype: 26
     name: "NOAA e-mail checker"
     description: "NOAA GVAR_IMG e-mail checker"
 
 - model: requester.job
-  pk: 10
+  pk: 9
   fields: {}
+
+- model: factopy.stream
+  pk: 9
+  fields:
+    feed: 9
+    created: "2013-01-01T00:00+00:00"
+    modified: "2013-01-01T00:00+00:00"
 
 - model: requester.noaaemailchecker
   pk: 10

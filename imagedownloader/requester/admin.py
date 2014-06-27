@@ -1,10 +1,13 @@
 from django.contrib import admin
-from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
+from polymorphic.admin import PolymorphicParentModelAdmin, \
+    PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from requester.models import Area, Satellite, Channel
-from requester.models import NOAAAdapt
-from requester.models import Account, FTPServerAccount, WebServerAccount, EmailAccount, GOESRequest, NOAAEMailChecker, NOAAFTPDownloader
+from requester.models import NOAAAdapt, Job
+from requester.models import Account, FTPServerAccount, WebServerAccount, \
+    EmailAccount, GOESRequest, NOAAEMailChecker, NOAAFTPDownloader
 from requester.models.materials import File, Request #, Order
-from factopy.admin import MaterialAdmin, ProcessAdmin, MaterialChildAdmin, ProcessChildAdmin, ComplexProcessChildAdmin
+from factopy.admin import MaterialAdmin, ProcessAdmin, MaterialChildAdmin, \
+    ProcessChildAdmin
 
 MaterialAdmin.child_models += (
 	(File, MaterialChildAdmin),
@@ -17,10 +20,12 @@ ProcessAdmin.child_models += (
 	(GOESRequest, ProcessChildAdmin),
 	(NOAAEMailChecker, ProcessChildAdmin),
 	(NOAAFTPDownloader, ProcessChildAdmin),
+	(Job, ProcessChildAdmin),
 )
 
 class AreaAdmin(admin.ModelAdmin):
-	list_display = [ 'name', 'north_latitude', 'south_latitude', 'east_longitude', 'west_longitude']
+	list_display = [ 'name', 'north_latitude', 'south_latitude',
+                 'east_longitude', 'west_longitude']
 
 
 class SatelliteAdmin(admin.ModelAdmin):
