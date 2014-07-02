@@ -1,6 +1,9 @@
 from django.db import models
-from factopy.models import Collect
+from factopy.models import Process
 from libs.geometry.jaen import getslots
+
+class Collect(Process):
+    pass
 
 
 class CollectTimed(Collect):

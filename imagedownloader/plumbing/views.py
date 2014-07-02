@@ -1,12 +1,12 @@
 from django.http import HttpResponse
 from django.template import Context, loader
 from django.shortcuts import render, redirect
-from plumbing.models import Program, Importer
+from plumbing.models import SyncImporter
 
 # Create your views here.
 
 def index(request):
-	program_list = Program.objects.all()
+	program_list = [] #Program.objects.all()
 	template = loader.get_template('plumbing/index.html')
 	context = Context({
 		'program_list': program_list,
@@ -14,16 +14,17 @@ def index(request):
 	return HttpResponse(template.render(context))
 
 def execute(request, program_id):
-	programs = Program.objects.filter(id=program_id)
-	programs[0].execute()
+	#programs = Program.objects.filter(id=program_id)
+	#programs[0].execute()
 	return redirect('/plumbing/status')
 
 def status(request):
-	programs = Program.objects.all()
-	return render(request, 'plumbing/status.html', {'programs': programs})
+	#programs = Program.objects.all()
+    programs = []
+    return render(request, 'plumbing/status.html', {'programs': programs})
 
 def update(request):
-	new_importers = len(Importer.setup_unloaded())
+	new_importers = len(SyncImporter.setup_unloaded())
 	template = loader.get_template('plumbing/update.html')
 	context = Context({
 		'new_importers': new_importers,

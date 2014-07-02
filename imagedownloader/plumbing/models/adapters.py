@@ -1,7 +1,7 @@
 import sys
 sys.path.append(".")
 from django.db import models
-from factopy.models import ComplexProcess, MaterialStatus, Importer, Adapt, Stream
+from factopy.models import MaterialStatus, Push, Adapt, Stream
 #from plumbing import Stream
 from requester.models import File
 from datetime import datetime
@@ -12,7 +12,7 @@ from libs import matrix
 import pytz
 
 
-class SyncImporter(Importer):
+class SyncImporter(Push):
 	class Meta(object):
 			app_label = 'plumbing'
 
@@ -30,7 +30,7 @@ class SyncImporter(Importer):
 		return materials_tmp
 
 
-class Program(ComplexProcess):
+""" class Program(ComplexProcess):
 	class Meta(object):
 			app_label = 'plumbing'
 	stream = models.ForeignKey(Stream)
@@ -45,6 +45,7 @@ class Program(ComplexProcess):
 
 	def execute(self):
 		self.do(self.stream)
+"""
 
 
 class Compact(Adapt):

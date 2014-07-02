@@ -141,8 +141,8 @@ INSTALLED_APPS = (
 	'django.contrib.admindocs',
 	'factopy',
 	'requester',
-	'plumbing',
-	'stations',
+	#'plumbing',
+	#'stations',
 )
 
 # A sample logging configuration. The only tangible logging
