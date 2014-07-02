@@ -200,7 +200,7 @@ runbackend:
 	$(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runbackend 4
 
 test:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test stations plumbing requester
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test requester # stations plumbing
 
 test-coverage-travis-ci:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/,requester/models.py' manage.py test stations plumbing requester
