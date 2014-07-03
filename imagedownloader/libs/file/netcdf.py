@@ -37,6 +37,9 @@ class NCObject(object):
 
     @classmethod
     def distill(self, files_or_pattern):
+        if files_or_pattern in ['', []]:
+            raise Exception('There is not file list or '
+                            'pattern to open.')
         if files_or_pattern.__class__ is list:
             files = files_or_pattern
             pattern = ''

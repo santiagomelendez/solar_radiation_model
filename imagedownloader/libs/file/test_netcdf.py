@@ -84,6 +84,16 @@ class TestNetcdf(unittest.TestCase):
         [ref.close() for ref in self.refs]
         self.ro_ref.close()
 
+    def test_open_unexistent_file(self):
+        with self.assertRaisesRegexp(Exception, u'There is not file list or '
+                                     'pattern to open.'):
+            root, is_new = nc.open([])
+
+    def test_open_unexistent_pattern(self):
+        with self.assertRaisesRegexp(Exception, u'There is not file list or '
+                                     'pattern to open.'):
+            root, is_new = nc.open('')
+
     def test_open_close_existent_file(self):
         # check if open an existent file.
         root, is_new = nc.open('unittest00.nc')
