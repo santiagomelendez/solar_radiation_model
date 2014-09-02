@@ -47,13 +47,13 @@ def cut_month(x, y, month):
 def cut_projected(root):
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
-	time = nc.getvar(root, 'data_time')
+	time = nc.getvar(root, 'time')
 	months = list(set([ (datetime.fromtimestamp(int(t))).month for t in time ]))
 	nc.getdim(root, 'monthing')
-	months_cut = nc.getvar(root, 'months', 'i2', ('monthing',))
-	dims = list(lat.dimensions)
+	months_cut = root.getvar('months', 'i2', ('monthing',))
+	dims=list(root.variables['lat'].dimensions)
 	dims.insert(0, 'monthing')
-	linke = nc.getvar(root, 'linketurbidity', 'f4', tuple(dims),4)
+	linke = root.getvar('linketurbidity', 'f4', tuple(dims),4)
 	linke_x, linke_y = project_coordinates(lat[:], lon[:])
 	months_cut[:] = np.array(list(months))
 	for i in range(len(months)):

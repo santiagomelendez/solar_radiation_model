@@ -31,10 +31,10 @@ def merge_tails():
 	#from scipy import misc
 	say("Merging all the tails in one netCDF file...")
 	root = nc.open(localpath+ "/dem.nc")[0]
-	nc.getdim(root,'northing', 180 * 120) # 180 degrees * 120 px/degree
-	nc.getdim(root,'easting', 360 * 120) # 360 degrees * 120 px/degree
-	data = nc.getvar(root, 'dem', 'i2', ('northing','easting',))
-	files = glob.glob(localpath + "/all10/all10/*10g")
+	nc.getdim(root,'yc', 180 * 120) # 180 degrees * 120 px/degree
+	nc.getdim(root,'xc', 360 * 120) # 360 degrees * 120 px/degree
+	data = root.getvar('dem', 'i2', ('yc','xc',))
+	files = glob.glob(localpath + "/all10/*10g")
 	tails = [[file_coordinates(f),f] for f in files]
 	for t, f in tails:
 		print t, f
@@ -52,7 +52,9 @@ if not os.path.exists(localpath+ "/dem.nc"):
 
 def cut(lat,lon):
 	root = nc.open(localpath+"/dem.nc")[0]
-	dem = nc.getvar(root, 'dem', 'i2', lat.dimensions)
+	for dim in lat.dimensions:
+		nc.getdim(root, str(dim), len(dim))
+	dem = root.getvar('dem', 'i2', lat.dimensions)
 	x, y = p.pixels_from_coordinates(lat[:], lon[:], dem.shape[0], dem.shape[1])
 	# In the transformation the 'y' dimension is twisted because the map is inverted.
 	result = p.transform_data(dem,x,dem.shape[0] - y)
@@ -60,8 +62,8 @@ def cut(lat,lon):
 	return result, x, y
 
 def cut_projected(root):
-	lat = nc.getvar(root, 'lat')
-	lon = nc.getvar(root, 'lon')
-	dem = nc.getvar(root, 'dem', 'i2', lat.dimensions)
+	lat = root.getvar('lat')
+	lon = root.getvar('lon')
+	dem = root.getvar('dem', 'i2', lat.dimensions)
 	dem[:], dem_x, dem_y = cut(lat, lon)
 	return dem[:], dem_x, dem_y

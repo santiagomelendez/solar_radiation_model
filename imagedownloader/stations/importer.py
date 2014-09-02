@@ -2,7 +2,7 @@ import sys
 sys.path.append("../")
 sys.path.append(".")
 from datetime import datetime, timedelta
-from xlrd import open_workbook, XL_CELL_EMPTY, XL_CELL_BLANK
+#from xlrd import open_workbook, XL_CELL_EMPTY, XL_CELL_BLANK
 import csv
 from libs.file import netcdf as nc
 from libs.geometry import jaen as geo
@@ -17,36 +17,35 @@ def rows2csv(rows, filename):
 		for i in range(len(rows)):
 			spamwriter.writerow(rows[i])
 
-def mvolt_to_watt(mvolt):
+"""def mvolt_to_watt(mvolt):
 	mvolt_per_kwatts_m2 = 8.48
-	return (mvolt / mvolt_per_kwatts_m2) * 1000
+	return (mvolt / mvolt_per_kwatts_m2) * 1000"""
 
 def rows2slots(rows, image_per_hour):
 	resumed_slots = []
 	old_slot = geo.getslots(rows[0][0],image_per_hour)
 	seconds_in_slot = (rows[1][0] - rows[0][0]).total_seconds()
-	mvolt = 0
+	MJ = 0
 	rows_by_slot = 0
 	dt = rows[0][0]
 	for r in rows:
 		slot = geo.getslots(dt,image_per_hour)
 		if not old_slot is slot:
-			resumed_slots.append([slot, [dt, mvolt_to_watt((mvolt/rows_by_slot)/seconds_in_slot), rows_by_slot]])
-			old_slot, rows_by_slot, mvolt = slot, 0, 0
-		mvolt += r[1]
+			resumed_slots.append([slot, [dt, ((MJ/rows_by_slot)/seconds_in_slot)*1E6, rows_by_slot]])
+			old_slot, rows_by_slot, MJ = slot, 0, 0
+		MJ += r[1]
 		rows_by_slot += 1
 		dt = r[0]
 	if not old_slot is slot:
-		resumed_slots.append([slot, [dt, mvolt_to_watt((mvolt/rows_by_slot)/seconds_in_slot), rows_by_slot]])
-		old_slot, rows_by_slot, mvolt = slot, 0, 0
+		resumed_slots.append([slot, [dt, ((MJ/rows_by_slot)/seconds_in_slot)*1E6, rows_by_slot]])
+		old_slot, rows_by_slot, MJ = slot, 0, 0
 	return resumed_slots
 
-def rows2netcdf(rows, filename, index):
-	root, is_new = nc.open(filename)
-	if not is_new:
-		measurements = nc.clonevar(root, 'globalradiation', 'measurements')
+def rows2netcdf(rows, root, measurements, index):
+	#root, is_new = nc.open(filename)
+	#if not is_new:
 		slots = nc.getvar(root, 'slots')
-		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
+		times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
 		instant_radiation = rows2slots(rows,2)
 		earth_failures = 0
 		i_e = 0
@@ -78,8 +77,8 @@ def rows2netcdf(rows, filename, index):
 			earth_failures += 1
 			i_e += 1
 		show("Detected %i of %i estimated times without earth measure.\n" % (earth_failures, len(slots)))
-		error.rmse(root, index)
-		nc.close(root)
+		#error.rmse(root, index)
+		#nc.close(root)
 
 def get_val(sh,x,y):
 	try:
@@ -92,7 +91,7 @@ def get_val(sh,x,y):
 def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="00", utc_hour=0, utc_minute=0):
 	if year_or_timestamp.__class__ is str and julian is None:
 		tzsplit = year_or_timestamp.split("+")
-		timestamp = datetime.strptime(tzsplit[0],"%Y-%m-%d %H:%M:%S")
+		timestamp = datetime.strptime(tzsplit[0],"%Y-%m-%d-%H:%M")
 		if len(tzsplit) > 1:
 			utc_hour, utc_minute = int(tzsplit[1][:2]) if utc_hour is 0 else utc_hour, int(tzsplit[1][4:])
 	else:
@@ -103,14 +102,14 @@ def to_datetime(year_or_timestamp, julian=None, hour="00", minute="00", second="
 	timestamp = (timestamp + delta if utc_hour < 0 else timestamp - delta)
 	return timestamp.replace(tzinfo=pytz.UTC)
 
-def from_xls_without_params(input_filename, utc_diff):
+"""def from_xls_without_params(input_filename, utc_diff):
 	i_sheet = int(sys.argv[5])
 	x_year = int(sys.argv[6])
 	x_julian = int(sys.argv[7])
 	x_timestamp = int(sys.argv[8])
 	x_value = int(sys.argv[9])
 	y_from = int(sys.argv[10])
-	return from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)
+	return from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from)"""
 
 def from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x_value, y_from):
 	wb = open_workbook(input_filename)
@@ -131,24 +130,55 @@ def from_xls(input_filename, utc_diff, i_sheet, x_year, x_julian, x_timestamp, x
 		year, julian, time = get_val(sh,x_year,y), get_val(sh,x_julian,y), get_val(sh,x_timestamp,y)
 	return rows
 
-def from_csv_without_params(input_filename, utc_diff):
+"""def from_csv_without_params(input_filename, utc_diff):
 	timestamp_col = int(sys.argv[5])
 	channel = int(sys.argv[6])
 	skip_rows = int(sys.argv[7])
 	return from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows)
+
+def from_txt_without_params(input_filename, utc_diff):
+	timestamp_col = int(sys.argv[5])
+	channel = int(sys.argv[6])
+	skip_rows = int(sys.argv[7])
+	return from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows)"""
 
 def from_csv(input_filename, utc_diff, timestamp_col, channel, skip_rows):
 	rows = np.genfromtxt(input_filename,
 		delimiter = ',',
 		skiprows= skip_rows,
 		usecols=[timestamp_col, channel],
-		converters = {timestamp_col: lambda s: to_datetime(s[1:-1], utc_hour=int(utc_diff)), channel: lambda s: float(s)})
+		converters = {timestamp_col: lambda s: to_datetime(s, utc_hour=int(utc_diff)), channel: lambda s: float(s)})
 	return rows
 
-if __name__ == "__main__":
+def from_txt(input_filename, utc_diff, timestamp_col, channel, skip_rows):
+	rows = np.genfromtxt(input_filename,
+		delimiter = '\t',
+		skiprows= skip_rows,
+		usecols=[timestamp_col, channel],
+		converters = {timestamp_col: lambda s: to_datetime(s, utc_hour=int(utc_diff)), channel: lambda s: float(s)})
+	return rows
+
+def import_measurement(year, month, filename, stations):
+
+	root, _ = nc.open(filename)
+
+	measurements = nc.clonevar(root, 'globalradiation', 'measurements')
+	for name in stations:
+#		input_filename = '/home/adrian/Desktop/heliosat2/Datos_horarios/' + name + '_' + year + month + '_H.txt'
+		input_filename = '/home/santiago/GERSOLAR/GOES/Datos_horarios/' + name + '_' + year + month + '_H.txt'
+		stations_index = stations.index(name)
+		stations_index = stations.index(name)
+		rows = from_txt(input_filename, utc_diff = -3, timestamp_col = 0, channel = 1, skip_rows = 1)
+		rows2netcdf(rows, root, measurements, stations_index)
+	nc.close(root)
+
+
+
+"""if __name__ == "__main__":
 	importer = {}
 	importer["xls"] = from_xls_without_params
 	importer["csv"] = from_csv_without_params
+	importer["txt"] = from_txt_without_params
 	output_filename = sys.argv[1]
 	output_index = int(sys.argv[2]) if output_filename.split(".")[-1] == "nc" else None
 	input_filename = sys.argv[3]
@@ -157,7 +187,7 @@ if __name__ == "__main__":
 	if output_index is None:
 		rows2csv(rows, output_filename)
 	else:
-		rows2netcdf(rows,output_filename,output_index)
+		rows2netcdf(rows,output_filename,output_index)"""
 
 #python stations/importer.py cut_positions.pkg.goes13.2012.M07.BAND_01.nc 0 mayo2011.xls -3 1 1 2 3 9 10
 #python stations/importer.py cut_positions.pkg.goes13.2012.M07.BAND_01.nc 0 2011UTC.csv 0 0 1 3

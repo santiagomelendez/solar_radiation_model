@@ -73,25 +73,56 @@ def statistical_search_position(station, lat, lon):
 	diffs = np.abs(lat[:] - station[0]) + np.abs(lon[:] - station[1])
 	np.where(diffs <= np.min(diffs))
 	x, y = [ v[0] for v in np.where(diffs <= np.min(diffs))]
-	return (x, y) if 0 < x < lat.shape[0] and 0 < y < lat.shape[1] else (None, None)
+	return (x , y) if 0 < x < lat.shape[0] and 0 < y < lat.shape[1] else (None, None)
 
-def cut_positions(filename, blurred, *positions):
+def cut_area(filename, blurred, positions):
 	blurred = int(blurred)
-	pos = eval("".join(positions))
 	root = nc.open(filename)[0]
 	lat = nc.getvar(root, 'lat')
 	lon = nc.getvar(root, 'lon')
 	data = nc.getvar(root, 'data')
-	root_cut = nc.clonefile(root, 'cut_positions.' + filename, ['lat', 'lon', 'data'])[0]
-	nc.getdim(root_cut, 'northing_cut', len(pos))
-	nc.getdim(root_cut, 'easting_cut', 2)
-	lat_cut = nc.getvar(root_cut, 'lat', 'f4', ('northing_cut','easting_cut',),4)
-	lon_cut = nc.getvar(root_cut, 'lon', 'f4', ('northing_cut','easting_cut',),4)
-	data_cut = nc.getvar(root_cut, 'data', 'f4', ('timing','northing_cut','easting_cut',),4)
+	root_cut = nc.open('cut_area.' + filename)[0]
+	nc.getdim(root_cut, 'time', None)
+	nc.getdim(root_cut, 'yc_cut', len(positions)*2*blurred)
+	nc.getdim(root_cut, 'xc_cut', 2*blurred)
+	time = root_cut.getvar('time', 'i4', ('time',))
+	lat_cut = root_cut.getvar('lat', 'f4', ('yc_cut','xc_cut',),4)
+	lon_cut = root_cut.getvar('lon', 'f4', ('yc_cut','xc_cut',),4)
+	data_cut = root_cut.getvar('data', 'f4', ('time', 'yc_cut', 'xc_cut',),4)
+	time[:] = nc.getvar(root, 'time')[:]
 	ix = 0
-	for i in range(len(pos)):
-		show("\rCutting data: processing position %d / %d " % (i+1, len(pos)))
-		x, y = statistical_search_position(pos[i], lat, lon)
+	for i in range(len(positions)):
+		show("\rCutting data: processing position %d / %d " % (i+1, len(positions)))
+		x, y = statistical_search_position(positions[i], lat, lon)
+		if x and y:
+			lat_cut[ix*2*blurred:(ix+1)*2*blurred, 0:2*blurred] = lat[y-blurred:y+blurred,x-blurred:x+blurred]
+			lon_cut[ix*2*blurred:(ix+1)*2*blurred, 0:2*blurred] = lon[y-blurred:y+blurred,x-blurred:x+blurred]
+			data_cut[:,ix*2*blurred:(ix+1)*2*blurred, 0:2*blurred] = data[:,y-blurred:y+blurred,x-blurred:x+blurred]
+			ix += 1
+	nc.close(root)
+	nc.close(root_cut)
+
+def cut_positions(filename, blurred, positions):
+	blurred = int(blurred)
+	root, _ = nc.open(filename)
+	lat = nc.getvar(root, 'lat')
+	lon = nc.getvar(root, 'lon')
+	data = nc.getvar(root, 'data')
+	root_cut, _ = nc.open('cut_positions.' + filename)
+	nc.getdim(root_cut, 'time', None)
+	nc.getdim(root_cut, 'yc_cut', len(positions))
+	nc.getdim(root_cut, 'xc_cut', 2)
+	time = root_cut.getvar('time', 'i4', ('time',))
+	#slots = root_cut.getvar('slots', 'u1', ('time',))
+	lat_cut = root_cut.getvar('lat', 'f4', ('yc_cut','xc_cut',),4)
+	lon_cut = root_cut.getvar('lon', 'f4', ('yc_cut','xc_cut',),4)
+	data_cut = root_cut.getvar('data', 'f4', ('time', 'yc_cut', 'xc_cut',),4)
+	time[:] = nc.getvar(root, 'time')
+	#slots[:] = nc.getvar(root, 'slots')
+	ix = 0
+	for i in range(len(positions)):
+		show("\rCutting data: processing position %d / %d " % (i+1, len(positions)))
+		x, y = statistical_search_position(positions[i], lat, lon)
 		if x and y:
 			lat_cut[ix,0] = lat[x,y]
 			lon_cut[ix,0] = lon[x,y]
@@ -198,17 +229,18 @@ def unzip(source_filename, dest_dir):
 				if word in (os.curdir, os.pardir, ''): continue
 				path = os.path.join(path, word)
 			zf.extract(member, path)
-
+"""
 if __name__=="__main__":
 	functions = { 'cut' : cut,
 		'cut_positions' : cut_positions,
+		'cut_area' : cut_area,
 		'get_tlinke': cut_projected_linke,
 		'get_terrain' : cut_projected_terrain,
 		'download': download,
 		'unzip': unzip }
 	functions[sys.argv[1]](*(sys.argv[2:]))
 	show("\nReady.\n")
-
+"""
 #station = [-34.5880556, -59.0627778] # Lujan
 #station = [-36.541704, -63.990947] # Anguil
 #station = [-31.84894, -60.536117] # Parana

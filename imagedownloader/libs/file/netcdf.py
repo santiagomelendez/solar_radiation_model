@@ -102,7 +102,7 @@ class File(NCObject):
             avoided = []
         variables = [str(v) for v in self.variables.keys()
                      if v not in avoided]
-        obj_clone, is_new = NCObject.open(filename)
+        obj_clone = NCObject.open(filename)
         for d in self.dimensions:
             dim = self.getdim(d)
             obj_clone.getdim(d, len(dim))
@@ -110,7 +110,7 @@ class File(NCObject):
             var = self.getvar(v)
             var_clone = obj_clone.clonevar(var, v)
             var_clone[:] = var[:]
-        return obj_clone, is_new
+        return obj_clone
 
     def sync(self):
         self.root.sync()
@@ -155,30 +155,29 @@ class Package(NCObject):
         obj_clone.getdim('time')
         for d in self.roots[0].dimensions:
             if d != 'time':
-                dim = self.getdim(d)
-                obj_clone.getdim(str(d), len(dim[0]))
+                dim = self.roots[0].getdim(d)
+                obj_clone.getdim(str(d), len(dim))
         # The first file set the variables origin
         variables = [str(v) for v in self.roots[0].variables.keys()
                      if v not in avoided]
         variables.sort()
         for v in variables:
             var_ref = self.roots[0].getvar(v)
-            var = getvar(self, v)
-            var_clone = obj_clone.clonevar(var_ref, v, ['time'])
+	    var =getvar(self, v)
+	    var_clone = obj_clone.clonevar(var_ref, v)
             var_clone[:] = var[:]
         return obj_clone, obj_clone.is_new
 
     def pack(self, var):
-        s = var[0].shape
-        if len(s) > 0:
-            if 'S' in str(var[0].dtype):
-                res = [v.tostring() for v in var]
-            elif s[0] > 1:
-                res = [var]
-            else:
+	s=var[0].shape
+	if len(s) > 0:
+	    if 'S' in str(var[0].dtype):
+                res=[v.tostring() for v in var]
+	    elif s[0] > 1:
+	        res = [var]
+	    else:
                 res = var
             return np.vstack(res)
-
 
 def open(pattern):
     obj = NCObject.open(pattern)

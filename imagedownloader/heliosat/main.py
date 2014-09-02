@@ -2,7 +2,6 @@
 
 import sys
 sys.path.append(".")
-
 import numpy as np
 from datetime import datetime
 from libs.statistics import stats
@@ -17,7 +16,7 @@ from libs.dem import dem
 #import processgroundstations as pgs
 from libs.console import say, show, show_times
 
-SAT_LON = -60.0 # -75.3305 # longitude of sub-satellite point in degrees
+SAT_LON = -75.113 # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 
@@ -29,26 +28,27 @@ def geti0met():
 	return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 def calibrated_data(root):
+#	import pdb; pdb.set_trace()
 	data = nc.getvar(root, 'data')[:]
-	counts_shift = nc.getvar(root, 'counts_shift')[0]
-	space_measurement = nc.getvar(root, 'space_measurement')[0]
-	prelaunch = nc.getvar(root, 'prelaunch')[0]
-	postlaunch = nc.getvar(root, 'postlaunch')[0]
+	counts_shift = nc.getvar(root, 'counts_shift')[0] = 32
+	space_measurement = nc.getvar(root, 'space_measurement')[0] = 28
+	prelaunch = nc.getvar(root, 'prelaunch')[0] = 0.6118208
+	postlaunch = nc.getvar(root, 'postlaunch')[0] = 1.181
 	print prelaunch, "= 0.6118208", postlaunch, "= 1.181", counts_shift, space_measurement
 	# INFO: Without the postlaunch coefficient the RMSE go to 15%
 	return postlaunch * prelaunch * (np.float32(data) / counts_shift - space_measurement)
 
 def process_temporal_data(lat, lon, root):
-	times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'data_time')[:] ]
+	times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
 	indexes = range(len(times))
-	gamma = nc.clonevar(root,'data_time', 'gamma')
+	gamma = root.getvar('gamma', dimensions = ('time') ) 
 	nc.sync(root)
 	tst_hour = nc.clonevar(root,'data', 'tst_hour')
 	declination = nc.clonevar(root, 'gamma', 'declination')
 	solarangle = nc.clonevar(root, 'data', 'solarangle')
 	solarelevation = nc.clonevar(root, 'solarangle', 'solarelevation')
 	excentricity = nc.clonevar(root, 'gamma', 'excentricity')
-	slots = nc.getvar(root,'slots', 'u1', ('timing',))
+	slots = root.getvar('slots',vtype = 'i1', dimensions = ('time',))
 	nc.sync(root)
 	for i in indexes:
 		show("\rTemporal data: preprocessing image %d / %d " % (i, len(indexes)-1))
@@ -59,11 +59,13 @@ def process_temporal_data(lat, lon, root):
 		tst_hour[i,:] = geo.gettsthour(geo.getdecimalhour(dt), GREENWICH_LON, lon, geo.gettimeequation(gamma[i]))
 		declination[i] = geo.getdeclination(gamma[i])
 		slots[i] = geo.getslots(dt,IMAGE_PER_HOUR)
-		omega = geo.gethourlyangle(tst_hour[i], lat/abs(lat))
-		solarangle[i] = geo.getzenithangle(declination[i],lat,omega)
-		solarelevation[i] = geo.getelevation(solarangle[i])
+		omega = geo.gethourlyangle(tst_hour[i,:], lat/abs(lat))
+		solarangle[i,:] = geo.getzenithangle(declination[i],lat,omega)
+		solarelevation[i,:] = geo.getelevation(solarangle[i,:])
 		excentricity[i] = geo.getexcentricity(gamma[i])
-	nc.sync(root)
+		nc.sync(root)
+
+	#nc.sync(root)
 	say("Projecting Linke's turbidity index... ")
 	linke.cut_projected(root)
 	say("Calculating the satellital zenith angle... ")
@@ -169,7 +171,7 @@ def process_ground_albedo(lat, data, root):
 	#The day is divided in _slots_ to avoid the minutes diferences between days.
 	# TODO: Related with the solar hour at the noon if the pictures are taken every 15 minutes (meteosat)
 	say("Calculating the noon window... ")
-	slot_window_in_hours = 4
+	slot_window_in_hours = 4 
 	# On meteosat are 96 image per day
 	image_per_hour = IMAGE_PER_HOUR
 	image_per_day = 24 * image_per_hour
@@ -264,8 +266,8 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 	show("-----------------------\n")
 
 	root = nc.open(filename)[0]
-	lat = (nc.getvar(root, 'lat'))[:]
-	lon = (nc.getvar(root, 'lon'))[:]
+	lat = nc.getvar(root, 'lat')
+	lon = nc.getvar(root, 'lon')
 	data = calibrated_data(root)
 	
 	process_temporal_data(lat, lon, root)
@@ -275,17 +277,17 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 
 	process_radiation(root)
 
-	process_validate(root)
+	#	process_validate(root)
 	#draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 	nc.close(root)
 	show("Process finished.\n")
-
+"""
 import aspects
 import re
 current_module = sys.modules[__name__]
 methods = current_module.__dict__
 fxs = [ func for name,func in methods.items() if re.match( r'^process.*',name) or re.match( r'workwith',name) ]
-aspects.with_wrap(show_times, *fxs)
+#aspects.with_wrap(show_times, *fxs)
 
 
 #import cProfile, pstats, io
@@ -296,4 +298,4 @@ workwith(sys.argv[1], sys.argv[2], sys.argv[3])
 #s = io.StringIO()
 #ps = pstats.Stats(pr, stream=s)
 #ps.dump_stats('profile_results')
-
+"""
