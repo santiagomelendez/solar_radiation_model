@@ -9,10 +9,9 @@ django-model-utils==1.2.0
 docutils==0.8.1
 email==4.0.2
 numpy==1.8.0
-#h5py==2.2.1
 ipython==0.12
 mglob==0.4
-#netCDF4==1.0.7
+netcdf==0.0.25
 python-dateutil==1.5
 pytz==2012j
 #scipy==0.10.1
@@ -26,4 +25,6 @@ django-sslify==0.2.2
 defusedxml==0.4.1
 lxml==2.3.6
 django-tastypie==0.11.0
-factopy==0.0.2
+#factopy==0.0.4
+-e git+https://github.com/ecolell/factopy.git#egg=factopy
+django-timedeltafield==0.7.2

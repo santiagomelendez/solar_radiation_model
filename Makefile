@@ -28,8 +28,6 @@ ifeq ($(OS), Darwin)
 	update_shared_libs=
 	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.5.5.dylib
 	LIBSQLITE3=/usr/local/lib/libsqlite3.0.dylib
-	LIBHDF5=/usr/local/lib/libhdf5_hl.8.dylib
-	LIBNETCDF=/usr/local/lib/libnetcdf.7.dylib
 	CONFIGURE_USER_POSTGRES= \
 		sudo dscl . -create /Users/postgres UniqueID 174 && \
 		sudo dscl . -create /Users/postgres PrimaryGroupID 174 && \
@@ -49,8 +47,6 @@ ifeq ($(OS), Linux)
 	NPROC=$(shell nproc)
 	LIBPOSTGRES=/usr/local/pgsql/lib/libpq.so.5.5
 	LIBSQLITE3=/usr/local/lib/libsqlite3.so.0.8.6
-	LIBHDF5=/usr/local/lib/libhdf5.so.8.0.1
-	LIBNETCDF=/usr/local/lib/libnetcdf.so.7.2.0
 	CONFIGURE_USER_POSTGRES= ( sudo grep postgres /etc/passwd || \
 		( sudo adduser postgres && \
 		sudo passwd postgres ) && \
@@ -84,6 +80,7 @@ PYTHON=bin/python
 EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=$(PYTHONLIBS) . bin/activate; 
+HDF5VER=1.8.12
 
 ifneq ($(filter-out postgres,$(MAKECMDGOALS)),$(MAKECMDGOALS))
 	DATABASE_REQUIREMENTS=postgres-requirements
@@ -138,19 +135,11 @@ postgres: $(LIBPOSTGRES) pg-start
 	@ echo "[ setting up   ] postgres database"
 	@ cd imagedownloader/imagedownloader && cp -f database.postgres.py database.py
 
-$(LIBHDF5):
-	$(call get,hdf5-1.8.13,hdf5-1.8.13.tar.gz,http://www.hdfgroup.org/ftp/HDF5/current/src)
-	$(call compile,hdf5-1.8.13,,--prefix=/usr/local --enable-shared --enable-hl,install)
-
-$(LIBNETCDF): $(LIBHDF5)
-	$(call get,netcdf-4.3.1-rc4,netcdf-4.3.1-rc4.tar.gz,ftp://ftp.unidata.ucar.edu/pub/netcdf)
-	$(call compile,netcdf-4.3.1-rc4,LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include,--enable-netcdf-4 --enable-dap --enable-shared --prefix=/usr/local,install)
-
 imagedownloader/aspects.py:
 	$(call get,python-aspects-1.3,python-aspects-1.3.tar.gz,http://www.cs.tut.fi/~ask/aspects)
 	@ cp python-aspects-1.3/aspects.py imagedownloader/aspects.py
 
-libs-and-headers: $(LIBNETCDF) $(PYTHONPATH) imagedownloader/aspects.py
+libs-and-headers: $(PYTHONPATH) imagedownloader/aspects.py
 	@ $(update_shared_libs)
 
 bin/activate: imagedownloader/requirements.txt
@@ -161,14 +150,8 @@ bin/activate: imagedownloader/requirements.txt
 	@ ($(PYTHONLIBS) $(VIRTUALENV) --python=$(PYTHONPATH) --no-site-packages . 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) inside $(VIRTUALENV)"
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
-	@ echo "[ installing   ] numpy inside $(VIRTUALENV)"
-	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) numpy 2>&1) >> tracking.log
-	@ echo "[ installing   ] h5py inside $(VIRTUALENV)"
-	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) h5py 2>&1) >> tracking.log
-	@ echo "[ installing   ] netCDF4 inside $(VIRTUALENV)"
-	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) netCDF4 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
-	@ PATH="$(POSTGRES_PATH):$(PATH)"; $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt 2>&1 | grep Downloading
+	@ PATH="$(POSTGRES_PATH):$(PATH)"; $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r imagedownloader/requirements.txt
 	@ touch bin/activate
 
 postgres-requirements:
@@ -182,7 +165,11 @@ db-migrate: $(DATABASE_REQUIREMENTS)
 	@ echo "[ migrating    ] setting up the database structure"	
 	@ ($(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py syncdb --noinput 2>&1) >> ../tracking.log
 
-deploy: libs-and-headers bin/activate db-migrate
+bash-config:
+	@ echo "[ configure    ] change the limit to allowed open files by user"
+	@ echo "ulimit -n 10240" >> ~/.bashrc
+
+deploy: libs-and-headers bin/activate db-migrate bash-config
 	@ echo "[ deployed     ] the system was completly deployed"
 
 show-version:
@@ -198,23 +185,26 @@ run:
 runbackend:
 	$(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py runbackend 4
 
-test:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test stations plumbing requester
+test: bash-config
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test requester # stations plumbing
 
-test-coverage-travis-ci:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/,requester/models.py' manage.py test stations plumbing requester
+test-coverage-travis-ci: bash-config
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='stations/models.py,plumbing/models/,requester/models.py' manage.py test requester # stations plumbing requester
 
 test-coveralls:
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
 
 test-coverage: test-coverage-travis-ci test-coveralls
 
+shell: bash-config
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py shell	
+
 clean: pg-stop
 	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
-	@ sudo rm -rf sqlite* postgresql* hdf5* netcdf-4* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python setuptools-*.tar.gz get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py subversion
+	@ sudo rm -rf sqlite* postgresql* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python setuptools-*.tar.gz get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 imagedownloader/aspects.py subversion
 
 hardclean: clean
 	@ echo "[ cleaning     ] remove compiled libraries and the database engine"
 	@ cd /usr/local/bin && sudo rm -rf python* sqlite3
-	@ cd /usr/local/lib && sudo rm -rf libpython* libhdf5* libnetcdf* libsqlite3* python*
+	@ cd /usr/local/lib && sudo rm -rf libpython* libsqlite3* python*
 	@ cd /usr/local && sudo rm -rf pgsql*
