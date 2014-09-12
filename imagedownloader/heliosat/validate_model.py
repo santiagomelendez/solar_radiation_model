@@ -9,15 +9,17 @@ from stations.importer import *
 from libs.file.toolbox import *
 from heliosat.main import *
 
-#cut_positions('clone_M12.nc', 0, pos)
+directory = '/home/santiago/GERSOLAR/git/solar_radiation_model/imagedownloader/'
 
-#workwith('2013', '12', '/home/santiago/GERSOLAR/git/solar_radiation_model/imagedownloader/cut_positions.clone_M12.nc')
+cut_positions(directory + 'clone_M12.nc', 0, pos)
 
-import_measurement('2013', '12', '/home/santiago/GERSOLAR/git/solar_radiation_model/imagedownloader/cut_positions.clone_M12.nc', names)
+workwith('2013', '12', directory + 'cut_positions.clone_M12.nc')
+
+import_measurement('2013', '12', directory + 'cut_positions.clone_M12.nc', names)
 
 
 from libs.statistics import error
-root, _ = nc.open('cut_positions.clone_M12.nc')
+root, _ = nc.open(directory + 'cut_positions.clone_M12.nc')
 
-error.dailyerrors(root, names)			# Error relativos respecto a la integral diaria
+error.dailyerrors(root, names)	
 
