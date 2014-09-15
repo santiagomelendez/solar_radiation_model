@@ -28,15 +28,17 @@ def geti0met():
 	return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 def calibrated_data(root):
-#	import pdb; pdb.set_trace()
 	data = nc.getvar(root, 'data')[:]
-	counts_shift = nc.getvar(root, 'counts_shift')[0] = 32
-	space_measurement = nc.getvar(root, 'space_measurement')[0] = 28
-	prelaunch = nc.getvar(root, 'prelaunch')[0] = 0.6118208
-	postlaunch = nc.getvar(root, 'postlaunch')[0] = 1.181
-	print prelaunch, "= 0.6118208", postlaunch, "= 1.181", counts_shift, space_measurement
+	counts_shift = root.getvar('counts_shift')
+	counts_shift[:] = 32
+	space_measurement = root.getvar('space_measurement') 
+	space_measurement[:] = 28
+	prelaunch = root.getvar('prelaunch') 
+	prelaunch[:] = 0.6118208
+	postlaunch = root.getvar('postlaunch')
+	postlaunch[:] = 1.181
 	# INFO: Without the postlaunch coefficient the RMSE go to 15%
-	return postlaunch * prelaunch * (np.float32(data) / counts_shift - space_measurement)
+	return postlaunch[:]* prelaunch[:]* (np.float32(data) / counts_shift[:] - space_measurement[:])
 
 def process_temporal_data(lat, lon, root):
 	times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
