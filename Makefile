@@ -189,7 +189,7 @@ test: bash-config
 	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py test requester # stations plumbing
 
 test-coverage-travis-ci: bash-config
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='requester/models.py' manage.py test requester
+	@ $(SOURCE_ACTIVATE) cd imagedownloader && coverage run --source='requester/models/' manage.py test requester
    	# stations plumbing requester
 
 test-coveralls:
