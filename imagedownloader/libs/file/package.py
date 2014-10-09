@@ -77,7 +77,7 @@ if __name__=="__main__":
 	year = sys.argv[3]
 	data = select_images(pattern, month)	
 	filename = 'M' + str(month) + '_' + year + '.nc'
-	package = pack(data[0:30], filename)
+	package = pack(data, filename)
 	nc.sync(package)
 	nc.close(package)
 	show("\nReady.\n")
