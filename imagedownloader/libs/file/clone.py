@@ -2,9 +2,11 @@ from libs.file import netcdf as nc
 import os
 
 def clone(files, filename, variables=['lat', 'lon', 'data']):
-        obj_clone = nc.open(filename)[0]
-        if not obj_clone.is_new:
-            os.remove(filename)
+        obj_clone, is_new = nc.open(filename)
+        if not is_new:
+				nc.close(obj_clone)
+				os.remove(filename)
+				obj_clone, _ = nc.open(filename)
         obj_clone.getdim('time')
         for d in files.roots[0].dimensions:
             if d != 'time':
