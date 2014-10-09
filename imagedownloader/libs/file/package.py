@@ -8,7 +8,8 @@ import numpy as np
 from libs.console import show, say
 from libs.geometry import jaen as geo
 import glob
-from itertools import chain
+from itertools import chain, groupby, dropwhile
+from functools import partial
 import re
 
 def getimagedata(filename):
@@ -18,50 +19,65 @@ def getimagedata(filename):
 	return (datetime.strptime('%s.%s.%s' % imagedata[0], '%Y.%j.%H%M%S') 
 			  if valid_datetime(imagedata) else None)
 			   
-def filter_by_solar_elevation(time, lat, lon, threshold):
+def solar_elevation_condition(lat, lon, threshold, time):
 	alpha = geo.getsolarelevationmatrix(time, 0.0, lat, lon)
 	condition= (np.min(alpha) >= threshold)
 	return condition 
 
-def create_dict(pattern, year, month):
+
+def pack(pattern_list, filename):
+	pattern_list.sort()
+	root, is_new = nc.open(pattern_list)
+	root_clone, _  = clone.clone(root, filename)		
+	return root_clone
+
+def filter_by_month(files, month):
+	valid_date = lambda t, month: t.month == month and t.hour > 8 and t.hour < 22
+	month_images = filter(lambda file, m=month: valid_date(getimagedata(file), m), files)	
+	month_images.sort()
+	return month_images
+
+def divide_by_day(month_images):
+	month_images.sort()
+	days_list = []
+	days_key = []
+	for day, files in groupby(month_images, lambda f: getimagedata(f).day):
+		days_list.append(list(files))
+		days_key.append(day)       
+	return days_list, days_key
+
+def select_day_images(lat, lon, day_list):
+    alpha = partial(solar_elevation_condition, lat, lon, 10.0)
+    is_night = lambda image: not alpha(getimagedata(image))
+    drop_night_from_left = lambda l: list(dropwhile(is_night, l)) 
+    day = drop_night_from_left(day_list) 
+    day.reverse()
+    day = drop_night_from_left(day) 
+    day.reverse()
+    return day
+
+def select_images(pattern, month):
+	from multiprocessing import Pool
 	files = glob.glob(pattern)
-	files.sort()
 	image, _ = nc.open(files[0])
 	lat = nc.getvar(image, 'lat')
 	lon = nc.getvar(image, 'lon')
 	nc.close(image)
-	days = {}
-	valid_data = lambda t: t and t.month 
-	for file in files:
-		dt = getimagedata(file) 
-		if valid_data(dt):
-			alpha_condition = filter_by_solar_elevation(dt, lat, lon, 10)
-			if alpha_condition:
-				days.setdefault(dt.day, []).append(file) 	
-	return days
-
-def pack(satellite, filename, year, month, *day):
-	month = create_dict(satellite, year, month)
-	pattern = ([month[d].values() for d in day]
-					  if len(day) > 0 else month.values())
-	pattern = list(chain(*pattern))
-	pattern.sort()
-	root, is_new = nc.open(pattern)
-	root_clone, _  = clone.clone(root, filename)		
-	return root_clone, month
+	month_images = filter_by_month(files, month)
+	days_images, days_keys = divide_by_day(month_images)
+	day_selection = partial(select_day_images, lat, lon)
+	pool = Pool()
+	data = pool.map(day_selection, days_images)
+	data = list(chain(*data))
+	return data
 
 if __name__=="__main__":
-	functions = {'create_dict' : create_dict,
-		'pack' : pack}
-	if sys.argv[1] == 'create_dict':
-		days = functions[sys.argv[1]](*(sys.argv[2:]))
-		dict = (open('libs/file/' + 'M' + sys.argv[4] + '_' 
-					+ sys.argv[3] + '_dict' + '.txt', 'w'))
-		for d in days.keys():
-			files = [image.split('/')[-1] for image in days[d]]
-			dict.write(str(d) + ': ' + str(files) + '\n')
-		dict.close()
-	else:
-			functions[sys.argv[1]](*(sys.argv[2:]))
+	pattern = sys.argv[1]
+	month = int(sys.argv[2])
+	year = sys.argv[3]
+	data = select_images(pattern, month)	
+	filename = 'M' + str(month) + '_' + year + '.nc'
+	package = pack(data[0:30], filename)
+	nc.sync(package)
+	nc.close(package)
 	show("\nReady.\n")
-
