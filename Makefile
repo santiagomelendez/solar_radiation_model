@@ -100,7 +100,7 @@ $(PYTHONPATH): Python$(PYLARGESUFIX_VER)
 	@ (sudo $(PYTHONLIBS) $(PYTHONPATH) ez_setup.py 2>&1) >> tracking.log
 
 $(LIBSQLITE3):
-	$(call install,sqlite-autoconf-3080100,sqlite-autoconf-3080100.tar.gz,http://www.sqlite.org/2013)
+	$(call install,sqlite-autoconf-3080701,sqlite-autoconf-3080701.tar.gz,http://www.sqlite.org/2014)
 
 sqlite3: $(LIBSQLITE3)
 	@ echo "[ setting up   ] sqlite3 database"
