@@ -15,6 +15,7 @@ aspects.py
 bin
 include
 lib
+share
 python-aspects*
 setuptools*
 sqlite-autoconf*
