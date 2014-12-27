@@ -1,6 +1,7 @@
 Solar Radiation Model
 =====================
 [![GNU/AGPL License](http://www.gnu.org/graphics/agplv3-88x31.png)](https://github.com/gersolar/solar_radiation_model/blob/master/GNU-AGPL-3.0.txt) [![Build Status](https://travis-ci.org/gersolar/solar_radiation_model.png?branch=master)](https://travis-ci.org/gersolar/solar_radiation_model) [![Coverage Status](https://coveralls.io/repos/gersolar/solar_radiation_model/badge.png?branch=master)](https://coveralls.io/r/gersolar/solar_radiation_model?branch=master) [![Code Health](https://landscape.io/github/gersolar/solar_radiation_model/master/landscape.png)](https://landscape.io/github/gersolar/solar_radiation_model/master)
+[![Supported Python versions](https://pypip.in/py_versions/solar_radiation_model/badge.svg)](https://pypi.python.org/pypi/solar_radiation_model/) [![Stories in Ready](https://badge.waffle.io/gersolar/solar_radiation_model.png?label=ready&title=Ready)](https://waffle.io/gersolar/solar_radiation_model)
 
 Solar Radiation Model is a python service that provides you with a pipe and filter architecture. Further, it manage a field sensor database and an automatic downloader for satellite images.
 
