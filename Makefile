@@ -27,7 +27,7 @@ bin/activate: requirements.txt
 	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt 2>&1 | grep Downloading
 	@ touch bin/activate
 
-deploy: bin/activate bash-config
+deploy: bin/activate
 	@ echo "[ deployed     ] the system was completly deployed"
 
 show-version:
