@@ -34,10 +34,10 @@ show-version:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) --version
 
 test:
-	@ $(SOURCE_ACTIVATE) $(PYTHON) tests/__main__.py
+	@ $(SOURCE_ACTIVATE) $(PYTHON) tests
 
 test-coverage-travis-ci:
-	@ $(SOURCE_ACTIVATE) && coverage run --source='models/' tests/__main__.py
+	@ $(SOURCE_ACTIVATE) coverage run --source='models/' tests/__main__.py
 
 test-coveralls:
 	@ $(SOURCE_ACTIVATE) coveralls
