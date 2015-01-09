@@ -1,2 +1,0 @@
-from tastypie.authentication import SessionAuthentication
-from tastypie.resources import ModelResource
