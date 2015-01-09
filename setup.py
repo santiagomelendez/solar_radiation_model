@@ -186,7 +186,7 @@ setup(
     version=VERSION_GIT,
     author=u'Eloy Adonis Colell',
     author_email='gersolar.dev@gmail.com',
-    packages=['solar_radiation_model', ],
+    packages=['models', ],
     url='https://github.com/gersolar/solar_radiation_model',
     license='MIT',
     description='A python script that estimates the solar radiation at the soil '
