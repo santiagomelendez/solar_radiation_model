@@ -14,7 +14,7 @@ unattended:
 $(LIBSQLITE3):
 	$(call install,sqlite-autoconf-3080701,sqlite-autoconf-3080701.tar.gz,http://www.sqlite.org/2014)
 
-bin/activate: imagedownloader/requirements.txt
+bin/activate: requirements.txt
 	@ echo "[ using        ] $(PYTHONPATH)"
 	@ echo "[ installing   ] $(VIRTUALENV)"
 	@ (sudo $(FIRST_EASYINSTALL) virtualenv 2>&1) >> tracking.log
