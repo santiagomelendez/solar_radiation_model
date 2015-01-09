@@ -7,17 +7,11 @@
 *.tgz
 *.dat
 *.txt
-hdf5*
-imagedownloader/aspects.py
-netcdf*
 Python*
-aspects.py
 bin
 include
 lib
 share
-python-aspects*
-setuptools*
 sqlite-autoconf*
 .coveralls.yml
 .coverage
