@@ -6,7 +6,6 @@
 *.tar.gz
 *.tgz
 *.dat
-*.txt
 Python*
 bin
 include
