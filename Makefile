@@ -41,16 +41,16 @@ test: bash-config
 	@ $(SOURCE_ACTIVATE) $(PYTHON) tests/__main__.py
 
 test-coverage-travis-ci: bash-config
-	@ $(SOURCE_ACTIVATE) && coverage run --source='requester/models/' manage.py test requester
+	@ $(SOURCE_ACTIVATE) && coverage run --source='models/' tests/__main__.py
 
 test-coveralls:
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && coveralls
+	@ $(SOURCE_ACTIVATE) coveralls
 
 test-coverage: test-coverage-travis-ci test-coveralls
 
 shell: bash-config
-	@ $(SOURCE_ACTIVATE) cd imagedownloader && ../$(PYTHON) manage.py shell	
+	@ $(SOURCE_ACTIVATE) ipython
 
 clean:
 	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
-	@ sudo rm -rf sqlite* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python get-pip.py tracking.log imagedownloader/imagedownloader.sqlite3 subversion
+	@ sudo rm -rf sqlite* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python get-pip.py tracking.log subversion
