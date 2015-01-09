@@ -27,20 +27,16 @@ bin/activate: requirements.txt
 	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt 2>&1 | grep Downloading
 	@ touch bin/activate
 
-bash-config:
-	@ echo "[ configure    ] change the limit to allowed open files by user"
-	@ echo "ulimit -n 10240" >> ~/.bashrc
-
 deploy: bin/activate bash-config
 	@ echo "[ deployed     ] the system was completly deployed"
 
 show-version:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) --version
 
-test: bash-config
+test:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) tests/__main__.py
 
-test-coverage-travis-ci: bash-config
+test-coverage-travis-ci:
 	@ $(SOURCE_ACTIVATE) && coverage run --source='models/' tests/__main__.py
 
 test-coveralls:
