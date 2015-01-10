@@ -2,16 +2,6 @@ import sys
 from datetime import datetime
 import pytz
 
-try:
-	import pyttsx
-	engine = pyttsx.init()
-except (OSError, ImportError):
-	class FakeTTSX(object):
-		def say(self, speech):
-			pass
-		def runAndWait(self):
-			pass
-	engine = FakeTTSX()
 
 def total_seconds(td):
 	return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
@@ -24,10 +14,7 @@ def show(*objs):
 	sys.stdout.flush()
 
 def say(speech):
-	#NOT engine.startLoop()
 	show(speech)
-	engine.say(speech)
-	engine.runAndWait()
 
 progress = ['/','-','\\','|']
 def show_progress(i):

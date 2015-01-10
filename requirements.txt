@@ -1,7 +1,4 @@
-decorator==3.4.0
-docutils==0.8.1
 numpy==1.8.0
 mglob==0.4
 netcdf==0.0.30
 pytz==2012j
-pyttsx==1.1

@@ -24,7 +24,7 @@ bin/activate: requirements.txt
 	@ ($(SOURCE_ACTIVATE) $(EASYINSTALL) pip 2>&1) >> tracking.log
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ $(SOURCE_ACTIVATE) $(PIP) install -e  .
-	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt 2>&1 | grep Downloading
+	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt
 	@ touch bin/activate
 
 deploy: bin/activate
@@ -49,4 +49,4 @@ shell: bash-config
 
 clean:
 	@ echo "[ cleaning     ] remove deployment generated files that doesn't exists in the git repository"
-	@ sudo rm -rf sqlite* python-aspects* virtualenv* bin/ lib/ lib64 include/ build/ share Python-* .Python get-pip.py tracking.log subversion
+	@ rm -rf sqlite* pip-*.json local/ python-aspects* virtualenv* bin/ lib/ *.egg-info/ lib64 include/ build/ share Python-* .Python get-pip.py tracking.log subversion
