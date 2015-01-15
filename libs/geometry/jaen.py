@@ -4,6 +4,8 @@ from libs.console import show, show_progress
 cuda_can_help=False
 import gpu
 from datetime import datetime
+from libs import aspects
+import re
 
 def iterative_broadcast(*args):
 	ITERABLE_AMOUNT_OF_DIMS=[1,3]
@@ -286,8 +288,6 @@ def gettstdatetime(timestamp, tst_hour):
 	return np.trunc(timestamp) + tst_hour / 24.
 
 if not cuda_can_help:
-	import aspects
-	import re
 	excluded_functions = ['getsecondmin']
 	current_module = sys.modules[__name__]
 	methods = current_module.__dict__
