@@ -1,5 +1,5 @@
 import numpy as np
-from libs.file import netcdf as nc
+from netcdf import netcdf as nc
 from libs.geometry import project as p
 from datetime import datetime
 from libs.console import say

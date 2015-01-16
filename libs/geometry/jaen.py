@@ -78,16 +78,16 @@ def getdeclination(gamma):
 	return result
 
 def gettimeequation(gamma):
-	gamma = np.deg2rad(gamma)
-	return np.rad2deg((0.000075 + 0.001868 * np.cos(gamma) - 0.032077 * np.sin(gamma) - 0.014615 * np.cos(2 * gamma) - 0.04089 * np.sin(2 * gamma)) * (12 /np.pi))
+    gamma = np.deg2rad(gamma)
+    return np.rad2deg((0.000075 + 0.001868 * np.cos(gamma) - 0.032077 * np.sin(gamma) - 0.014615 * np.cos(2 * gamma) - 0.04089 * np.sin(2 * gamma)) * (12 /np.pi))
 
 def getdecimalhour(dt):
 	return dt.hour + dt.minute/60.0 + dt.second/3600.0
 
 def gettsthour(hour, d_ref, d, timeequation):
-	timeequation = np.deg2rad(timeequation)
-	lon_diff = np.deg2rad(d_ref - d)
-	return hour - lon_diff * (12 / np.pi) + timeequation
+    timeequation = np.deg2rad(timeequation)
+    lon_diff = np.deg2rad(d_ref - d)
+    return hour - lon_diff * (12 / np.pi) + timeequation
 
 def gethourlyangle(tst_hour, latitud_sign):
 	return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
@@ -287,9 +287,9 @@ def getclearsky(cloudindex):
 def gettstdatetime(timestamp, tst_hour):
 	return np.trunc(timestamp) + tst_hour / 24.
 
-if not cuda_can_help:
-	excluded_functions = ['getsecondmin']
-	current_module = sys.modules[__name__]
-	methods = current_module.__dict__
-	fxs = [ func for name,func in methods.items() if not name in excluded_functions and re.match( r'^get.*',name) ]
-	aspects.with_wrap(iterative_broadcast, *fxs)
+#if not cuda_can_help:
+#	excluded_functions = ['getsecondmin']
+#	current_module = sys.modules[__name__]
+#	methods = current_module.__dict__
+#	fxs = [ func for name,func in methods.items() if not name in excluded_functions and re.match( r'^get.*',name) ]
+#	aspects.with_wrap(iterative_broadcast, *fxs)
