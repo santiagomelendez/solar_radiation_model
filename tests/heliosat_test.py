@@ -10,11 +10,16 @@ from goescalibration import instrument
 class TestHeliosat(unittest.TestCase):
 
     def create_mook(self, filename):
+        ma = np.matrix('5.1 3.2 1.3 -1.4 -3.5 -4.6;'
+                       '5.2 3.3 1.4 -1.5 -3.6 -4.7;'
+                       '5.4 3.5 1.5 -1.6 -3.7 -4.8;'
+                       '5.6 3.7 1.8 -1.8 -3.9 -4.9 ')
+        x_m, y_m = ma.shape
         root, _ = nc.open(filename)
         nc.getdim(root, 'auditCount', 2)
         nc.getdim(root, 'auditSize', 80)
-        nc.getdim(root, 'xc', 10)
-        nc.getdim(root, 'yc', 5)
+        nc.getdim(root, 'xc', x_m)
+        nc.getdim(root, 'yc', y_m)
         nc.getdim(root, 'time')
         var = nc.getvar(root,
             'time',

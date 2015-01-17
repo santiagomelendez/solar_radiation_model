@@ -25,13 +25,13 @@ if not os.path.exists(destiny):
 	initial_configuration()
 
 def get_month(month):
-	if gdal_supported:
-		ds = gdal.Open(localpath + "/tifs/"+str(month).zfill(2)+"_longlat_wgs84.tif")
-		linke = ds.ReadAsArray()
-	else:
-		root = nc.open(destiny)[0]
-		data = nc.getvar(root, "linketurbidity")
-		linke = data[month -1]
+    if gdal_supported:
+        ds = gdal.Open(localpath + "/tifs/"+str(month).zfill(2)+"_longlat_wgs84.tif")
+        linke = ds.ReadAsArray()
+    else:
+        root, _ = nc.open(destiny)
+        data = nc.getvar(root, "linketurbidity")
+        linke = data[0,month -1,:]
 	# The linke turbidity is obtained when the image pixel value is divied by 20.
 	return linke/20.
 

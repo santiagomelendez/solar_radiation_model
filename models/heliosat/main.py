@@ -9,6 +9,7 @@ from libs.statistics import stats
 #from osgeo import gdal
 
 from netcdf import netcdf as nc
+import numpy as np
 from libs.geometry import jaen as geo
 from libs.linke import toolbox as linke
 from libs.dem import dem
@@ -29,13 +30,15 @@ def geti0met():
 
 def calibrated_data(root):
     data = nc.getvar(root, 'data')
-    counts_shift = nc.getvar(root, 'counts_shift')
-    space_measurement = nc.getvar(root, 'space_measurement')
-    prelaunch = nc.getvar(root, 'prelaunch_0')
-    postlaunch = nc.getvar(root, 'postlaunch')
+    adapt = lambda m: np.expand_dims(m, axis=len(m.shape)-1)
+    counts_shift = adapt(nc.getvar(root, 'counts_shift')[:])
+    space_measurement = adapt(nc.getvar(root, 'space_measurement')[:])
+    prelaunch = adapt(nc.getvar(root, 'prelaunch_0')[:])
+    postlaunch = adapt(nc.getvar(root, 'postlaunch')[:])
+    print data.shape, counts_shift.shape, space_measurement.shape, prelaunch.shape, postlaunch.shape
     # INFO: Without the postlaunch coefficient the RMSE go to 15%
-    return postlaunch[:] * prelaunch[:] * (np.float32(data[:]) /
-                                     counts_shift[:] - space_measurement[:])
+    return postlaunch * prelaunch * (np.float32(data[:]) /
+                                     counts_shift - space_measurement)
 
 def process_temporal_data(lat, lon, root):
     times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
