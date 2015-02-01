@@ -11,7 +11,8 @@ from libs.statistics import stats
 from netcdf import netcdf as nc
 import numpy as np
 from libs.geometry import jaen as geo
-from libs.linke import toolbox as linke
+#from libs.linke import toolbox as linke
+from linketurbidity import instrument as linke
 from libs.dem import dem
 #from libs.paint import jaen as draw
 #import processgroundstations as pgs
@@ -73,8 +74,6 @@ def process_temporal_data(lat, lon, root):
         nc.sync(root)
 
     #nc.sync(root)
-    say("Projecting Linke's turbidity index... ")
-    linke.cut_projected(root)
     say("Calculating the satellital zenith angle... ")
     satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
     dem.cut_projected(root)
@@ -87,7 +86,7 @@ def process_irradiance(root):
     excentricity = nc.getvar(root,'excentricity')[:]
     solarangle = nc.getvar(root,'solarangle')[:]
     solarelevation = nc.getvar(root,'solarelevation')[:]
-    linketurbidity = nc.getvar(root,'linketurbidity')[0]
+    linketurbidity = nc.getvar(root,'linke')[0]
     terrain = nc.getvar(root,'dem')[:]
     say("Calculating beam, diffuse and global irradiance... ")
     # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
@@ -123,7 +122,7 @@ def process_optical_fading(root):
     solarelevation = nc.getvar(root,'solarelevation')[:]
     terrain = nc.getvar(root,'dem')[:]
     satellitalelevation = nc.getvar(root, 'satellitalelevation')[:]
-    linketurbidity = nc.getvar(root,'linketurbidity')[0]
+    linketurbidity = nc.getvar(root,'linke')[0]
     say("Calculating optical path and optical depth... ")
     # The maximum height of the non-transparent atmosphere is at 8434.5 mts
     solar_opticalpath = geo.getopticalpath(geo.getcorrectedelevation(solarelevation),terrain, 8434.5)
@@ -277,6 +276,8 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
     lon = nc.getvar(root, 'lon')[0]
     data = calibrated_data(root)
 
+    say("Projecting Linke's turbidity index... ")
+    linke.persist(filename)
     process_temporal_data(lat, lon, root)
     process_atmospheric_data(data, root)
 

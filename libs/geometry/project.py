@@ -14,6 +14,7 @@ def transform_data(data, x, y):
     result = np.zeros(x.shape)
     e_x = np.round(x)
     e_y = np.round(y)
+    print e_x.shape, e_y.shape
     for (i,j), v in np.ndenumerate(e_x):
         tmp = data[int(e_y[i,j]),int(v)] # data[int(e_y[i,j]),int(e_x[i,j])]
         result[i,j] = tmp if tmp >= 0 else 0

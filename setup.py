@@ -101,86 +101,6 @@ def get_long_description():
     return description
 
 
-class Builder(object):
-
-    def __init__(self, lib):
-        self.lib_key = lib
-        self.lib = BINARIES[lib]
-        self.name = self.lib['name'] % self.lib['version']
-        self.local_unpacked = '%s%s' % (TMP_PATH, self.name)
-        self.local_filename = ''
-
-    def call(self, cmd):
-        return subprocess.call(cmd, shell=True)
-
-    def download(self):
-        url = self.lib['url']
-        if url.find('%s') > 0:
-            url = url % self.name
-        filename = '%s.tar.gz' % self.name
-        self.local_filename = '%s%s' % (TMP_PATH, filename)
-        if not os.path.isfile(self.local_filename):
-            begin = datetime.now()
-
-            def dl_progress(count, block_size, total_size):
-                transfered = (count * block_size
-                              if total_size >= count * block_size
-                              else total_size)
-                progress = transfered * 100. / total_size
-                speed = (transfered /
-                         ((datetime.now() - begin).total_seconds())) / 1024
-                print '\r%s' % (' ' * 78),
-                print (u'\rDownloaded %s '
-                       '(\033[33m%03.2f %%\033[0m at \033[35m%i KB/s\033[0m)'
-                       % (filename, progress, speed)),
-                sys.stdout.flush()
-            source = '%s/%s' % (url, filename)
-            destiny = '%s%s' % (TMP_PATH, filename)
-            self.local_filename, _ = urlretrieve(source, destiny,
-                                                 reporthook=dl_progress)
-
-    def uncompress(self):
-        if not os.path.isdir(self.local_unpacked):
-            self.download()
-            # self.call('rm -rf %s*' % self.local_unpacked)
-            import tarfile as tar
-            tfile = tar.open(self.local_filename, mode='r:gz')
-            tfile.extractall(TMP_PATH)
-            tfile.close()
-            self.call('chmod -R ugo+rwx %s*' % self.local_unpacked)
-
-    def build(self):
-        depends = self.lib['compile']['depends']
-        install = lambda dep: easy_install.main(['-U', dep])
-        map(install, depends)
-        filename = SYSTEMS[OS_NAME]['libs'][self.lib_key]
-        if not os.path.isfile(filename):
-            self.uncompress()
-            title = '%s %s' % (OS_NAME, p.architecture()[0])
-            spacer = '-' * len(title)
-            print '+%s+\n|%s|\n+%s+' % (spacer, title, spacer)
-            import multiprocessing
-            # self.call('sudo rm %s' % filename)
-            path = '%s%s' % (TMP_PATH, self.lib['name'] % self.lib['version'])
-            config = self.lib['compile']['config']
-            ncores = multiprocessing.cpu_count()
-            self.call(('cd %s; %s ./configure %s; make -j %s; '
-                       ' sudo make install')
-                      % (path, config['pre'], config['post'], ncores))
-            update_shared_libs = SYSTEMS[OS_NAME]['update_shared_libs']
-            if update_shared_libs:
-                self.call(update_shared_libs)
-
-
-class build_wrapper(build):
-    def initialize_options(self):
-        # Deploy all the described libraries in the BINARIES dictionary.
-        libs = sorted(BINARIES.keys())
-        build_lib = lambda lib: Builder(lib).build()
-        map(build_lib, libs)
-        return build.initialize_options(self)
-
-
 setup(
     name='solar_radiation_model',
     version=VERSION_GIT,
@@ -209,7 +129,4 @@ setup(
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Scientific/Engineering :: Physics",
     ],
-    #cmdclass={
-    #    'build': build_wrapper,
-    #},
 )

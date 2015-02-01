@@ -45,17 +45,12 @@ def cut_month(x, y, month):
 	return np.float32(result)
 
 def cut_projected(root):
-	lat = nc.getvar(root, 'lat')
-	lon = nc.getvar(root, 'lon')
-	time = nc.getvar(root, 'time')
-	months = list(set([ (datetime.fromtimestamp(int(t))).month for t in time ]))
-	nc.getdim(root, 'monthing')
-	months_cut = root.getvar('months', 'i2', ('monthing',))
-	dims=list(root.variables['lat'].dimensions)
-	dims.insert(0, 'monthing')
-	linke = root.getvar('linketurbidity', 'f4', tuple(dims),4)
-	linke_x, linke_y = project_coordinates(lat[:], lon[:])
-	months_cut[:] = np.array(list(months))
-	for i in range(len(months)):
-		linke[i] = cut_month(linke_x, linke_y, months[i])
-	return linke[:], linke_x, linke_y
+    lat = nc.getvar(root, 'lat')
+    lon = nc.getvar(root, 'lon')
+    time = nc.getvar(root, 'time')
+    months = list(set([ (datetime.fromtimestamp(int(t))).month for t in time ]))
+    linke = nc.getvar(root, 'linketurbidity', 'f4', source=lat)
+    linke_x, linke_y = project_coordinates(lat, lon)
+    for i in range(len(months)):
+        linke[i] = cut_month(linke_x, linke_y, months[i])
+    return linke[:], linke_x, linke_y

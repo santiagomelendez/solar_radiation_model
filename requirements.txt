@@ -1,5 +1,7 @@
+noaadem==0.0.3
 numpy==1.8.0
 mglob==0.4
 netcdf==0.0.30
 pytz==2012j
+linketurbidity==0.0.2
 goescalibration==0.0.2
