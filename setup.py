@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from distutils.core import setup
-from distutils.command.build import build
-from setuptools.command import easy_install
+from setuptools import setup
 import os
 import subprocess
 from urllib import urlretrieve
-from datetime import datetime
-import sys
 
 
 def parse_requirements(filename):
@@ -35,54 +31,6 @@ def calculate_version():
 
 REQUIREMENTS = parse_requirements('requirements.txt')
 VERSION_GIT = calculate_version()
-import platform as p
-TMP_PATH = '/tmp/'
-OS_NAME = p.system()
-BINARIES = {
-    'hdf5': {
-        'version': '1.8.13',
-        'name': 'hdf5-%s',
-        'url': 'http://www.hdfgroup.org/ftp/HDF5/releases/%s/src',
-        'compile': {
-            'depends': ['pyandoc==0.0.1', 'numpy==1.8.0'],
-            'config': {
-                'pre': '',
-                'post': '--prefix=/usr/local --enable-shared --enable-hl',
-            },
-        },
-    },
-    'netcdf': {
-        'version': '4.3.1-rc4',
-        'name': 'netcdf-%s',
-        'url': 'ftp://ftp.unidata.ucar.edu/pub/netcdf',
-        'compile': {
-            'depends': [],
-            'config': {
-                'pre': ('LDFLAGS=-L/usr/local/lib '
-                        'CPPFLAGS=-I/usr/local/include '
-                        'LD_LIBRARY_PATH=/usr/local'),
-                'post': ('--enable-netcdf-4 --enable-dap --enable-shared'
-                         ' --prefix=/usr/local'),
-            },
-        },
-    },
-}
-SYSTEMS = {
-    'Linux': {
-        'update_shared_libs': 'sudo ldconfig',
-        'libs': {
-            'hdf5': '/usr/local/lib/libhdf5.so.8.0.1',
-            'netcdf': '/usr/local/lib/libnetcdf.so.7.2.0',
-        },
-    },
-    'Darwin': {
-        'update_shared_libs': '',
-        'libs': {
-            'hdf5': '/usr/local/lib/libhdf5_hl.8.dylib',
-            'netcdf': '/usr/local/lib/libnetcdf.7.dylib',
-        },
-    },
-}
 
 
 def get_long_description():
