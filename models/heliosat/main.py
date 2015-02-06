@@ -11,9 +11,8 @@ from libs.statistics import stats
 from netcdf import netcdf as nc
 import numpy as np
 from libs.geometry import jaen as geo
-#from libs.linke import toolbox as linke
 from linketurbidity import instrument as linke
-from libs.dem import dem
+from noaadem import instrument as dem
 #from libs.paint import jaen as draw
 #import processgroundstations as pgs
 from libs.console import say, show, show_times
@@ -271,13 +270,16 @@ def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
     show("Filename: ", filename)
     show("-----------------------\n")
 
+    say("Projecting DEM's map... ")
+    dem.persist(filename)
+    say("Projecting Linke's turbidity index... ")
+    linke.persist(filename)
+
     root = nc.open(filename)[0]
     lat = nc.getvar(root, 'lat')[0]
     lon = nc.getvar(root, 'lon')[0]
     data = calibrated_data(root)
 
-    say("Projecting Linke's turbidity index... ")
-    linke.persist(filename)
     process_temporal_data(lat, lon, root)
     process_atmospheric_data(data, root)
 
