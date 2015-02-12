@@ -67,7 +67,7 @@ def process_temporal_data(lat, lon, root):
             lon,
             geo.gettimeequation(gamma[i]))
         declination[i] = geo.getdeclination(gamma[i])
-        slots[i] = geo.getslots(dt,IMAGE_PER_HOUR)
+        slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
         omega = geo.gethourlyangle(tst_hour[i,:], lat/abs(lat))
         solarangle[i,:] = geo.getzenithangle(declination[i],lat,omega)
         solarelevation[i,:] = geo.getelevation(solarangle[i,:])
