@@ -5,6 +5,7 @@ sys.path.append(".")
 import numpy as np
 from datetime import datetime
 from libs.statistics import stats
+import glob
 #import pylab as pl
 #from osgeo import gdal
 
@@ -210,7 +211,9 @@ def process_ground_albedo(lat, data, root):
     r_alphanoon[r_alphanoon < 15] = 15
     solarelevation = nc.getvar(root, "solarelevation")[:]
     say("Calculating the apparent albedo second minimum... ")
-    groundminimumalbedo = geo.getsecondmin(np.ma.masked_array(apparentalbedo[condition], solarelevation[condition] < r_alphanoon[condition]))
+    groundminimumalbedo = geo.getsecondmin(
+        np.ma.masked_array(apparentalbedo[condition],
+                           solarelevation[condition] < r_alphanoon[condition]))
     aux_2g0 = 2 * groundreferencealbedo
     aux_05g0 = 0.5 * groundreferencealbedo
     groundminimumalbedo[groundminimumalbedo > aux_2g0] = aux_2g0[groundminimumalbedo > aux_2g0]
@@ -247,6 +250,7 @@ def process_radiation(root):
     f_var[:] = globalradiation
     nc.sync(root)
     f_var = None
+    cloudalbedo = None
 
 
 def process_validate(root):
@@ -270,7 +274,6 @@ def process_validate(root):
         show("----------\n")
         error.rmse(root, s)
 
-def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
 
 def filter_filenames(filename):
     files = glob.glob(filename)
@@ -282,10 +285,11 @@ def filter_filenames(filename):
     return files
 
 
+def workwith(year=2011, month=05, filename="data/goes13.*.BAND_01.nc"):
     show("=======================")
     show("Year: " , year)
     show("Month: " , month)
-    show("Filename: ", filename)
+    show("Filenames: ", filename)
     show("-----------------------\n")
 
     filenames = filter_filenames(filename)
