@@ -52,7 +52,7 @@ def process_temporal_data(lat, lon, root):
     solarangle = nc.getvar(root, 'solarangle', 'f4', source=data)
     solarelevation = nc.getvar(root, 'solarelevation', source=solarangle)
     excentricity = nc.getvar(root, 'excentricity', source=gamma)
-    slots = nc.getvar(root, 'slots', 'i1', ('time',))
+    slots = nc.getvar(root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
     nc.sync(root)
     for i in indexes:
         show("\rTemporal data: preprocessing image %d / %d " % (i, len(indexes)-1))
@@ -195,11 +195,11 @@ def process_ground_albedo(lat, data, root):
     # Create the condition used to work only with the data inside that window
     say("Filtering the data outside the calculated window... ")
     condition = ((slots >= min_slot) & (slots < max_slot)) # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
+    condition = np.reshape(condition, condition.shape[0])
     apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
     m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], data[condition] <= (geti0met()/np.pi) * 0.03)
     # To do the nexts steps needs a lot of memory
     say("Calculating the ground reference albedo... ")
-    # TODO: Should review the p5_apparentalbedo parameters and shapes
     p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5))
     groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
     # Calculate the solar elevation using times, latitudes and omega
@@ -225,12 +225,11 @@ def process_ground_albedo(lat, data, root):
 def process_radiation(root):
     apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
     groundalbedo = nc.getvar(root, "groundalbedo")[:]
-    cloudalbedo = nc.getvar(root, "cloudalbedo")[:]
+    cloudalbedo = nc.getvar(root, "cloudalbedo")
     say("Calculating the cloud index... ")
-    cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo, cloudalbedo)
+    cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo, cloudalbedo[:])
     apparentalbedo = None
     groundalbedo = None
-    cloudalbedo = None
     f_var = nc.getvar(root, 'cloudinessindex', source=cloudalbedo)
     f_var[:] = cloudindex
     nc.sync(root)
@@ -272,18 +271,30 @@ def process_validate(root):
         error.rmse(root, s)
 
 def workwith(year=2011, month=05, filename="goes13.all.BAND_02.nc"):
+
+def filter_filenames(filename):
+    files = glob.glob(filename)
+    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
+    short = (lambda f, start=1, end=-2:
+             ".".join((f.split('/')[-1]).split('.')[start:end]))
+    to_datetime = lambda f: datetime.strptime(short(f), '%Y.%j.%H%M%S')
+    files = filter(lambda f: include_daylight(to_datetime(f)), files)
+    return files
+
+
     show("=======================")
     show("Year: " , year)
     show("Month: " , month)
     show("Filename: ", filename)
     show("-----------------------\n")
 
+    filenames = filter_filenames(filename)
     say("Projecting DEM's map... ")
     dem.persist(filename)
     say("Projecting Linke's turbidity index... ")
     linke.persist(filename)
 
-    root = nc.open(filename)[0]
+    root = nc.open(filenames)[0]
     lat = nc.getvar(root, 'lat')[0]
     lon = nc.getvar(root, 'lon')[0]
     data = calibrated_data(root)
