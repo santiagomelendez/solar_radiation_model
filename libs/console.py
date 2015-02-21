@@ -19,11 +19,3 @@ def say(speech):
 progress = ['/','-','\\','|']
 def show_progress(i):
 	show('\b \b', progress[i % len(progress)])
-
-def show_times(*args):
-	import aspects
-	begin = datetime.utcnow().replace(tzinfo=pytz.UTC)
-	result = yield aspects.proceed(*args)
-	end = datetime.utcnow().replace(tzinfo=pytz.UTC)
-	say("\t[time consumed: %.2f seconds]\n" % (end - begin).total_seconds())
-	yield aspects.return_stop(result)
