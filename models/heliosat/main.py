@@ -16,7 +16,7 @@ from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 #from libs.paint import jaen as draw
 #import processgroundstations as pgs
-from libs.console import say, show, show_times
+from libs.console import say, show
 
 SAT_LON = -75.113 # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
@@ -36,6 +36,8 @@ def calibrated_data(root):
     space_measurement = adapt(nc.getvar(root, 'space_measurement')[:])
     prelaunch = adapt(nc.getvar(root, 'prelaunch_0')[:])
     postlaunch = adapt(nc.getvar(root, 'postlaunch')[:])
+    show("Counts: %.f, Space: %.f, Prelaunch: %.5f, Postlaunch: %.5f \n\n" %
+         (counts_shift[0], space_measurement[0], prelaunch[0], postlaunch[0]))
     # INFO: Without the postlaunch coefficient the RMSE go to 15%
     return postlaunch * prelaunch * (np.float32(data[:]) /
                                      counts_shift - space_measurement)
