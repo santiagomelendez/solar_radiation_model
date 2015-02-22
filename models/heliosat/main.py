@@ -22,8 +22,6 @@ SAT_LON = -75.113 # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 
-def getsatelliteradiance(data, index):
-    return data[index]
 
 def geti0met():
     GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
