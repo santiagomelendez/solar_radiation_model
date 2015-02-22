@@ -31,11 +31,10 @@ def geti0met():
 
 def calibrated_data(root):
     data = nc.getvar(root, 'data')
-    adapt = lambda m: np.expand_dims(m, axis=len(m.shape)-1)
-    counts_shift = adapt(nc.getvar(root, 'counts_shift')[:])
-    space_measurement = adapt(nc.getvar(root, 'space_measurement')[:])
-    prelaunch = adapt(nc.getvar(root, 'prelaunch_0')[:])
-    postlaunch = adapt(nc.getvar(root, 'postlaunch')[:])
+    counts_shift = nc.getvar(root, 'counts_shift')[:]
+    space_measurement = nc.getvar(root, 'space_measurement')[:]
+    prelaunch = nc.getvar(root, 'prelaunch_0')[:]
+    postlaunch = nc.getvar(root, 'postlaunch')[:]
     show("Counts: %.f, Space: %.f, Prelaunch: %.5f, Postlaunch: %.5f \n\n" %
          (counts_shift[0], space_measurement[0], prelaunch[0], postlaunch[0]))
     # INFO: Without the postlaunch coefficient the RMSE go to 15%
