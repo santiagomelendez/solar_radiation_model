@@ -1,6 +1,4 @@
 import sys
-from datetime import datetime
-import pytz
 
 
 def total_seconds(td):
