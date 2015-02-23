@@ -17,3 +17,4 @@ sqlite-autoconf*
 *.nc
 *.zip
 libs/dem/all10/*
+src/
