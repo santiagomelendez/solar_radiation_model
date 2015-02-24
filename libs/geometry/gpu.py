@@ -1,9 +1,10 @@
 import numpy as np
 try:
-	import pycuda.driver as cuda
-	cuda_can_help = True
-except ImportError: 
-	cuda_can_help = False 
+    import pycuda.driver as cuda
+    cuda_can_help = True
+    print "<< using CUDA cores >>"
+except ImportError:
+    cuda_can_help = False
 
 ma = np.ma
 pi = str(np.float32(np.pi))

@@ -1,6 +1,5 @@
 import numpy as np
 from libs.console import show, show_progress
-cuda_can_help=False
 import gpu
 from datetime import datetime
 from libs import aspects
@@ -58,7 +57,7 @@ def getdailyangle(julianday, totaldays):
 
 def getexcentricity(gamma):
     result = None
-    if cuda_can_help:
+    if gpu.cuda_can_help:
         func = mod_getexcentricity.get_function("getexcentricity")
         sh = gamma.shape
         show("")
@@ -75,7 +74,7 @@ def getexcentricity(gamma):
 
 def getdeclination(gamma):
     result = None
-    if cuda_can_help:
+    if gpu.cuda_can_help:
         func = mod_getdeclination.get_function("getdeclination")
         #sh = gamma.shape
         #print "\n",
@@ -117,7 +116,7 @@ def gethourlyangle(tst_hour, latitud_sign):
 
 def getzenithangle(declination, latitude, hourlyangle):
     result = None
-    if cuda_can_help:
+    if gpu.cuda_can_help:
         func = mod_getzenitangle.get_function("getzenitangle")
         result = gpu.gpu_exec(func, hourlyangle, latitude, declination)
     else:
@@ -244,7 +243,7 @@ def getglobalirradiance(beamirradiance, diffuseirradiance):
 
 def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
     result = None
-    if cuda_can_help:
+    if gpu.cuda_can_help:
         func = mod_getalbedo.get_function("getalbedo")
         sh = radiance.shape
         show("")
@@ -265,7 +264,7 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
     rpol = 6356.5838
     req = 6378.1690
     h = 42166.55637 # 42164.0
-    if cuda_can_help:
+    if gpu.cuda_can_help:
         func = mod_getsatellitalzenithangle.get_function(
             "getsatellitalzenithangle")
         lat = gpu.gpu_exec(func, lat, lon, sub_lon, rpol, req, h)
@@ -374,7 +373,7 @@ def gettstdatetime(timestamp, tst_hour):
     return np.trunc(timestamp) + tst_hour / 24.
 
 
-#if not cuda_can_help:
+#if not gpu.cuda_can_help:
 #    excluded_functions = ['getsecondmin']
 #    current_module = sys.modules[__name__]
 #    methods = current_module.__dict__
