@@ -1,7 +1,9 @@
 import numpy as np
 try:
-    import pycuda.driver as cuda
     from pycuda.compiler import SourceModule
+    import pycuda.gpuarray as gpuarray
+    import pycuda.driver as cuda
+    import pycuda.autoinit
     cuda_can_help = True
     print "<< using CUDA cores >>"
 except ImportError:
