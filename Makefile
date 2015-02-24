@@ -44,7 +44,7 @@ test-coveralls:
 
 test-coverage: test-coverage-travis-ci test-coveralls
 
-shell: bash-config
+shell:
 	@ $(SOURCE_ACTIVATE) ipython
 
 clean:
