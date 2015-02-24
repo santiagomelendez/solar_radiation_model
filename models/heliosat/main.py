@@ -274,24 +274,28 @@ def process_validate(root):
         error.rmse(root, s)
 
 
-def filter_filenames(filename):
-    files = glob.glob(filename)
-    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
+def to_datetime(filename):
     short = (lambda f, start=1, end=-2:
-             ".".join((f.split('/')[-1]).split('.')[start:end]))
-    to_datetime = lambda f: datetime.strptime(short(f), '%Y.%j.%H%M%S')
+         ".".join((f.split('/')[-1]).split('.')[start:end]))
+    return datetime.strptime(short(filename), '%Y.%j.%H%M%S')
+
+
+def filter_filenames(filename):
+    files = glob.glob(filename) if isinstance(filename, str) else filename
+    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
     files = filter(lambda f: include_daylight(to_datetime(f)), files)
     return files
 
 
-def workwith(year=2011, month=05, filename="data/goes13.*.BAND_01.nc"):
+def workwith(filename="data/goes13.*.BAND_01.nc"):
+    filenames = filter_filenames(filename)
+    months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
+                          map(to_datetime, filenames))))
     show("=======================")
-    show("Year: " , year)
-    show("Month: " , month)
+    show("Months: " , months)
     show("Filenames: ", filename)
     show("-----------------------\n")
 
-    filenames = filter_filenames(filename)
     say("Projecting DEM's map... ")
     dem.persist(filename)
     say("Projecting Linke's turbidity index... ")

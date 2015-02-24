@@ -52,7 +52,7 @@ def get_long_description():
 setup(
     name='solar_radiation_model',
     version=VERSION_GIT,
-    author=u'Eloy Adonis Colell',
+    author=u'GERSolar',
     author_email='gersolar.dev@gmail.com',
     packages=['models', ],
     url='https://github.com/gersolar/solar_radiation_model',

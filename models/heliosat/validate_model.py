@@ -26,7 +26,7 @@ directory = '/home/santiago/GERSOLAR/git/solar_radiation_model/imagedownloader/'
 
 cut_positions(directory + 'clone_M12.nc', 0, pos)
 
-workwith('2013', '12', directory + 'cut_positions.clone_M12.nc')
+workwith(directory + 'cut_positions.clone_M12.nc')
 
 import_measurement('2013', '12', directory + 'cut_positions.clone_M12.nc', names)
 

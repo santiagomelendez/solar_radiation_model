@@ -17,7 +17,7 @@ class TestHeliosat(unittest.TestCase):
         os.system('rm -rf mock_data')
 
     def test_main(self):
-        main.workwith(2013, 3, 'mock_data/goes13.2015.*.BAND_01.nc')
+        main.workwith('mock_data/goes13.2015.*.BAND_01.nc')
 
 
 if __name__ == '__main__':
