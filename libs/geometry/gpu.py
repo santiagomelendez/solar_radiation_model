@@ -1,9 +1,15 @@
 import numpy as np
 try:
     import pycuda.driver as cuda
+    from pycuda.compiler import SourceModule
     cuda_can_help = True
     print "<< using CUDA cores >>"
 except ImportError:
+    class SourceModule(object):
+        def __init__(self, c):
+            pass
+        def get_function(self, name):
+            pass
     cuda_can_help = False
 
 ma = np.ma
