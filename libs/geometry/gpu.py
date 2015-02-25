@@ -6,7 +6,7 @@ try:
     import pycuda.autoinit
     cuda_can_help = True
     print "<< using CUDA cores >>"
-except ImportError:
+except Exception:
     class SourceModule(object):
         def __init__(self, c):
             pass
