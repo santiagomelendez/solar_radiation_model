@@ -6,19 +6,15 @@ import numpy as np
 from datetime import datetime
 from libs.statistics import stats
 import glob
-#import pylab as pl
-#from osgeo import gdal
 
 from netcdf import netcdf as nc
-import numpy as np
 from libs.geometry import jaen as geo
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
-#from libs.paint import jaen as draw
-#import processgroundstations as pgs
+# import processgroundstations as pgs
 from libs.console import say, show
 
-SAT_LON = -75.113 # -75.3305 # longitude of sub-satellite point in degrees
+SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 
@@ -26,6 +22,7 @@ IMAGE_PER_HOUR = 2
 def geti0met():
     GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
+
 
 def calibrated_data(root):
     data = nc.getvar(root, 'data')
@@ -39,8 +36,10 @@ def calibrated_data(root):
     return postlaunch * prelaunch * (np.float32(data[:]) /
                                      counts_shift - space_measurement)
 
+
 def process_temporal_data(lat, lon, root):
-    times = [ datetime.utcfromtimestamp(int(t)) for t in nc.getvar(root, 'time') ]
+    times = [datetime.utcfromtimestamp(int(t))
+             for t in nc.getvar(root, 'time')]
     indexes = range(len(times))
     data = nc.getvar(root, 'data')
     nc.getdim(root, 'xc_k', 1)
@@ -55,44 +54,50 @@ def process_temporal_data(lat, lon, root):
     slots = nc.getvar(root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
     nc.sync(root)
     for i in indexes:
-        show("\rTemporal data: preprocessing image %d / %d " % (i, len(indexes)-1))
+        show("\rTemporal data: preprocessing image %d / %d " %
+             (i, len(indexes) - 1))
         dt = times[i]
         # Calculate some geometry parameters
-        # Parameters that need the datetime: gamma, tst_hour, slots, linketurbidity
-        gamma[i] = geo.getdailyangle(geo.getjulianday(dt),geo.gettotaldays(dt))
-        tst_hour[i,:] = geo.gettsthour(
+        # Parameters that need the datetime:
+        # gamma, tst_hour, slots, linketurbidity
+        gamma[i] = geo.getdailyangle(geo.getjulianday(dt),
+                                     geo.gettotaldays(dt))
+        tst_hour[i, :] = geo.gettsthour(
             geo.getdecimalhour(dt),
             GREENWICH_LON,
             lon,
             geo.gettimeequation(gamma[i]))
         declination[i] = geo.getdeclination(gamma[i])
         slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
-        omega = geo.gethourlyangle(tst_hour[i,:], lat/abs(lat))
-        solarangle[i,:] = geo.getzenithangle(declination[i],lat,omega)
-        solarelevation[i,:] = geo.getelevation(solarangle[i,:])
+        omega = geo.gethourlyangle(tst_hour[i, :], lat/abs(lat))
+        solarangle[i, :] = geo.getzenithangle(declination[i], lat, omega)
+        solarelevation[i, :] = geo.getelevation(solarangle[i, :])
         excentricity[i] = geo.getexcentricity(gamma[i])
         nc.sync(root)
-
-    #nc.sync(root)
+    # nc.sync(root)
     say("Calculating the satellital zenith angle... ")
     satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
     lat_ref = nc.getvar(root, 'lat')
-    v_satellitalzenithangle = nc.getvar(root, 'satellitalzenithangle', source=lat_ref)
+    v_satellitalzenithangle = nc.getvar(root, 'satellitalzenithangle',
+                                        source=lat_ref)
     v_satellitalzenithangle[:] = satellitalzenithangle
     nc.sync(root)
     v_satellitalzenithangle = None
 
+
 def process_irradiance(root):
-    excentricity = nc.getvar(root,'excentricity')[:]
-    solarangle = nc.getvar(root,'solarangle')[:]
-    solarelevation = nc.getvar(root,'solarelevation')[:]
-    linketurbidity = nc.getvar(root,'linke')[0]
-    terrain = nc.getvar(root,'dem')[:]
+    excentricity = nc.getvar(root, 'excentricity')[:]
+    solarangle = nc.getvar(root, 'solarangle')[:]
+    solarelevation = nc.getvar(root, 'solarelevation')[:]
+    linketurbidity = nc.getvar(root, 'linke')[0]
+    terrain = nc.getvar(root, 'dem')[:]
     say("Calculating beam, diffuse and global irradiance... ")
     # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
-    bc = geo.getbeamirradiance(1367.0,excentricity,solarangle,solarelevation,linketurbidity,terrain)
-    dc = geo.getdiffuseirradiance(1367.0,excentricity,solarelevation,linketurbidity)
-    gc = geo.getglobalirradiance(bc,dc)
+    bc = geo.getbeamirradiance(1367.0, excentricity, solarangle,
+                               solarelevation, linketurbidity, terrain)
+    dc = geo.getdiffuseirradiance(1367.0, excentricity, solarelevation,
+                                  linketurbidity)
+    gc = geo.getglobalirradiance(bc, dc)
     data = nc.getvar(root, 'data')
     v_bc = nc.getvar(root, 'bc', source=data)
     v_bc[:] = bc
@@ -103,14 +108,19 @@ def process_irradiance(root):
     nc.sync(root)
     v_gc, v_dc, v_bc = None, None, None
 
+
 def process_atmospheric_irradiance(root):
     i0met = geti0met()
-    dc = nc.getvar(root,'dc')[:]
-    satellitalzenithangle = nc.getvar(root,'satellitalzenithangle')[:]
-    excentricity = nc.getvar(root,'excentricity')[:]
+    dc = nc.getvar(root, 'dc')[:]
+    satellitalzenithangle = nc.getvar(root, 'satellitalzenithangle')[:]
+    excentricity = nc.getvar(root, 'excentricity')[:]
     say("Calculating atmospheric irradiance... ")
-    atmosphericradiance = geo.getatmosphericradiance(1367.0, i0met,dc, satellitalzenithangle)
-    atmosphericalbedo = geo.getalbedo(atmosphericradiance, i0met, excentricity, satellitalzenithangle)
+    atmosphericradiance = geo.getatmosphericradiance(1367.0,
+                                                     i0met,
+                                                     dc,
+                                                     satellitalzenithangle)
+    atmosphericalbedo = geo.getalbedo(atmosphericradiance, i0met, excentricity,
+                                      satellitalzenithangle)
     satellitalelevation = geo.getelevation(satellitalzenithangle)
     data = nc.getvar(root, 'data')
     lon = nc.getvar(root, 'lon')
@@ -121,20 +131,25 @@ def process_atmospheric_irradiance(root):
     nc.sync(root)
     v_atmosphericalbedo, v_satellitalelevation = None, None
 
+
 def process_optical_fading(root):
-    solarelevation = nc.getvar(root,'solarelevation')[:]
-    terrain = nc.getvar(root,'dem')[:]
+    solarelevation = nc.getvar(root, 'solarelevation')[:]
+    terrain = nc.getvar(root, 'dem')[:]
     satellitalelevation = nc.getvar(root, 'satellitalelevation')[:]
-    linketurbidity = nc.getvar(root,'linke')[0]
+    linketurbidity = nc.getvar(root, 'linke')[0]
     say("Calculating optical path and optical depth... ")
     # The maximum height of the non-transparent atmosphere is at 8434.5 mts
-    solar_opticalpath = geo.getopticalpath(geo.getcorrectedelevation(solarelevation),terrain, 8434.5)
+    solar_opticalpath = geo.getopticalpath(
+        geo.getcorrectedelevation(solarelevation), terrain, 8434.5)
     solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
-    satellital_opticalpath = geo.getopticalpath(geo.getcorrectedelevation(satellitalelevation),terrain, 8434.5)
+    satellital_opticalpath = geo.getopticalpath(
+        geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
     satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
     say("Calculating sun-earth and earth-satellite transmitances... ")
-    t_earth = geo.gettransmitance(linketurbidity, solar_opticalpath, solar_opticaldepth, solarelevation)
-    t_sat = geo.gettransmitance(linketurbidity, satellital_opticalpath, satellital_opticaldepth, satellitalelevation)
+    t_earth = geo.gettransmitance(linketurbidity, solar_opticalpath,
+                                  solar_opticaldepth, solarelevation)
+    t_sat = geo.gettransmitance(linketurbidity, satellital_opticalpath,
+                                satellital_opticaldepth, satellitalelevation)
     data = nc.getvar(root, 'data')
     satellitalelevation = nc.getvar(root, 'satellitalelevation')
     v_earth = nc.getvar(root, 't_earth', source=data)
@@ -144,20 +159,23 @@ def process_optical_fading(root):
     nc.sync(root)
     v_earth, v_sat = None, None
 
+
 def process_albedos(data, root):
     i0met = geti0met()
-    excentricity = nc.getvar(root,'excentricity')[:]
-    solarangle = nc.getvar(root,'solarangle')[:]
-    atmosphericalbedo = nc.getvar(root,'atmosphericalbedo')[:]
-    t_earth = nc.getvar(root,'t_earth')[:]
-    t_sat = nc.getvar(root,'t_sat')[:]
-    say("Calculating observed albedo, apparent albedo, effective albedo and cloud albedo... ")
-    observedalbedo = geo.getalbedo(data, i0met , excentricity, solarangle)
+    excentricity = nc.getvar(root, 'excentricity')[:]
+    solarangle = nc.getvar(root, 'solarangle')[:]
+    atmosphericalbedo = nc.getvar(root, 'atmosphericalbedo')[:]
+    t_earth = nc.getvar(root, 't_earth')[:]
+    t_sat = nc.getvar(root, 't_sat')[:]
+    say("Calculating observed albedo, apparent albedo, effective albedo and "
+        "cloud albedo... ")
+    observedalbedo = geo.getalbedo(data, i0met, excentricity, solarangle)
     data_ref = nc.getvar(root, 'data')
     v_albedo = nc.getvar(root, 'observedalbedo', source=data_ref)
     v_albedo[:] = observedalbedo
     nc.sync(root)
-    apparentalbedo = geo.getapparentalbedo(observedalbedo,atmosphericalbedo, t_earth, t_sat)
+    apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
+                                           t_earth, t_sat)
     v_albedo = nc.getvar(root, 'apparentalbedo', source=data_ref)
     v_albedo[:] = apparentalbedo
     nc.sync(root)
@@ -165,11 +183,13 @@ def process_albedos(data, root):
     v_albedo = nc.getvar(root, 'effectivealbedo', source=data_ref)
     v_albedo[:] = effectivealbedo
     nc.sync(root)
-    cloudalbedo = geo.getcloudalbedo(effectivealbedo,atmosphericalbedo,t_earth,t_sat)
+    cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
+                                     t_earth, t_sat)
     v_albedo = nc.getvar(root, 'cloudalbedo', source=data_ref)
     v_albedo[:] = cloudalbedo
     nc.sync(root)
     v_albedo = None
+
 
 def process_atmospheric_data(data, root):
     process_irradiance(root)
@@ -177,11 +197,14 @@ def process_atmospheric_data(data, root):
     process_optical_fading(root)
     process_albedos(data, root)
 
+
 def process_ground_albedo(lat, data, root):
     slots = nc.getvar(root, "slots")[:]
     declination = nc.getvar(root, "declination")[:]
-    #The day is divided in _slots_ to avoid the minutes diferences between days.
-    # TODO: Related with the solar hour at the noon if the pictures are taken every 15 minutes (meteosat)
+    # The day is divided into _slots_ to avoid the minutes diferences
+    # between days.
+    # TODO: Related with the solar hour at the noon if the pictures are taken
+    # every 15 minutes (meteosat)
     say("Calculating the noon window... ")
     slot_window_in_hours = 4
     # On meteosat are 96 image per day
@@ -194,13 +217,16 @@ def process_ground_albedo(lat, data, root):
     max_slot = noon_slot + half_window
     # Create the condition used to work only with the data inside that window
     say("Filtering the data outside the calculated window... ")
-    condition = ((slots >= min_slot) & (slots < max_slot)) # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
+    condition = ((slots >= min_slot) & (slots < max_slot))
+    # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
     condition = np.reshape(condition, condition.shape[0])
     apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
-    m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], data[condition] <= (geti0met()/np.pi) * 0.03)
+    mask1 = data[condition] <= (geti0met() / np.pi) * 0.03
+    m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
     # To do the nexts steps needs a lot of memory
     say("Calculating the ground reference albedo... ")
-    p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5))
+    mask2 = m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5)
+    p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, mask2)
     groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
     # Calculate the solar elevation using times, latitudes and omega
     say("Calculating solar elevation... ")
@@ -215,8 +241,10 @@ def process_ground_albedo(lat, data, root):
                            solarelevation[condition] < r_alphanoon[condition]))
     aux_2g0 = 2 * groundreferencealbedo
     aux_05g0 = 0.5 * groundreferencealbedo
-    groundminimumalbedo[groundminimumalbedo > aux_2g0] = aux_2g0[groundminimumalbedo > aux_2g0]
-    groundminimumalbedo[groundminimumalbedo < aux_05g0] = aux_05g0[groundminimumalbedo < aux_05g0]
+    condition_2g0 = groundminimumalbedo > aux_2g0
+    condition_05g0 = groundminimumalbedo < aux_05g0
+    groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
+    groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
     say("Synchronizing with the NetCDF4 file... ")
     lat_ref = nc.getvar(root, 'lat')
     f_groundalbedo = nc.getvar(root, 'groundalbedo', source=lat_ref)
@@ -224,12 +252,14 @@ def process_ground_albedo(lat, data, root):
     nc.sync(root)
     f_groundalbedo = None
 
+
 def process_radiation(root):
     apparentalbedo = nc.getvar(root, "apparentalbedo")[:]
     groundalbedo = nc.getvar(root, "groundalbedo")[:]
     cloudalbedo = nc.getvar(root, "cloudalbedo")
     say("Calculating the cloud index... ")
-    cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo, cloudalbedo[:])
+    cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo,
+                                   cloudalbedo[:])
     apparentalbedo = None
     groundalbedo = None
     f_var = nc.getvar(root, 'cloudinessindex', source=cloudalbedo)
@@ -259,10 +289,10 @@ def process_validate(root):
     stations = [0]
     for s in stations:
         show("==========\n")
-        say("Station %i (%i slots)" % (s,  measured[:,s,0].size))
+        say("Station %i (%i slots)" % (s,  measured[:, s, 0].size))
         show("----------")
         show("mean (measured):\t", error.ghi_mean(measured, s))
-        show("mean (estimated):\t", estimated[:,s,0].mean())
+        show("mean (estimated):\t", estimated[:, s, 0].mean())
         ghi_ratio = error.ghi_ratio(measured, s)
         bias = error.bias(estimated, measured, s)
         show("BIAS:\t%.5f\t( %.5f %%)" % (bias, bias * ghi_ratio))
@@ -276,7 +306,7 @@ def process_validate(root):
 
 def to_datetime(filename):
     short = (lambda f, start=1, end=-2:
-         ".".join((f.split('/')[-1]).split('.')[start:end]))
+             ".".join((f.split('/')[-1]).split('.')[start:end]))
     return datetime.strptime(short(filename), '%Y.%j.%H%M%S')
 
 
@@ -292,7 +322,7 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
                           map(to_datetime, filenames))))
     show("=======================")
-    show("Months: " , months)
+    show("Months: ", months)
     show("Filenames: ", filename)
     show("-----------------------\n")
 
@@ -314,6 +344,6 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     process_radiation(root)
 
     #    process_validate(root)
-    #draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
+    # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
     nc.close(root)
     show("Process finished.\n")
