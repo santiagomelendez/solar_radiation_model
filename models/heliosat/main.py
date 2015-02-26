@@ -317,14 +317,16 @@ class Static(object):
         # At first it should have: lat, lon, dem, linke
         self.root, is_new = nc.open('static.nc')
         if is_new:
+            say("This is the first execution from the deployment... ")
             with nc.loader(filenames[0]) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
-                nc.getvar(self.root, 'lat', source=lat)
-                nc.getvar(self.root, 'lon', source=lon)
+                nc.getvar(self.root, 'lat', source=self.lat)
+                nc.getvar(self.root, 'lon', source=self.lon)
                 self.project_dem()
                 self.project_linke()
-                nc.sync(root)
+                nc.sync(self.root)
+            show("-----------------------\n")
 
     def project_dem(self):
         say("Projecting DEM's map... ")
@@ -395,13 +397,13 @@ class Loader(object):
 
 def workwith(filename="data/goes13.*.BAND_01.nc"):
     filenames = filter_filenames(filename)
-    loader = Loader(filenames)
     months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
                           map(to_datetime, filenames))))
     show("=======================")
     show("Months: ", months)
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
+    loader = Loader(filenames)
 
     process_temporal_data(loader)
     process_atmospheric_data(loader)
