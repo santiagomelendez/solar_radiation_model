@@ -320,8 +320,8 @@ class Static(object):
             with nc.loader(filenames[0]) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
-                nc.getvar(root, 'lat', source=lat)
-                nc.getvar(root, 'lon', source=lon)
+                nc.getvar(self.root, 'lat', source=lat)
+                nc.getvar(self.root, 'lon', source=lon)
                 self.project_dem()
                 self.project_linke()
                 nc.sync(root)
