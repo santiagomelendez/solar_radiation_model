@@ -67,9 +67,8 @@ def process_temporal_data(loader):
                                        times, gamma, tst_hour, slots, lon),
         indexes)
     say("Calculating datetime related parameters...")
-    print gamma.shape
     declination[:] = geo.getdeclination(gamma[:])
-    omega = geo.gethourlyangle(tst_hour[:], lat/abs(lat))
+    omega = geo.gethourlyangle(tst_hour[:], lat / abs(lat))
     solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
     solarelevation[:] = geo.getelevation(solarangle[:])
     excentricity[:] = geo.getexcentricity(gamma[:])
@@ -381,7 +380,6 @@ class Loader(object):
     def calibrated_data(self):
         if not hasattr(self, '_cached_calibrated_data'):
             row_data = self.data[:]
-            print row_data.shape
             counts_shift = self.counts_shift[:]
             space_measurement = self.space_measurement[:]
             prelaunch = self.prelaunch_0[:]

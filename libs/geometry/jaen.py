@@ -1,7 +1,7 @@
 import numpy as np
 from libs.console import show, show_progress
 import gpu
-gpu.cuda_can_help = False
+# gpu.cuda_can_help = False
 from datetime import datetime
 from libs import aspects
 
@@ -77,12 +77,7 @@ def getexcentricity(gamma):
     result = None
     if gpu.cuda_can_help:
         func = mod_getexcentricity.get_function("getexcentricity")
-        sh = gamma.shape
-        show("")
-        for i in range(sh[0]):
-            show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]-1).zfill(3))
-            gamma[i] = gpu.gpu_exec(func, gamma[i])
-        result = gamma
+        result = gpu.gpu_exec(func, gamma)
     else:
         gamma = np.deg2rad(gamma)
         result = (1.000110 + 0.034221 * np.cos(gamma) +
@@ -97,7 +92,7 @@ mod_getdeclination = gpu.SourceModule(
     __global__ void getdeclination(float *gamma)
     {
         int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
+        int i2d = blockDim.x * blockIdx.x;
         int i3d = i2d + it;
         gamma[i3d] *= """ + gpu.deg2rad_ratio + """;
         gamma[i3d] = 0.006918 - 0.399912 * cos(gamma[i3d]) + \
@@ -149,12 +144,12 @@ def gethourlyangle(tst_hour, latitud_sign):
     return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
 
 
-mod_getzenitangle = gpu.SourceModule(
+mod_getzenithangle = gpu.SourceModule(
     """
-    __global__ void getzenitangle(float *hourlyangle, float *lat, float *dec)
+    __global__ void getzenithangle(float *hourlyangle, float *lat, float *dec)
     {
         int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
+        int i2d = blockDim.x * blockIdx.x;
         int i3d = i2d + it;
         float lat_r = lat[i2d] * """ + gpu.deg2rad_ratio + """;
         float dec_r = dec[it] * """ + gpu.deg2rad_ratio + """;
@@ -169,7 +164,7 @@ mod_getzenitangle = gpu.SourceModule(
 def getzenithangle(declination, latitude, hourlyangle):
     result = None
     if gpu.cuda_can_help:
-        func = mod_getzenitangle.get_function("getzenitangle")
+        func = mod_getzenithangle.get_function("getzenithangle")
         result = gpu.gpu_exec(func, hourlyangle, latitude, declination)
     else:
         hourlyangle = np.deg2rad(hourlyangle)
@@ -315,7 +310,7 @@ def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
         sh = radiance.shape
         show("")
         for i in range(sh[0]):
-            show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]).zfill(3))
+            # show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]).zfill(3))
             radiance[i] = gpu.gpu_exec(func, radiance[i], totalirradiance,
                                        excentricity[i], zenitangle[i])
         result = radiance
