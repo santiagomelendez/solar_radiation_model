@@ -25,9 +25,10 @@ def geti0met():
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 
-def process_instant_data(loader, i, of_size, times, gamma, tst_hour, slots, lon):
+def process_instant_data(loader, i, of_size,
+                         times, gamma, tst_hour, slots, lon):
     show("\rTemporal data: preprocessing image %d / %d " %
-        (i, of_size))
+         (i, of_size))
     dt = times[i]
     # Calculate some geometry parameters
     # Parameters that need the datetime:
@@ -41,6 +42,7 @@ def process_instant_data(loader, i, of_size, times, gamma, tst_hour, slots, lon)
         geo.gettimeequation(gamma[i]))
     slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
     nc.sync(loader.root)
+
 
 def process_temporal_data(loader):
     lat = loader.lat[0]
@@ -56,7 +58,8 @@ def process_temporal_data(loader):
     tst_hour = nc.getvar(loader.root, 'tst_hour', 'f4', source=data)
     declination = nc.getvar(loader.root, 'declination', source=gamma)
     solarangle = nc.getvar(loader.root, 'solarangle', 'f4', source=data)
-    solarelevation = nc.getvar(loader.root, 'solarelevation', source=solarangle)
+    solarelevation = nc.getvar(loader.root, 'solarelevation',
+                               source=solarangle)
     excentricity = nc.getvar(loader.root, 'excentricity', source=gamma)
     slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
     nc.sync(loader.root)
@@ -64,6 +67,7 @@ def process_temporal_data(loader):
                                        times, gamma, tst_hour, slots, lon),
         indexes)
     say("Calculating datetime related parameters...")
+    print gamma.shape
     declination[:] = geo.getdeclination(gamma[:])
     omega = geo.gethourlyangle(tst_hour[:], lat/abs(lat))
     solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
@@ -117,9 +121,11 @@ def process_atmospheric_irradiance(loader):
     satellitalelevation = geo.getelevation(satellitalzenithangle)
     data = loader.data
     lon = loader.lon
-    v_atmosphericalbedo = nc.getvar(loader.root, 'atmosphericalbedo', source=data)
+    v_atmosphericalbedo = nc.getvar(loader.root, 'atmosphericalbedo',
+                                    source=data)
     v_atmosphericalbedo[:] = atmosphericalbedo
-    v_satellitalelevation = nc.getvar(loader.root, 'satellitalelevation', source=lon)
+    v_satellitalelevation = nc.getvar(loader.root, 'satellitalelevation',
+                                      source=lon)
     v_satellitalelevation[:] = satellitalelevation
     nc.sync(loader.root)
     v_atmosphericalbedo, v_satellitalelevation = None, None
@@ -268,7 +274,8 @@ def process_radiation(loader):
     say("Calculating the global radiation... ")
     clearskyglobalradiation = nc.getvar(loader.root, 'gc')
     globalradiation = clearsky * clearskyglobalradiation[:]
-    f_var = nc.getvar(loader.root, 'globalradiation', source=clearskyglobalradiation)
+    f_var = nc.getvar(loader.root, 'globalradiation',
+                      source=clearskyglobalradiation)
     say("Saving the global radiation... ")
     f_var[:] = globalradiation
     nc.sync(loader.root)
@@ -335,10 +342,10 @@ class Static(object):
 
     def project_linke(self):
         say("Projecting Linke's turbidity index... ")
-        dts = map(lambda m: datetime(2014, m, 15), range(1,13))
+        dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
         linkes = map(lambda dt: linke.obtain(dt, compressed=False), dts)
-        linkes = map(lambda l: linke.transform_data(l, self.lat[0], self.lon[0]),
-                     linkes)
+        linkes = map(lambda l: linke.transform_data(l, self.lat[0],
+                                                    self.lon[0]), linkes)
         linkes = np.vstack([[linkes]])
         nc.getdim(self.root, 'months', 12)
         linke_var = nc.getvar(self.root, 'linke', 'f4', ('months', 'yc', 'xc'))
@@ -390,7 +397,7 @@ class Loader(object):
 
     def __getattr__(self, name):
         self.freq[name] += 1
-        if not name in self._attrs.keys():
+        if name not in self._attrs.keys():
             self._attrs[name] = nc.getvar(self.root, name)
         return self._attrs[name]
 
