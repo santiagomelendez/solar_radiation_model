@@ -24,17 +24,6 @@ def geti0met():
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 
-def calibrated_data(root):
-    data = nc.getvar(root, 'data')
-    counts_shift = nc.getvar(root, 'counts_shift')[:]
-    space_measurement = nc.getvar(root, 'space_measurement')[:]
-    prelaunch = nc.getvar(root, 'prelaunch_0')[:]
-    postlaunch = nc.getvar(root, 'postlaunch')[:]
-    # INFO: Without the postlaunch coefficient the RMSE go to 15%
-    return postlaunch * prelaunch * (np.float32(data[:]) /
-                                     counts_shift - space_measurement)
-
-
 def process_temporal_data(loader):
     lat = loader.lat[0]
     lon = loader.lon[0]
@@ -159,7 +148,7 @@ def process_optical_fading(loader):
     v_earth, v_sat = None, None
 
 
-def process_albedos(data, loader):
+def process_albedos(loader):
     i0met = geti0met()
     excentricity = loader.excentricity[:]
     solarangle = loader.solarangle[:]
@@ -168,7 +157,8 @@ def process_albedos(data, loader):
     t_sat = loader.t_sat[:]
     say("Calculating observed albedo, apparent albedo, effective albedo and "
         "cloud albedo... ")
-    observedalbedo = geo.getalbedo(data, i0met, excentricity, solarangle)
+    observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
+                                   excentricity, solarangle)
     data_ref = loader.data
     v_albedo = nc.getvar(loader.root, 'observedalbedo', source=data_ref)
     v_albedo[:] = observedalbedo
@@ -190,14 +180,14 @@ def process_albedos(data, loader):
     v_albedo = None
 
 
-def process_atmospheric_data(data, root, loader):
+def process_atmospheric_data(loader):
     process_irradiance(loader)
     process_atmospheric_irradiance(loader)
     process_optical_fading(loader)
-    process_albedos(data, loader)
+    process_albedos(loader)
 
 
-def process_ground_albedo(lat, data, loader):
+def process_ground_albedo(loader):
     slots = loader.slots[:]
     declination = loader.declination[:]
     # The day is divided into _slots_ to avoid the minutes diferences
@@ -220,7 +210,7 @@ def process_ground_albedo(lat, data, loader):
     # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
     condition = np.reshape(condition, condition.shape[0])
     apparentalbedo = loader.apparentalbedo[:]
-    mask1 = data[condition] <= (geti0met() / np.pi) * 0.03
+    mask1 = loader.calibrated_data[condition] <= (geti0met() / np.pi) * 0.03
     m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
     # To do the nexts steps needs a lot of memory
     say("Calculating the ground reference albedo... ")
@@ -229,7 +219,7 @@ def process_ground_albedo(lat, data, loader):
     groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
     # Calculate the solar elevation using times, latitudes and omega
     say("Calculating solar elevation... ")
-    r_alphanoon = geo.getsolarelevation(declination, lat, 0)
+    r_alphanoon = geo.getsolarelevation(declination, loader.lat[0], 0)
     r_alphanoon = r_alphanoon * 2./3.
     r_alphanoon[r_alphanoon > 40] = 40
     r_alphanoon[r_alphanoon < 15] = 15
@@ -373,6 +363,24 @@ class Loader(object):
                     map(to_datetime, self.filenames))])
         return self._cached_linke
 
+    @property
+    def calibrated_data(self):
+        if not hasattr(self, '_cached_calibrated_data'):
+            row_data = self.data[:]
+            counts_shift = self.counts_shift[:]
+            space_measurement = self.space_measurement[:]
+            prelaunch = self.prelaunch_0[:]
+            postlaunch = self.postlaunch[:]
+            # INFO: Without the postlaunch coefficient the RMSE go to 15%
+            normalized_data = (np.float32(row_data)
+                               / counts_shift
+                               - space_measurement)
+            self._cached_calibrated_data = (normalized_data
+                                            * postlaunch
+                                            * prelaunch)
+        return self._cached_calibrated_data
+
+
     def __getattr__(self, name):
         if not name in self._attrs.keys():
             self._attrs[name] = nc.getvar(self.root, name)
@@ -389,19 +397,10 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
 
-    # say("Projecting Linke's turbidity index... ")
-    # linke.persist(filename)
-
-    root = nc.open(filenames)[0]
-    lat = nc.getvar(root, 'lat')[0]
-    lon = nc.getvar(root, 'lon')[0]
-    data = calibrated_data(root)
-    nc.close(root)
-
     process_temporal_data(loader)
-    process_atmospheric_data(data, root, loader)
+    process_atmospheric_data(loader)
 
-    process_ground_albedo(lat, data, loader)
+    process_ground_albedo(loader)
 
     process_radiation(loader)
 
