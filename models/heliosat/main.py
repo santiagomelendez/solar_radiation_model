@@ -306,37 +306,36 @@ def filter_filenames(filename):
     return files
 
 
-def project_dem(cached, lat, lon):
-    say("Projecting DEM's map... ")
-    lon = nc.getvar(cached, 'lon')
-    dem_var = nc.getvar(cached, 'dem', 'f4', source=lon)
-    dem_var[:] = dem.obtain(lat[0], lon[0])
+class Static(object):
 
+    def __init__(self, filenames):
+        # At first it should have: lat, lon, dem, linke
+        self.root, is_new = nc.open('static.nc')
+        if is_new:
+            with nc.loader(filenames[0]) as root_ref:
+                self.lat = nc.getvar(root_ref, 'lat')
+                self.lon = nc.getvar(root_ref, 'lon')
+                nc.getvar(root, 'lat', source=lat)
+                nc.getvar(root, 'lon', source=lon)
+                self.project_dem()
+                self.project_linke()
+                nc.sync(root)
 
-def project_linke(cached, lat, lon):
-    say("Projecting Linke's turbidity index... ")
-    dts = map(lambda m: datetime(2014, m, 15), range(1,13))
-    linkes = map(lambda dt: linke.obtain(dt, compressed=False), dts)
-    linkes = map(lambda l: linke.transform_data(l, lat[0], lon[0]), linkes)
-    linkes = np.vstack([[linkes]])
-    nc.getdim(cached, 'months', 12)
-    linke_var = nc.getvar(cached, 'linke', 'f4', ('months', 'yc', 'xc'))
-    linke_var[:] = linkes
+    def project_dem(self):
+        say("Projecting DEM's map... ")
+        dem_var = nc.getvar(self.root, 'dem', 'f4', source=self.lon)
+        dem_var[:] = dem.obtain(self.lat[0], self.lon[0])
 
-
-def get_static_cache(filenames):
-    # At first it should have: lat, lon, dem
-    cached, is_new = nc.open('static.nc')
-    if is_new:
-        root, _ = nc.open(filenames[0])
-        lat = nc.getvar(root, 'lat')
-        lon = nc.getvar(root, 'lon')
-        nc.getvar(cached, 'lat', source=lat)
-        nc.getvar(cached, 'lon', source=lon)
-        project_dem(cached, lat, lon)
-        project_linke(cached, lat, lon)
-        nc.sync(cached)
-    return cached
+    def project_linke(self):
+        say("Projecting Linke's turbidity index... ")
+        dts = map(lambda m: datetime(2014, m, 15), range(1,13))
+        linkes = map(lambda dt: linke.obtain(dt, compressed=False), dts)
+        linkes = map(lambda l: linke.transform_data(l, self.lat[0], self.lon[0]),
+                     linkes)
+        linkes = np.vstack([[linkes]])
+        nc.getdim(self.root, 'months', 12)
+        linke_var = nc.getvar(self.root, 'linke', 'f4', ('months', 'yc', 'xc'))
+        linke_var[:] = linkes
 
 
 class Loader(object):
@@ -344,7 +343,8 @@ class Loader(object):
     def __init__(self, filenames):
         self.filenames = filenames
         self.root = nc.open(filenames)[0]
-        self.cached = get_static_cache(filenames)
+        self.static = Static(filenames)
+        self.cached = self.static.root
         self._attrs = {}
 
     @property
