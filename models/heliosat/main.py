@@ -13,6 +13,7 @@ from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 # import processgroundstations as pgs
 from libs.console import say, show
+from collections import defaultdict
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
@@ -24,11 +25,27 @@ def geti0met():
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 
+def process_instant_data(loader, i, of_size, times, gamma, tst_hour, slots, lon):
+    show("\rTemporal data: preprocessing image %d / %d " %
+        (i, of_size))
+    dt = times[i]
+    # Calculate some geometry parameters
+    # Parameters that need the datetime:
+    # gamma, tst_hour, slots, linketurbidity
+    gamma[i] = geo.getdailyangle(geo.getjulianday(dt),
+                                 geo.gettotaldays(dt))
+    tst_hour[i, :] = geo.gettsthour(
+        geo.getdecimalhour(dt),
+        GREENWICH_LON,
+        lon,
+        geo.gettimeequation(gamma[i]))
+    slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
+    nc.sync(loader.root)
+
 def process_temporal_data(loader):
     lat = loader.lat[0]
     lon = loader.lon[0]
-    times = [datetime.utcfromtimestamp(int(t))
-             for t in loader.time]
+    times = map(lambda t: datetime.utcfromtimestamp(int(t)), loader.time)
     indexes = range(len(times))
     data = loader.data
     nc.getdim(loader.root, 'xc_k', 1)
@@ -43,27 +60,15 @@ def process_temporal_data(loader):
     excentricity = nc.getvar(loader.root, 'excentricity', source=gamma)
     slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
     nc.sync(loader.root)
-    for i in indexes:
-        show("\rTemporal data: preprocessing image %d / %d " %
-             (i, len(indexes) - 1))
-        dt = times[i]
-        # Calculate some geometry parameters
-        # Parameters that need the datetime:
-        # gamma, tst_hour, slots, linketurbidity
-        gamma[i] = geo.getdailyangle(geo.getjulianday(dt),
-                                     geo.gettotaldays(dt))
-        tst_hour[i, :] = geo.gettsthour(
-            geo.getdecimalhour(dt),
-            GREENWICH_LON,
-            lon,
-            geo.gettimeequation(gamma[i]))
-        declination[i] = geo.getdeclination(gamma[i])
-        slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
-        omega = geo.gethourlyangle(tst_hour[i, :], lat/abs(lat))
-        solarangle[i, :] = geo.getzenithangle(declination[i], lat, omega)
-        solarelevation[i, :] = geo.getelevation(solarangle[i, :])
-        excentricity[i] = geo.getexcentricity(gamma[i])
-        nc.sync(loader.root)
+    map(lambda i: process_instant_data(loader, i, len(indexes) - 1,
+                                       times, gamma, tst_hour, slots, lon),
+        indexes)
+    say("Calculating datetime related parameters...")
+    declination[:] = geo.getdeclination(gamma[:])
+    omega = geo.gethourlyangle(tst_hour[:], lat/abs(lat))
+    solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
+    solarelevation[:] = geo.getelevation(solarangle[:])
+    excentricity[:] = geo.getexcentricity(gamma[:])
     say("Calculating the satellital zenith angle... ")
     satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
     v_satellitalzenithangle = nc.getvar(loader.root, 'satellitalzenithangle',
@@ -346,6 +351,7 @@ class Loader(object):
         self.static = Static(filenames)
         self.cached = self.static.root
         self._attrs = {}
+        self.freq = defaultdict(int)
 
     @property
     def dem(self):
@@ -356,8 +362,7 @@ class Loader(object):
     @property
     def linke(self):
         if not hasattr(self, '_cached_linke'):
-            if not hasattr(self, '_linke'):
-                self._linke = nc.getvar(self.cached, 'linke')
+            self._linke = nc.getvar(self.cached, 'linke')
             self._cached_linke = np.vstack([
                 map(lambda dt: self._linke[0, dt.month - 1],
                     map(to_datetime, self.filenames))])
@@ -367,6 +372,7 @@ class Loader(object):
     def calibrated_data(self):
         if not hasattr(self, '_cached_calibrated_data'):
             row_data = self.data[:]
+            print row_data.shape
             counts_shift = self.counts_shift[:]
             space_measurement = self.space_measurement[:]
             prelaunch = self.prelaunch_0[:]
@@ -380,8 +386,8 @@ class Loader(object):
                                             * prelaunch)
         return self._cached_calibrated_data
 
-
     def __getattr__(self, name):
+        self.freq[name] += 1
         if not name in self._attrs.keys():
             self._attrs[name] = nc.getvar(self.root, name)
         return self._attrs[name]
@@ -407,3 +413,4 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     #    process_validate(root)
     # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
     show("Process finished.\n")
+    print loader.freq
