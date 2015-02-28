@@ -58,13 +58,7 @@ def process_temporal_data(loader):
     solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
     solarelevation[:] = geo.getelevation(solarangle[:])
     excentricity[:] = geo.getexcentricity(gamma)
-    say("Calculating the satellital zenith angle... ")
-    satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
-    v_satellitalzenithangle = nc.getvar(loader.root, 'satellitalzenithangle',
-                                        source=loader.lat)
-    v_satellitalzenithangle[:] = satellitalzenithangle
     nc.sync(loader.root)
-    v_satellitalzenithangle = None
 
 
 def process_irradiance(loader):
@@ -94,7 +88,9 @@ def process_irradiance(loader):
 def process_atmospheric_irradiance(loader):
     i0met = geti0met()
     dc = loader.dc[:]
-    satellitalzenithangle = loader.satellitalzenithangle[:]
+    say("Calculating the satellital parameters... ")
+    lat, lon = loader.lat[:], loader.lon[:]
+    satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
     excentricity = loader.excentricity[:]
     say("Calculating atmospheric irradiance... ")
     atmosphericradiance = geo.getatmosphericradiance(1367.0,
