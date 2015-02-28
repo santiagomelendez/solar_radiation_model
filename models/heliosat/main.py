@@ -105,37 +105,32 @@ def process_atmospheric_irradiance(loader):
     v_atmosphericalbedo = nc.getvar(loader.root, 'atmosphericalbedo',
                                     source=data)
     v_atmosphericalbedo[:] = atmosphericalbedo
-    v_satellitalelevation = nc.getvar(loader.root, 'satellitalelevation',
-                                      source=lon)
-    v_satellitalelevation[:] = satellitalelevation
+    say("Calculating satellital optical path and optical depth... ")
+    satellital_opticalpath = geo.getopticalpath(
+        geo.getcorrectedelevation(satellitalelevation), loader.dem[:], 8434.5)
+    satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
+    say("Calculating earth-satellite transmitances... ")
+    t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
+                                satellital_opticaldepth, satellitalelevation)
+    v_sat = nc.getvar(loader.root, 't_sat', source=lon)
+    v_sat[:] = t_sat
     nc.sync(loader.root)
-    v_atmosphericalbedo, v_satellitalelevation = None, None
+    v_atmosphericalbedo, v_sat = None, None
 
 
 def process_optical_fading(loader):
     solarelevation = loader.solarelevation[:]
-    terrain = loader.dem[:]
-    satellitalelevation = loader.satellitalelevation[:]
-    linketurbidity = loader.linke[:]
-    say("Calculating optical path and optical depth... ")
+    say("Calculating solar optical path and optical depth... ")
     # The maximum height of the non-transparent atmosphere is at 8434.5 mts
     solar_opticalpath = geo.getopticalpath(
-        geo.getcorrectedelevation(solarelevation), terrain, 8434.5)
+        geo.getcorrectedelevation(solarelevation), loader.dem[:], 8434.5)
     solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
-    satellital_opticalpath = geo.getopticalpath(
-        geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
-    satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
-    say("Calculating sun-earth and earth-satellite transmitances... ")
-    t_earth = geo.gettransmitance(linketurbidity, solar_opticalpath,
+    say("Calculating sun-earth transmitances... ")
+    t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
                                   solar_opticaldepth, solarelevation)
-    t_sat = geo.gettransmitance(linketurbidity, satellital_opticalpath,
-                                satellital_opticaldepth, satellitalelevation)
     data = loader.data
-    satellitalelevation = loader.satellitalelevation
     v_earth = nc.getvar(loader.root, 't_earth', source=data)
     v_earth[:] = t_earth
-    v_sat = nc.getvar(loader.root, 't_sat', source=satellitalelevation)
-    v_sat[:] = t_sat
     nc.sync(loader.root)
     v_earth, v_sat = None, None
 
