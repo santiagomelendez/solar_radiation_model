@@ -235,9 +235,6 @@ def process_radiation(loader):
                                    cloudalbedo[:])
     apparentalbedo = None
     groundalbedo = None
-    f_var = nc.getvar(loader.root, 'cloudinessindex', source=cloudalbedo)
-    f_var[:] = cloudindex
-    nc.sync(loader.root)
     say("Calculating the clear sky... ")
     clearsky = geo.getclearsky(cloudindex)
     cloudindex = None
