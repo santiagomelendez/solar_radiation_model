@@ -237,9 +237,6 @@ def process_radiation(loader):
     groundalbedo = None
     say("Calculating the clear sky... ")
     clearsky = geo.getclearsky(cloudindex)
-    # f_var = nc.getvar(loader.root, 'clearskyindex', source=cloudalbedo)
-    # f_var[:] = clearsky
-    # nc.sync(loader.root)
     say("Calculating the global radiation... ")
     clearskyglobalradiation = nc.getvar(loader.root, 'gc')
     globalradiation = clearsky * clearskyglobalradiation[:]
