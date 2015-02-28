@@ -156,9 +156,6 @@ def process_albedos(loader):
     v_albedo[:] = apparentalbedo
     nc.sync(loader.root)
     effectivealbedo = geo.geteffectivealbedo(solarangle)
-    v_albedo = nc.getvar(loader.root, 'effectivealbedo', source=data_ref)
-    v_albedo[:] = effectivealbedo
-    nc.sync(loader.root)
     cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
                                      t_earth, t_sat)
     v_albedo = nc.getvar(loader.root, 'cloudalbedo', source=data_ref)
