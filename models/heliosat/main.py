@@ -3,9 +3,10 @@
 import sys
 sys.path.append(".")
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 from libs.statistics import stats
 import glob
+import os
 
 from netcdf import netcdf as nc
 from libs.geometry import jaen as geo
@@ -52,8 +53,8 @@ def process_temporal_data(loader):
     data = loader.data
     nc.getdim(loader.root, 'xc_k', 1)
     nc.getdim(loader.root, 'yc_k', 1)
-    gamma = nc.getvar(loader.root, 'gamma', 'f4',
-                      dimensions=('time', 'yc_k', 'xc_k'))
+    slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
+    gamma = nc.getvar(loader.root, 'gamma', 'f4', source=slots)
     nc.sync(loader.root)
     tst_hour = nc.getvar(loader.root, 'tst_hour', 'f4', source=data)
     declination = nc.getvar(loader.root, 'declination', source=gamma)
@@ -61,7 +62,6 @@ def process_temporal_data(loader):
     solarelevation = nc.getvar(loader.root, 'solarelevation',
                                source=solarangle)
     excentricity = nc.getvar(loader.root, 'excentricity', source=gamma)
-    slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
     nc.sync(loader.root)
     map(lambda i: process_instant_data(loader, i, len(indexes) - 1,
                                        times, gamma, tst_hour, slots, lon),
@@ -312,6 +312,10 @@ def to_datetime(filename):
 
 def filter_filenames(filename):
     files = glob.glob(filename) if isinstance(filename, str) else filename
+    last_dt = to_datetime(max(files))
+    a_month_ago = (last_dt - timedelta(days=30)).date()
+    include_lastmonth = lambda dt: dt.date() > a_month_ago
+    files = filter(lambda f: include_lastmonth(to_datetime(f)), files)
     include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
     files = filter(lambda f: include_daylight(to_datetime(f)), files)
     return files
@@ -400,6 +404,35 @@ class Loader(object):
         return self._attrs[name]
 
 
+class VolatileCache(object):
+
+    def __init__(self, filenames):
+        self.initialize_path(filenames)
+        self.update_cache(filenames)
+        self.loader = Loader(filenames)
+
+    def initialize_path(self, filenames):
+        self.path = '/'.join(filenames[0].split('/')[0:-1])
+        self.volatile_path = 'volatile_cache'
+        self.index = {self.get_cached_file(v): v for v in filenames}
+        if not os.path.exists(self.volatile_path):
+            os.makedirs(self.volatile_path)
+
+    def get_cached_file(self, filename):
+        short = (lambda f, start=None, end=None:
+                 ".".join((f.split('/')[-1]).split('.')[start:end]))
+        return '%s/%s' % (self.volatile_path, short(filename))
+
+    def update_cache(self, filenames):
+        cached_files = glob.glob('%s/*.nc' % self.volatile_path)
+        not_cached = filter(lambda f: self.get_cached_file(f) not in cached_files,
+                            filenames)
+        loader = Loader(not_cached)
+        new_files = map(self.get_cached_file, not_cached)
+        with nc.loader(new_files) as cache:
+            pass
+
+
 def workwith(filename="data/goes13.*.BAND_01.nc"):
     filenames = filter_filenames(filename)
     months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
@@ -408,7 +441,8 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     show("Months: ", months)
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
-    loader = Loader(filenames)
+    cache = VolatileCache(filenames)
+    loader = cache.loader
 
     process_temporal_data(loader)
     process_atmospheric_data(loader)
