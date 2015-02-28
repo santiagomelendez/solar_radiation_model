@@ -148,9 +148,6 @@ def process_albedos(loader):
     v_albedo[:] = cloudalbedo
     nc.sync(loader.root)
     v_albedo = None
-
-
-def process_groundalbedo(loader):
     slots = loader.slots[:]
     declination = loader.declination[:]
     # The day is divided into _slots_ to avoid the minutes diferences
@@ -172,7 +169,6 @@ def process_groundalbedo(loader):
     condition = ((slots >= min_slot) & (slots < max_slot))
     # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
     condition = np.reshape(condition, condition.shape[0])
-    apparentalbedo = loader.apparentalbedo[:]
     mask1 = loader.calibrated_data[condition] <= (geti0met() / np.pi) * 0.03
     m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
     # To do the nexts steps needs a lot of memory
@@ -392,9 +388,7 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
 
     process_temporaldata(loader)
     process_atmosphericdata(loader)
-
     process_albedos(loader)
-    process_groundalbedo(loader)
     process_globalradiation(loader)
 
     #    process_validate(root)
