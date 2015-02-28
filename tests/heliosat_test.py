@@ -28,6 +28,7 @@ class TestHeliosat(unittest.TestCase):
         scale_shapes = (2245. / 86) * (3515. / 180) * (30. / processed_days)
         estimated = elapsed * scale_shapes / 3600.
         print "Scaling total time to %.2f hours." % estimated
+        print "Efficiency achieved: %.2f%%" % (3.5 / estimated * 100.)
 
 
 if __name__ == '__main__':
