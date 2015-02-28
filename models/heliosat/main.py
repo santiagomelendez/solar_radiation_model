@@ -33,33 +33,31 @@ def process_temporal_data(loader):
     nc.getdim(loader.root, 'xc_k', 1)
     nc.getdim(loader.root, 'yc_k', 1)
     slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
-    gamma = nc.getvar(loader.root, 'gamma', 'f4', source=slots)
     nc.sync(loader.root)
-    tst_hour = nc.getvar(loader.root, 'tst_hour', 'f4', source=data)
-    declination = nc.getvar(loader.root, 'declination', source=gamma)
+    declination = nc.getvar(loader.root, 'declination', source=slots)
     solarangle = nc.getvar(loader.root, 'solarangle', 'f4', source=data)
     solarelevation = nc.getvar(loader.root, 'solarelevation',
                                source=solarangle)
-    excentricity = nc.getvar(loader.root, 'excentricity', source=gamma)
+    excentricity = nc.getvar(loader.root, 'excentricity', source=slots)
     nc.sync(loader.root)
     show("Calculaing time related paramenters... ")
     time = loader.time[:]
     shape = list(time.shape)
     shape.append(1)
     time = time.reshape(tuple(shape))
-    gamma[:] = geo.getdailyangle(geo.getjulianday(time),
+    gamma = geo.getdailyangle(geo.getjulianday(time),
                                  geo.gettotaldays(time))
-    tst_hour[:] = geo.gettsthour(geo.getdecimalhour(time),
+    tst_hour = geo.gettsthour(geo.getdecimalhour(time),
                                  GREENWICH_LON, lon,
-                                 geo.gettimeequation(gamma[:]))
+                                 geo.gettimeequation(gamma))
     slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
     nc.sync(loader.root)
     show("Calculating gamma related parameters...")
-    declination[:] = geo.getdeclination(gamma[:])
-    omega = geo.gethourlyangle(tst_hour[:], lat / abs(lat))
+    declination[:] = geo.getdeclination(gamma)
+    omega = geo.gethourlyangle(tst_hour, lat / abs(lat))
     solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
     solarelevation[:] = geo.getelevation(solarangle[:])
-    excentricity[:] = geo.getexcentricity(gamma[:])
+    excentricity[:] = geo.getexcentricity(gamma)
     say("Calculating the satellital zenith angle... ")
     satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
     v_satellitalzenithangle = nc.getvar(loader.root, 'satellitalzenithangle',
