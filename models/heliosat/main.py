@@ -353,9 +353,8 @@ class Loader(object):
             prelaunch = self.prelaunch_0[:]
             postlaunch = self.postlaunch[:]
             # INFO: Without the postlaunch coefficient the RMSE go to 15%
-            normalized_data = (np.float32(row_data)
-                               / counts_shift
-                               - space_measurement)
+            normalized_data = (np.float32(row_data) / counts_shift -
+                               space_measurement)
             self._cached_calibrated_data = (normalized_data
                                             * postlaunch
                                             * prelaunch)
