@@ -26,7 +26,7 @@ def geti0met():
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 
-def process_temporal_data(loader):
+def process_temporaldata(loader):
     lat = loader.lat[0]
     lon = loader.lon[0]
     data = loader.data
@@ -75,17 +75,15 @@ def process_irradiance(loader):
                                   linketurbidity)
     gc = geo.getglobalirradiance(bc, dc)
     data = nc.getvar(loader.root, 'data')
-    v_bc = nc.getvar(loader.root, 'bc', source=data)
-    v_bc[:] = bc
     v_dc = nc.getvar(loader.root, 'dc', source=data)
     v_dc[:] = dc
     v_gc = nc.getvar(loader.root, 'gc', source=data)
     v_gc[:] = gc
     nc.sync(loader.root)
-    v_gc, v_dc, v_bc = None, None, None
+    v_gc, v_dc = None, None
 
 
-def process_atmospheric_irradiance(loader):
+def process_atmosphericirradiance(loader):
     i0met = geti0met()
     dc = loader.dc[:]
     say("Calculating the satellital parameters... ")
@@ -118,7 +116,7 @@ def process_atmospheric_irradiance(loader):
     v_atmosphericalbedo, v_sat = None, None
 
 
-def process_optical_fading(loader):
+def process_opticalfading(loader):
     solarelevation = loader.solarelevation[:]
     say("Calculating solar optical path and optical depth... ")
     # The maximum height of the non-transparent atmosphere is at 8434.5 mts
@@ -164,14 +162,13 @@ def process_albedos(loader):
     v_albedo = None
 
 
-def process_atmospheric_data(loader):
+def process_atmosphericdata(loader):
     process_irradiance(loader)
-    process_atmospheric_irradiance(loader)
-    process_optical_fading(loader)
-    process_albedos(loader)
+    process_atmosphericirradiance(loader)
+    process_opticalfading(loader)
 
 
-def process_ground_albedo(loader):
+def process_groundalbedo(loader):
     slots = loader.slots[:]
     declination = loader.declination[:]
     # The day is divided into _slots_ to avoid the minutes diferences
@@ -226,7 +223,7 @@ def process_ground_albedo(loader):
     f_groundalbedo = None
 
 
-def process_radiation(loader):
+def process_globalradiation(loader):
     apparentalbedo = loader.apparentalbedo[:]
     groundalbedo = loader.groundalbedo[:]
     cloudalbedo = loader.cloudalbedo
@@ -412,12 +409,12 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     cache = VolatileCache(filenames)
     loader = cache.loader
 
-    process_temporal_data(loader)
-    process_atmospheric_data(loader)
+    process_temporaldata(loader)
+    process_atmosphericdata(loader)
 
-    process_ground_albedo(loader)
-
-    process_radiation(loader)
+    process_albedos(loader)
+    process_groundalbedo(loader)
+    process_globalradiation(loader)
 
     #    process_validate(root)
     # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
