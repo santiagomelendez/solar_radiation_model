@@ -61,12 +61,14 @@ def process_temporaldata(loader):
     nc.sync(loader.root)
 
 
-def process_irradiance(loader):
+def process_atmosphericdata(loader):
     excentricity = loader.excentricity[:]
     solarangle = loader.solarangle[:]
     solarelevation = loader.solarelevation[:]
     linketurbidity = loader.linke[:]
     terrain = loader.dem[:]
+    data = loader.data
+    lat, lon = loader.lat, loader.lon
     say("Calculating beam, diffuse and global irradiance... ")
     # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
     bc = geo.getbeamirradiance(1367.0, excentricity, solarangle,
@@ -75,21 +77,13 @@ def process_irradiance(loader):
                                   linketurbidity)
     gc = geo.getglobalirradiance(bc, dc)
     data = nc.getvar(loader.root, 'data')
-    v_dc = nc.getvar(loader.root, 'dc', source=data)
-    v_dc[:] = dc
     v_gc = nc.getvar(loader.root, 'gc', source=data)
     v_gc[:] = gc
     nc.sync(loader.root)
     v_gc, v_dc = None, None
-
-
-def process_atmosphericirradiance(loader):
     i0met = geti0met()
-    dc = loader.dc[:]
     say("Calculating the satellital parameters... ")
-    lat, lon = loader.lat[:], loader.lon[:]
-    satellitalzenithangle = geo.getsatellitalzenithangle(lat, lon, SAT_LON)
-    excentricity = loader.excentricity[:]
+    satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:], SAT_LON)
     say("Calculating atmospheric irradiance... ")
     atmosphericradiance = geo.getatmosphericradiance(1367.0,
                                                      i0met,
@@ -98,14 +92,12 @@ def process_atmosphericirradiance(loader):
     atmosphericalbedo = geo.getalbedo(atmosphericradiance, i0met, excentricity,
                                       satellitalzenithangle)
     satellitalelevation = geo.getelevation(satellitalzenithangle)
-    data = loader.data
-    lon = loader.lon
     v_atmosphericalbedo = nc.getvar(loader.root, 'atmosphericalbedo',
                                     source=data)
     v_atmosphericalbedo[:] = atmosphericalbedo
     say("Calculating satellital optical path and optical depth... ")
     satellital_opticalpath = geo.getopticalpath(
-        geo.getcorrectedelevation(satellitalelevation), loader.dem[:], 8434.5)
+        geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
     satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
     say("Calculating earth-satellite transmitances... ")
     t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
@@ -114,14 +106,10 @@ def process_atmosphericirradiance(loader):
     v_sat[:] = t_sat
     nc.sync(loader.root)
     v_atmosphericalbedo, v_sat = None, None
-
-
-def process_opticalfading(loader):
-    solarelevation = loader.solarelevation[:]
     say("Calculating solar optical path and optical depth... ")
     # The maximum height of the non-transparent atmosphere is at 8434.5 mts
     solar_opticalpath = geo.getopticalpath(
-        geo.getcorrectedelevation(solarelevation), loader.dem[:], 8434.5)
+        geo.getcorrectedelevation(solarelevation), terrain, 8434.5)
     solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
     say("Calculating sun-earth transmitances... ")
     t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
@@ -160,12 +148,6 @@ def process_albedos(loader):
     v_albedo[:] = cloudalbedo
     nc.sync(loader.root)
     v_albedo = None
-
-
-def process_atmosphericdata(loader):
-    process_irradiance(loader)
-    process_atmosphericirradiance(loader)
-    process_opticalfading(loader)
 
 
 def process_groundalbedo(loader):
