@@ -26,30 +26,9 @@ def geti0met():
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
 
 
-def process_instant_data(loader, i, of_size,
-                         times, gamma, tst_hour, slots, lon):
-    show("\rTemporal data: preprocessing image %d / %d " %
-         (i, of_size))
-    dt = times[i]
-    # Calculate some geometry parameters
-    # Parameters that need the datetime:
-    # gamma, tst_hour, slots, linketurbidity
-    gamma[i] = geo.getdailyangle(geo.getjulianday(dt),
-                                 geo.gettotaldays(dt))
-    tst_hour[i, :] = geo.gettsthour(
-        geo.getdecimalhour(dt),
-        GREENWICH_LON,
-        lon,
-        geo.gettimeequation(gamma[i]))
-    slots[i] = geo.getslots(dt, IMAGE_PER_HOUR)
-    nc.sync(loader.root)
-
-
 def process_temporal_data(loader):
     lat = loader.lat[0]
     lon = loader.lon[0]
-    times = map(lambda t: datetime.utcfromtimestamp(int(t)), loader.time)
-    indexes = range(len(times))
     data = loader.data
     nc.getdim(loader.root, 'xc_k', 1)
     nc.getdim(loader.root, 'yc_k', 1)
@@ -63,10 +42,19 @@ def process_temporal_data(loader):
                                source=solarangle)
     excentricity = nc.getvar(loader.root, 'excentricity', source=gamma)
     nc.sync(loader.root)
-    map(lambda i: process_instant_data(loader, i, len(indexes) - 1,
-                                       times, gamma, tst_hour, slots, lon),
-        indexes)
-    say("Calculating datetime related parameters...")
+    show("Calculaing time related paramenters... ")
+    time = loader.time[:]
+    shape = list(time.shape)
+    shape.append(1)
+    time = time.reshape(tuple(shape))
+    gamma[:] = geo.getdailyangle(geo.getjulianday(time),
+                                 geo.gettotaldays(time))
+    tst_hour[:] = geo.gettsthour(geo.getdecimalhour(time),
+                                 GREENWICH_LON, lon,
+                                 geo.gettimeequation(gamma[:]))
+    slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
+    nc.sync(loader.root)
+    show("Calculating gamma related parameters...")
     declination[:] = geo.getdeclination(gamma[:])
     omega = geo.gethourlyangle(tst_hour[:], lat / abs(lat))
     solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
@@ -427,10 +415,11 @@ class VolatileCache(object):
         cached_files = glob.glob('%s/*.nc' % self.volatile_path)
         not_cached = filter(lambda f: self.get_cached_file(f) not in cached_files,
                             filenames)
-        loader = Loader(not_cached)
-        new_files = map(self.get_cached_file, not_cached)
-        with nc.loader(new_files) as cache:
-            pass
+        if not_cached:
+            loader = Loader(not_cached)
+            new_files = map(self.get_cached_file, not_cached)
+            with nc.loader(new_files) as cache:
+                pass
 
 
 def workwith(filename="data/goes13.*.BAND_01.nc"):

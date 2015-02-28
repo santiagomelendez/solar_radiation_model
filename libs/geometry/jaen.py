@@ -45,12 +45,18 @@ def iterative_broadcast(*args):
         yield aspects.return_stop(result)
 
 
-def getjulianday(dt):
-    return dt.timetuple()[7]
+def getjulianday(times):
+    dts = map(lambda t: datetime.utcfromtimestamp(int(t)), times)
+    result = map(lambda dt: dt.timetuple()[7], dts)
+    result = np.array(result).reshape(times.shape)
+    return result
 
 
-def gettotaldays(dt):
-    return getjulianday(datetime(dt.year, 12, 31))
+def gettotaldays(times):
+    dts = map(lambda t: datetime.utcfromtimestamp(int(t)), times)
+    result = map(lambda dt: datetime(dt.year, 12, 31).timetuple()[7], dts)
+    result = np.array(result).reshape(times.shape)
+    return result
 
 
 def getdailyangle(julianday, totaldays):
@@ -130,8 +136,11 @@ def gettimeequation(gamma):
                        0.04089 * np.sin(2 * gamma)) * (12 / np.pi))
 
 
-def getdecimalhour(dt):
-    return dt.hour + dt.minute/60.0 + dt.second/3600.0
+def getdecimalhour(times):
+    dts = map(lambda (idx, t): datetime.utcfromtimestamp(int(t)),
+              np.ndenumerate(times))
+    result = map(lambda dt: dt.hour + dt.minute/60.0 + dt.second/3600.0, dts)
+    return np.array(result).reshape(times.shape)
 
 
 def gettsthour(hour, d_ref, d, timeequation):
@@ -406,8 +415,8 @@ def getcloudalbedo(effectivealbedo, atmosphericalbedo, t_earth, t_sat):
     return cloudalbedo
 
 
-def getslots(dt, images_per_hour):
-    return np.int(np.round(getdecimalhour(dt) * images_per_hour))
+def getslots(times, images_per_hour):
+    return np.round(getdecimalhour(times) * images_per_hour).astype(int)
 
 
 def getintfromdatetime(dt):
