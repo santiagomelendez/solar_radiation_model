@@ -1,5 +1,4 @@
 import numpy as np
-from libs.console import show, show_progress
 import gpu
 # gpu.cuda_can_help = False
 from datetime import datetime
@@ -37,7 +36,6 @@ def iterative_broadcast(*args):
             tmp_args = [a[it_idx] if i in iterable_args else a
                         for i, a in enumerate(args)]
             # Iterate using the wrapped function
-            show_progress(it_idx)
             tmp_args = tuple(tmp_args)
             result[it_idx] = yield aspects.proceed(*tmp_args)
     else:
@@ -317,9 +315,7 @@ def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
     if gpu.cuda_can_help:
         func = mod_getalbedo.get_function("getalbedo")
         sh = radiance.shape
-        show("")
         for i in range(sh[0]):
-            # show("\r--->" + str(i).zfill(3) + "/" + str(sh[0]).zfill(3))
             radiance[i] = gpu.gpu_exec(func, radiance[i], totalirradiance,
                                        excentricity[i], zenitangle[i])
         result = radiance
