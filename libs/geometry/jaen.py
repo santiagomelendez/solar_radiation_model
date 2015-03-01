@@ -2,45 +2,6 @@ import numpy as np
 import gpu
 # gpu.cuda_can_help = False
 from datetime import datetime
-from libs import aspects
-
-
-def iterative_broadcast(*args):
-    ITERABLE_AMOUNT_OF_DIMS = [1, 3]
-    # Get the arguments dimensions
-    dimensions = [(lambda x: len(x.shape)
-                   if isinstance(x, np.ndarray) else 0)(a) for a in args]
-    # Get the positions of the huge matrix in term of maximum amount of
-    # dimensions (detect cores matrix)
-    iterable_args = [i for i, dn in enumerate(dimensions)
-                     if dn in ITERABLE_AMOUNT_OF_DIMS]
-    # Define the first dimension as iterable, and obtain the amount of
-    # iterations to be done
-    iteration_amount = 0
-    if len(iterable_args) > 0:
-        iteration_amount = args[iterable_args[0]].shape[0]
-        huge_i = 0
-        for i, a in enumerate(args):
-            if dimensions[i] > dimensions[huge_i]:
-                huge_i = i
-            result_shape = args[huge_i].shape
-        between_limits = (min(ITERABLE_AMOUNT_OF_DIMS) < dimensions[huge_i] <
-                          max(ITERABLE_AMOUNT_OF_DIMS))
-        if between_limits:
-            result_shape = args[iterable_args[0]].shape + result_shape
-    if len(iterable_args) > 0:
-        # Begin the creation of the argument to be used in the iterative call
-        result = np.zeros(result_shape)
-        for it_idx in range(iteration_amount):
-            # Update the argument according to the iteration
-            tmp_args = [a[it_idx] if i in iterable_args else a
-                        for i, a in enumerate(args)]
-            # Iterate using the wrapped function
-            tmp_args = tuple(tmp_args)
-            result[it_idx] = yield aspects.proceed(*tmp_args)
-    else:
-        result = yield aspects.proceed(*args)
-        yield aspects.return_stop(result)
 
 
 def getjulianday(times):
@@ -463,12 +424,3 @@ def getclearsky(cloudindex):
 
 def gettstdatetime(timestamp, tst_hour):
     return np.trunc(timestamp) + tst_hour / 24.
-
-
-# if not gpu.cuda_can_help:
-#    excluded_functions = ['getsecondmin']
-#    current_module = sys.modules[__name__]
-#    methods = current_module.__dict__
-#    fxs = [func for name,func in methods.items()
-#           if not name in excluded_functions and re.match( r'^get.*',name)]
-#    aspects.with_wrap(iterative_broadcast, *fxs)
