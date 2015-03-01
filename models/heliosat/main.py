@@ -257,10 +257,10 @@ class Heliosat2(object):
         #    process_validate(root)
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
+def short(f, start=1, end=-2):
+    return ".".join((f.split('/')[-1]).split('.')[start:end])
 
 def to_datetime(filename):
-    short = (lambda f, start=1, end=-2:
-             ".".join((f.split('/')[-1]).split('.')[start:end]))
     return datetime.strptime(short(filename), '%Y.%j.%H%M%S')
 
 
@@ -380,9 +380,7 @@ class TemporalCache(Cache):
             os.makedirs(self.temporal_path)
 
     def get_cached_file(self, filename):
-        short = (lambda f, start=None, end=None:
-                 ".".join((f.split('/')[-1]).split('.')[start:end]))
-        return '%s/%s' % (self.temporal_path, short(filename))
+        return '%s/%s' % (self.temporal_path, short(filename, None, None))
 
     def update_cache(self, filenames):
         self.clean_cache(filenames)
