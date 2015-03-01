@@ -180,7 +180,8 @@ class Heliosat2(object):
         groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
         show("Calculating solar elevation... ")
-        r_alphanoon = geo.getsolarelevation(declination, loader.lat[0], 0)
+        lat = loader.lat
+        r_alphanoon = geo.getsolarelevation(declination, lat[0], 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
@@ -196,8 +197,7 @@ class Heliosat2(object):
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         show("Synchronizing with the NetCDF4 file... ")
-        lat_ref = loader.lat
-        f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat_ref)
+        f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat)
         f_groundalbedo[:] = groundminimumalbedo
         nc.sync(cache.root)
         f_groundalbedo = None
