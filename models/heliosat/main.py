@@ -63,7 +63,6 @@ class Heliosat2(object):
         tst_hour = geo.gettsthour(geo.getdecimalhour(time),
                                      GREENWICH_LON, lon,
                                      geo.gettimeequation(gamma))
-        nc.sync(cache)
         show("Calculating gamma related parameters...")
         declination[:] = geo.getdeclination(gamma)
         omega = geo.gethourlyangle(tst_hour, lat / abs(lat))
@@ -115,7 +114,6 @@ class Heliosat2(object):
                                     satellital_opticaldepth, satellitalelevation)
         v_sat = nc.getvar(cache, 't_sat', source=lon)
         v_sat[:] = t_sat
-        nc.sync(cache)
         v_atmosphericalbedo, v_sat = None, None
         show("Calculating solar optical path and optical depth... ")
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
@@ -128,7 +126,6 @@ class Heliosat2(object):
         # data = loader.data
         v_earth = nc.getvar(cache, 't_earth', source=data)
         v_earth[:] = t_earth
-        nc.sync(cache)
         v_earth, v_sat = None, None
         effectivealbedo = geo.geteffectivealbedo(solarangle[:])
         cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
@@ -151,14 +148,8 @@ class Heliosat2(object):
         observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
                                        excentricity, solarangle)
         data_ref = loader.data
-        # v_albedo = nc.getvar(cache.root, 'observedalbedo', source=data_ref)
-        # v_albedo[:] = observedalbedo
-        # nc.sync(cache.root)
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
                                                t_earth, t_sat)
-        # v_albedo = nc.getvar(cache.root, 'apparentalbedo', source=data_ref)
-        # v_albedo[:] = apparentalbedo
-        # nc.sync(cache.root)
         slots = cache.slots[:]
         declination = cache.declination[:]
         # The day is divided into _slots_ to avoid the minutes diferences
@@ -210,8 +201,6 @@ class Heliosat2(object):
         f_groundalbedo[:] = groundminimumalbedo
         nc.sync(cache.root)
         f_groundalbedo = None
-        #apparentalbedo = cache.apparentalbedo[:]
-        #groundalbedo = cache.groundalbedo[:]
         cloudalbedo = cache.cloudalbedo
         show("Calculating the cloud index... ")
         cloudindex = geo.getcloudindex(apparentalbedo, groundminimumalbedo,
