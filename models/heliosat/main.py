@@ -31,7 +31,7 @@ class Heliosat2(object):
         self.filenames = filenames
         self.cache = TemporalCache(self)
 
-    def process_temporaldata(self, loader, cache):
+    def process_temporalcache(self, loader, cache):
         lat = loader.lat[0]
         lon = loader.lon[0]
         data = loader.data
@@ -39,12 +39,12 @@ class Heliosat2(object):
         shape = list(time.shape)
         shape.append(1)
         time = time.reshape(tuple(shape))
-        nc.getdim(cache.root, 'xc_k', 1)
-        nc.getdim(cache.root, 'yc_k', 1)
-        nc.getdim(cache.root, 'time', 1)
+        nc.getdim(cache, 'xc_k', 1)
+        nc.getdim(cache, 'yc_k', 1)
+        nc.getdim(cache, 'time', 1)
         slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
         slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
-        nc.sync(cache.root)
+        nc.sync(cache)
         declination = cache.getvar('declination', source=slots)
         solarangle = cache.getvar('solarangle', 'f4', source=data)
         solarelevation = cache.getvar('solarelevation', source=solarangle)
@@ -55,48 +55,47 @@ class Heliosat2(object):
         tst_hour = geo.gettsthour(geo.getdecimalhour(time),
                                      GREENWICH_LON, lon,
                                      geo.gettimeequation(gamma))
-        nc.sync(cache.root)
+        nc.sync(cache)
         show("Calculating gamma related parameters...")
         declination[:] = geo.getdeclination(gamma)
         omega = geo.gethourlyangle(tst_hour, lat / abs(lat))
         solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
         solarelevation[:] = geo.getelevation(solarangle[:])
         excentricity[:] = geo.getexcentricity(gamma)
-        nc.sync(cache.root)
-
-
-    def process_atmosphericdata(self, loader, cache):
-        excentricity = cache.excentricity[:]
-        solarangle = cache.solarangle[:]
-        solarelevation = cache.solarelevation[:]
+        nc.sync(cache)
+        #excentricity = cache.excentricity[:]
+        #solarangle = cache.solarangle[:]
+        #solarelevation = cache.solarelevation[:]
         linketurbidity = loader.linke[:]
         terrain = loader.dem[:]
-        data = loader.data
+        # data = loader.data
         lat, lon = loader.lat, loader.lon
         say("Calculating beam, diffuse and global irradiance... ")
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
-        bc = geo.getbeamirradiance(1367.0, excentricity, solarangle,
-                                   solarelevation, linketurbidity, terrain)
-        dc = geo.getdiffuseirradiance(1367.0, excentricity, solarelevation,
+        bc = geo.getbeamirradiance(1367.0, excentricity[:], solarangle[:],
+                                   solarelevation[:], linketurbidity, terrain)
+        dc = geo.getdiffuseirradiance(1367.0, excentricity[:], solarelevation[:],
                                       linketurbidity)
         gc = geo.getglobalirradiance(bc, dc)
         data = loader.data
-        v_gc = nc.getvar(cache.root, 'gc', source=data)
+        v_gc = nc.getvar(cache, 'gc', source=data)
         v_gc[:] = gc
-        nc.sync(cache.root)
+        nc.sync(cache)
         v_gc, v_dc = None, None
         i0met = geti0met()
         say("Calculating the satellital parameters... ")
-        satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:], SAT_LON)
+        satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:],
+                                                             SAT_LON)
         say("Calculating atmospheric irradiance... ")
         atmosphericradiance = geo.getatmosphericradiance(1367.0,
                                                          i0met,
                                                          dc,
                                                          satellitalzenithangle)
-        atmosphericalbedo = geo.getalbedo(atmosphericradiance, i0met, excentricity,
+        atmosphericalbedo = geo.getalbedo(atmosphericradiance[:], i0met,
+                                          excentricity[:],
                                           satellitalzenithangle)
         satellitalelevation = geo.getelevation(satellitalzenithangle)
-        v_atmosphericalbedo = nc.getvar(cache.root, 'atmosphericalbedo',
+        v_atmosphericalbedo = nc.getvar(cache, 'atmosphericalbedo',
                                         source=data)
         v_atmosphericalbedo[:] = atmosphericalbedo
         say("Calculating satellital optical path and optical depth... ")
@@ -106,26 +105,33 @@ class Heliosat2(object):
         say("Calculating earth-satellite transmitances... ")
         t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
                                     satellital_opticaldepth, satellitalelevation)
-        v_sat = nc.getvar(cache.root, 't_sat', source=lon)
+        v_sat = nc.getvar(cache, 't_sat', source=lon)
         v_sat[:] = t_sat
-        nc.sync(cache.root)
+        nc.sync(cache)
         v_atmosphericalbedo, v_sat = None, None
         say("Calculating solar optical path and optical depth... ")
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         solar_opticalpath = geo.getopticalpath(
-            geo.getcorrectedelevation(solarelevation), terrain, 8434.5)
+            geo.getcorrectedelevation(solarelevation[:]), terrain, 8434.5)
         solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
         say("Calculating sun-earth transmitances... ")
         t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
-                                      solar_opticaldepth, solarelevation)
-        data = loader.data
-        v_earth = nc.getvar(cache.root, 't_earth', source=data)
+                                      solar_opticaldepth, solarelevation[:])
+        # data = loader.data
+        v_earth = nc.getvar(cache, 't_earth', source=data)
         v_earth[:] = t_earth
-        nc.sync(cache.root)
+        nc.sync(cache)
         v_earth, v_sat = None, None
+        effectivealbedo = geo.geteffectivealbedo(solarangle[:])
+        cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
+                                         t_earth, t_sat)
+        v_albedo = nc.getvar(cache, 'cloudalbedo', source=data)
+        v_albedo[:] = cloudalbedo
+        nc.sync(cache)
+        v_albedo = None
 
 
-    def process_albedos(self, loader, cache):
+    def process_globalradiation(self, loader, cache):
         i0met = geti0met()
         excentricity = cache.excentricity[:]
         solarangle = cache.solarangle[:]
@@ -137,21 +143,14 @@ class Heliosat2(object):
         observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
                                        excentricity, solarangle)
         data_ref = loader.data
-        v_albedo = nc.getvar(cache.root, 'observedalbedo', source=data_ref)
-        v_albedo[:] = observedalbedo
-        nc.sync(cache.root)
+        # v_albedo = nc.getvar(cache.root, 'observedalbedo', source=data_ref)
+        # v_albedo[:] = observedalbedo
+        # nc.sync(cache.root)
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
                                                t_earth, t_sat)
-        v_albedo = nc.getvar(cache.root, 'apparentalbedo', source=data_ref)
-        v_albedo[:] = apparentalbedo
-        nc.sync(cache.root)
-        effectivealbedo = geo.geteffectivealbedo(solarangle)
-        cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
-                                         t_earth, t_sat)
-        v_albedo = nc.getvar(cache.root, 'cloudalbedo', source=data_ref)
-        v_albedo[:] = cloudalbedo
-        nc.sync(cache.root)
-        v_albedo = None
+        # v_albedo = nc.getvar(cache.root, 'apparentalbedo', source=data_ref)
+        # v_albedo[:] = apparentalbedo
+        # nc.sync(cache.root)
         slots = cache.slots[:]
         declination = cache.declination[:]
         # The day is divided into _slots_ to avoid the minutes diferences
@@ -203,17 +202,13 @@ class Heliosat2(object):
         f_groundalbedo[:] = groundminimumalbedo
         nc.sync(cache.root)
         f_groundalbedo = None
-
-
-    def process_globalradiation(self, loader, cache):
-        apparentalbedo = cache.apparentalbedo[:]
-        groundalbedo = cache.groundalbedo[:]
+        #apparentalbedo = cache.apparentalbedo[:]
+        #groundalbedo = cache.groundalbedo[:]
         cloudalbedo = cache.cloudalbedo
         say("Calculating the cloud index... ")
-        cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo,
+        cloudindex = geo.getcloudindex(apparentalbedo, groundminimumalbedo,
                                        cloudalbedo[:])
         apparentalbedo = None
-        groundalbedo = None
         say("Calculating the clear sky... ")
         clearsky = geo.getclearsky(cloudindex)
         say("Calculating the global radiation... ")
@@ -250,9 +245,7 @@ class Heliosat2(object):
             error.rmse(root, s)
 
     def run_with(self, loader):
-        self.process_albedos(loader, self.cache)
         self.process_globalradiation(loader, self.cache)
-
         #    process_validate(root)
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
@@ -396,8 +389,7 @@ class TemporalCache(Cache):
             new_files = map(self.get_cached_file, not_cached)
             strategy = self.strategy
             with nc.loader(new_files) as cache:
-                strategy.process_temporaldata(loader, cache)
-                strategy.process_atmosphericdata(loader, cache)
+                strategy.process_temporalcache(loader, cache)
 
     def clean_cache(self, exceptions):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
