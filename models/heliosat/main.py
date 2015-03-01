@@ -13,7 +13,6 @@ from libs.geometry import jaen as geo
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 # import processgroundstations as pgs
-from libs.console import say, show
 from collections import defaultdict
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
@@ -21,9 +20,18 @@ GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 
 
+def show(*objs):
+	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
+	sys.stdout.write(begin)
+	for part in objs:
+		sys.stdout.write(str(part))
+	sys.stdout.flush()
+
+
 def geti0met():
     GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
     return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
+
 
 class Heliosat2(object):
 
@@ -70,7 +78,7 @@ class Heliosat2(object):
         terrain = loader.dem[:]
         # data = loader.data
         lat, lon = loader.lat, loader.lon
-        say("Calculating beam, diffuse and global irradiance... ")
+        show("Calculating beam, diffuse and global irradiance... ")
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         bc = geo.getbeamirradiance(1367.0, excentricity[:], solarangle[:],
                                    solarelevation[:], linketurbidity, terrain)
@@ -83,10 +91,10 @@ class Heliosat2(object):
         nc.sync(cache)
         v_gc, v_dc = None, None
         i0met = geti0met()
-        say("Calculating the satellital parameters... ")
+        show("Calculating the satellital parameters... ")
         satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:],
                                                              SAT_LON)
-        say("Calculating atmospheric irradiance... ")
+        show("Calculating atmospheric irradiance... ")
         atmosphericradiance = geo.getatmosphericradiance(1367.0,
                                                          i0met,
                                                          dc,
@@ -98,23 +106,23 @@ class Heliosat2(object):
         v_atmosphericalbedo = nc.getvar(cache, 'atmosphericalbedo',
                                         source=data)
         v_atmosphericalbedo[:] = atmosphericalbedo
-        say("Calculating satellital optical path and optical depth... ")
+        show("Calculating satellital optical path and optical depth... ")
         satellital_opticalpath = geo.getopticalpath(
             geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
         satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
-        say("Calculating earth-satellite transmitances... ")
+        show("Calculating earth-satellite transmitances... ")
         t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
                                     satellital_opticaldepth, satellitalelevation)
         v_sat = nc.getvar(cache, 't_sat', source=lon)
         v_sat[:] = t_sat
         nc.sync(cache)
         v_atmosphericalbedo, v_sat = None, None
-        say("Calculating solar optical path and optical depth... ")
+        show("Calculating solar optical path and optical depth... ")
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         solar_opticalpath = geo.getopticalpath(
             geo.getcorrectedelevation(solarelevation[:]), terrain, 8434.5)
         solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
-        say("Calculating sun-earth transmitances... ")
+        show("Calculating sun-earth transmitances... ")
         t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
                                       solar_opticaldepth, solarelevation[:])
         # data = loader.data
@@ -138,7 +146,7 @@ class Heliosat2(object):
         atmosphericalbedo = cache.atmosphericalbedo[:]
         t_earth = cache.t_earth[:]
         t_sat = cache.t_sat[:]
-        say("Calculating observed albedo, apparent albedo, effective albedo and "
+        show("Calculating observed albedo, apparent albedo, effective albedo and "
             "cloud albedo... ")
         observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
                                        excentricity, solarangle)
@@ -157,7 +165,7 @@ class Heliosat2(object):
         # between days.
         # TODO: Related with the solar hour at the noon if the pictures are taken
         # every 15 minutes (meteosat)
-        say("Calculating the noon window... ")
+        show("Calculating the noon window... ")
         slot_window_in_hours = 4
         # On meteosat are 96 image per day
         image_per_hour = IMAGE_PER_HOUR
@@ -168,25 +176,25 @@ class Heliosat2(object):
         min_slot = noon_slot - half_window
         max_slot = noon_slot + half_window
         # Create the condition used to work only with the data inside that window
-        say("Filtering the data outside the calculated window... ")
+        show("Filtering the data outside the calculated window... ")
         condition = ((slots >= min_slot) & (slots < max_slot))
         # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
         condition = np.reshape(condition, condition.shape[0])
         mask1 = loader.calibrated_data[condition] <= (geti0met() / np.pi) * 0.03
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory
-        say("Calculating the ground reference albedo... ")
+        show("Calculating the ground reference albedo... ")
         mask2 = m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5)
         p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, mask2)
         groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
-        say("Calculating solar elevation... ")
+        show("Calculating solar elevation... ")
         r_alphanoon = geo.getsolarelevation(declination, loader.lat[0], 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
         solarelevation = cache.solarelevation[:]
-        say("Calculating the apparent albedo second minimum... ")
+        show("Calculating the apparent albedo second minimum... ")
         groundminimumalbedo = geo.getsecondmin(
             np.ma.masked_array(apparentalbedo[condition],
                                solarelevation[condition] < r_alphanoon[condition]))
@@ -196,7 +204,7 @@ class Heliosat2(object):
         condition_05g0 = groundminimumalbedo < aux_05g0
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
-        say("Synchronizing with the NetCDF4 file... ")
+        show("Synchronizing with the NetCDF4 file... ")
         lat_ref = loader.lat
         f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat_ref)
         f_groundalbedo[:] = groundminimumalbedo
@@ -205,18 +213,18 @@ class Heliosat2(object):
         #apparentalbedo = cache.apparentalbedo[:]
         #groundalbedo = cache.groundalbedo[:]
         cloudalbedo = cache.cloudalbedo
-        say("Calculating the cloud index... ")
+        show("Calculating the cloud index... ")
         cloudindex = geo.getcloudindex(apparentalbedo, groundminimumalbedo,
                                        cloudalbedo[:])
         apparentalbedo = None
-        say("Calculating the clear sky... ")
+        show("Calculating the clear sky... ")
         clearsky = geo.getclearsky(cloudindex)
-        say("Calculating the global radiation... ")
+        show("Calculating the global radiation... ")
         clearskyglobalradiation = nc.getvar(cache.root, 'gc')
         globalradiation = clearsky * clearskyglobalradiation[:]
         f_var = nc.getvar(cache.root, 'globalradiation',
                           source=clearskyglobalradiation)
-        say("Saving the global radiation... ")
+        show("Saving the global radiation... ")
         f_var[:] = globalradiation
         nc.sync(cache.root)
         f_var = None
@@ -230,7 +238,7 @@ class Heliosat2(object):
         stations = [0]
         for s in stations:
             show("==========\n")
-            say("Station %i (%i slots)" % (s,  measured[:, s, 0].size))
+            show("Station %i (%i slots)" % (s,  measured[:, s, 0].size))
             show("----------")
             show("mean (measured):\t", error.ghi_mean(measured, s))
             show("mean (estimated):\t", estimated[:, s, 0].mean())
@@ -277,7 +285,7 @@ class StaticCache(Cache):
         # At first it should have: lat, lon, dem, linke
         self.root, is_new = nc.open('static.nc')
         if is_new:
-            say("This is the first execution from the deployment... ")
+            show("This is the first execution from the deployment... ")
             with nc.loader(filenames[0]) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
@@ -289,12 +297,12 @@ class StaticCache(Cache):
             show("-----------------------\n")
 
     def project_dem(self):
-        say("Projecting DEM's map... ")
+        show("Projecting DEM's map... ")
         dem_var = nc.getvar(self.root, 'dem', 'f4', source=self.lon)
         dem_var[:] = dem.obtain(self.lat[0], self.lon[0])
 
     def project_linke(self):
-        say("Projecting Linke's turbidity index... ")
+        show("Projecting Linke's turbidity index... ")
         dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
         linkes = map(lambda dt: linke.obtain(dt, compressed=False), dts)
         linkes = map(lambda l: linke.transform_data(l, self.lat[0],
