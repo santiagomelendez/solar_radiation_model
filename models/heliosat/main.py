@@ -27,45 +27,48 @@ def geti0met():
 
 class Heliosat2(object):
 
-    def process_temporaldata(self, loader):
+    def __init__(self, filenames):
+        self.filenames = filenames
+        self.cache = TemporalCache(self)
+
+    def process_temporaldata(self, loader, cache):
         lat = loader.lat[0]
         lon = loader.lon[0]
         data = loader.data
-        nc.getdim(loader.root, 'xc_k', 1)
-        nc.getdim(loader.root, 'yc_k', 1)
-        slots = nc.getvar(loader.root, 'slots', 'i1', ('time', 'yc_k', 'xc_k'))
-        nc.sync(loader.root)
-        declination = nc.getvar(loader.root, 'declination', source=slots)
-        solarangle = nc.getvar(loader.root, 'solarangle', 'f4', source=data)
-        solarelevation = nc.getvar(loader.root, 'solarelevation',
-                                   source=solarangle)
-        excentricity = nc.getvar(loader.root, 'excentricity', source=slots)
-        nc.sync(loader.root)
-        show("Calculaing time related paramenters... ")
         time = loader.time[:]
         shape = list(time.shape)
         shape.append(1)
         time = time.reshape(tuple(shape))
+        nc.getdim(cache.root, 'xc_k', 1)
+        nc.getdim(cache.root, 'yc_k', 1)
+        nc.getdim(cache.root, 'time', 1)
+        slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
+        slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
+        nc.sync(cache.root)
+        declination = cache.getvar('declination', source=slots)
+        solarangle = cache.getvar('solarangle', 'f4', source=data)
+        solarelevation = cache.getvar('solarelevation', source=solarangle)
+        excentricity = cache.getvar('excentricity', source=slots)
+        show("Calculaing time related paramenters... ")
         gamma = geo.getdailyangle(geo.getjulianday(time),
                                      geo.gettotaldays(time))
         tst_hour = geo.gettsthour(geo.getdecimalhour(time),
                                      GREENWICH_LON, lon,
                                      geo.gettimeequation(gamma))
-        slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         show("Calculating gamma related parameters...")
         declination[:] = geo.getdeclination(gamma)
         omega = geo.gethourlyangle(tst_hour, lat / abs(lat))
         solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
         solarelevation[:] = geo.getelevation(solarangle[:])
         excentricity[:] = geo.getexcentricity(gamma)
-        nc.sync(loader.root)
+        nc.sync(cache.root)
 
 
-    def process_atmosphericdata(self, loader):
-        excentricity = loader.excentricity[:]
-        solarangle = loader.solarangle[:]
-        solarelevation = loader.solarelevation[:]
+    def process_atmosphericdata(self, loader, cache):
+        excentricity = cache.excentricity[:]
+        solarangle = cache.solarangle[:]
+        solarelevation = cache.solarelevation[:]
         linketurbidity = loader.linke[:]
         terrain = loader.dem[:]
         data = loader.data
@@ -77,10 +80,10 @@ class Heliosat2(object):
         dc = geo.getdiffuseirradiance(1367.0, excentricity, solarelevation,
                                       linketurbidity)
         gc = geo.getglobalirradiance(bc, dc)
-        data = nc.getvar(loader.root, 'data')
-        v_gc = nc.getvar(loader.root, 'gc', source=data)
+        data = loader.data
+        v_gc = nc.getvar(cache.root, 'gc', source=data)
         v_gc[:] = gc
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         v_gc, v_dc = None, None
         i0met = geti0met()
         say("Calculating the satellital parameters... ")
@@ -93,7 +96,7 @@ class Heliosat2(object):
         atmosphericalbedo = geo.getalbedo(atmosphericradiance, i0met, excentricity,
                                           satellitalzenithangle)
         satellitalelevation = geo.getelevation(satellitalzenithangle)
-        v_atmosphericalbedo = nc.getvar(loader.root, 'atmosphericalbedo',
+        v_atmosphericalbedo = nc.getvar(cache.root, 'atmosphericalbedo',
                                         source=data)
         v_atmosphericalbedo[:] = atmosphericalbedo
         say("Calculating satellital optical path and optical depth... ")
@@ -103,9 +106,9 @@ class Heliosat2(object):
         say("Calculating earth-satellite transmitances... ")
         t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
                                     satellital_opticaldepth, satellitalelevation)
-        v_sat = nc.getvar(loader.root, 't_sat', source=lon)
+        v_sat = nc.getvar(cache.root, 't_sat', source=lon)
         v_sat[:] = t_sat
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         v_atmosphericalbedo, v_sat = None, None
         say("Calculating solar optical path and optical depth... ")
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
@@ -116,41 +119,41 @@ class Heliosat2(object):
         t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
                                       solar_opticaldepth, solarelevation)
         data = loader.data
-        v_earth = nc.getvar(loader.root, 't_earth', source=data)
+        v_earth = nc.getvar(cache.root, 't_earth', source=data)
         v_earth[:] = t_earth
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         v_earth, v_sat = None, None
 
 
-    def process_albedos(self, loader):
+    def process_albedos(self, loader, cache):
         i0met = geti0met()
-        excentricity = loader.excentricity[:]
-        solarangle = loader.solarangle[:]
-        atmosphericalbedo = loader.atmosphericalbedo[:]
-        t_earth = loader.t_earth[:]
-        t_sat = loader.t_sat[:]
+        excentricity = cache.excentricity[:]
+        solarangle = cache.solarangle[:]
+        atmosphericalbedo = cache.atmosphericalbedo[:]
+        t_earth = cache.t_earth[:]
+        t_sat = cache.t_sat[:]
         say("Calculating observed albedo, apparent albedo, effective albedo and "
             "cloud albedo... ")
         observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
                                        excentricity, solarangle)
         data_ref = loader.data
-        v_albedo = nc.getvar(loader.root, 'observedalbedo', source=data_ref)
+        v_albedo = nc.getvar(cache.root, 'observedalbedo', source=data_ref)
         v_albedo[:] = observedalbedo
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
                                                t_earth, t_sat)
-        v_albedo = nc.getvar(loader.root, 'apparentalbedo', source=data_ref)
+        v_albedo = nc.getvar(cache.root, 'apparentalbedo', source=data_ref)
         v_albedo[:] = apparentalbedo
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         effectivealbedo = geo.geteffectivealbedo(solarangle)
         cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
                                          t_earth, t_sat)
-        v_albedo = nc.getvar(loader.root, 'cloudalbedo', source=data_ref)
+        v_albedo = nc.getvar(cache.root, 'cloudalbedo', source=data_ref)
         v_albedo[:] = cloudalbedo
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         v_albedo = None
-        slots = loader.slots[:]
-        declination = loader.declination[:]
+        slots = cache.slots[:]
+        declination = cache.declination[:]
         # The day is divided into _slots_ to avoid the minutes diferences
         # between days.
         # TODO: Related with the solar hour at the noon if the pictures are taken
@@ -183,7 +186,7 @@ class Heliosat2(object):
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
-        solarelevation = loader.solarelevation[:]
+        solarelevation = cache.solarelevation[:]
         say("Calculating the apparent albedo second minimum... ")
         groundminimumalbedo = geo.getsecondmin(
             np.ma.masked_array(apparentalbedo[condition],
@@ -196,16 +199,16 @@ class Heliosat2(object):
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         say("Synchronizing with the NetCDF4 file... ")
         lat_ref = loader.lat
-        f_groundalbedo = nc.getvar(loader.root, 'groundalbedo', source=lat_ref)
+        f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat_ref)
         f_groundalbedo[:] = groundminimumalbedo
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         f_groundalbedo = None
 
 
-    def process_globalradiation(self, loader):
-        apparentalbedo = loader.apparentalbedo[:]
-        groundalbedo = loader.groundalbedo[:]
-        cloudalbedo = loader.cloudalbedo
+    def process_globalradiation(self, loader, cache):
+        apparentalbedo = cache.apparentalbedo[:]
+        groundalbedo = cache.groundalbedo[:]
+        cloudalbedo = cache.cloudalbedo
         say("Calculating the cloud index... ")
         cloudindex = geo.getcloudindex(apparentalbedo, groundalbedo,
                                        cloudalbedo[:])
@@ -214,13 +217,13 @@ class Heliosat2(object):
         say("Calculating the clear sky... ")
         clearsky = geo.getclearsky(cloudindex)
         say("Calculating the global radiation... ")
-        clearskyglobalradiation = nc.getvar(loader.root, 'gc')
+        clearskyglobalradiation = nc.getvar(cache.root, 'gc')
         globalradiation = clearsky * clearskyglobalradiation[:]
-        f_var = nc.getvar(loader.root, 'globalradiation',
+        f_var = nc.getvar(cache.root, 'globalradiation',
                           source=clearskyglobalradiation)
         say("Saving the global radiation... ")
         f_var[:] = globalradiation
-        nc.sync(loader.root)
+        nc.sync(cache.root)
         f_var = None
         cloudalbedo = None
 
@@ -247,10 +250,8 @@ class Heliosat2(object):
             error.rmse(root, s)
 
     def run_with(self, loader):
-        self.process_temporaldata(loader.loader)
-        self.process_atmosphericdata(loader.loader)
-        self.process_albedos(loader.loader)
-        self.process_globalradiation(loader.loader)
+        self.process_albedos(loader, self.cache)
+        self.process_globalradiation(loader, self.cache)
 
         #    process_validate(root)
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
@@ -273,7 +274,11 @@ def filter_filenames(filename):
     return files
 
 
-class Static(object):
+class Cache(object):
+    pass
+
+
+class StaticCache(Cache):
 
     def __init__(self, filenames):
         # At first it should have: lat, lon, dem, linke
@@ -312,21 +317,21 @@ class Loader(object):
     def __init__(self, filenames):
         self.filenames = filenames
         self.root = nc.open(filenames)[0]
-        self.static = Static(filenames)
-        self.cached = self.static.root
+        self.static = StaticCache(filenames)
+        self.static_cached = self.static.root
         self._attrs = {}
         self.freq = defaultdict(int)
 
     @property
     def dem(self):
         if not hasattr(self, '_cached_dem'):
-            self._cached_dem = nc.getvar(self.cached, 'dem')
+            self._cached_dem = nc.getvar(self.static_cached, 'dem')
         return self._cached_dem
 
     @property
     def linke(self):
         if not hasattr(self, '_cached_linke'):
-            self._linke = nc.getvar(self.cached, 'linke')
+            self._linke = nc.getvar(self.static_cached, 'linke')
             self._cached_linke = np.vstack([
                 map(lambda dt: self._linke[0, dt.month - 1],
                     map(to_datetime, self.filenames))])
@@ -355,47 +360,60 @@ class Loader(object):
         return self._attrs[name]
 
 
-class VolatileCache(object):
+class TemporalCache(Cache):
 
-    def __init__(self, filenames):
-        self.initialize_path(filenames)
-        self.update_cache(filenames)
-        self.loader = Loader(filenames)
-        self.cache = Loader(map(self.get_cached_file, filenames))
+    def __init__(self, strategy):
+        self.strategy = strategy
+        self.filenames = self.strategy.filenames
+        self.initialize_path(self.filenames)
+        self.update_cache(self.filenames)
+        self.cache = Loader(map(self.get_cached_file, self.filenames))
+        self.root = self.cache.root
+        self._attrs = {}
 
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
-        self.volatile_path = 'volatile_cache'
+        self.temporal_path = 'temporal_cache'
         self.index = {self.get_cached_file(v): v for v in filenames}
-        if not os.path.exists(self.volatile_path):
-            os.makedirs(self.volatile_path)
+        if not os.path.exists(self.temporal_path):
+            os.makedirs(self.temporal_path)
 
     def get_cached_file(self, filename):
         short = (lambda f, start=None, end=None:
                  ".".join((f.split('/')[-1]).split('.')[start:end]))
-        return '%s/%s' % (self.volatile_path, short(filename))
+        return '%s/%s' % (self.temporal_path, short(filename))
 
     def update_cache(self, filenames):
         self.clean_cache(filenames)
         self.extend_cache(filenames)
 
     def extend_cache(self, filenames):
-        cached_files = glob.glob('%s/*.nc' % self.volatile_path)
+        cached_files = glob.glob('%s/*.nc' % self.temporal_path)
         not_cached = filter(lambda f: self.get_cached_file(f) not in cached_files,
                             filenames)
         if not_cached:
             loader = Loader(not_cached)
             new_files = map(self.get_cached_file, not_cached)
+            strategy = self.strategy
             with nc.loader(new_files) as cache:
-                pass
+                strategy.process_temporaldata(loader, cache)
+                strategy.process_atmosphericdata(loader, cache)
 
     def clean_cache(self, exceptions):
-        cached_files = glob.glob('%s/*.nc' % self.volatile_path)
+        cached_files = glob.glob('%s/*.nc' % self.temporal_path)
         old_cache = filter(lambda f: self.index[f] not in exceptions,
                            cached_files)
 
+    def getvar(self, *args, **kwargs):
+        tmp = list(args)
+        tmp.insert(0, self.cache.root)
+        var = nc.getvar(*tmp, **kwargs)
+        return var
+
     def __getattr__(self, name):
-        return self.loader.__getattr__(name)
+        if name not in self._attrs.keys():
+            self._attrs[name] = nc.getvar(self.root, name)
+        return self._attrs[name]
 
 
 def workwith(filename="data/goes13.*.BAND_01.nc"):
@@ -406,8 +424,8 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     show("Months: ", months)
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
-    loader = VolatileCache(filenames)
-    strategy = Heliosat2()
+    loader = Loader(filenames)
+    strategy = Heliosat2(filenames)
     strategy.run_with(loader)
     show("Process finished.\n")
-    print loader.loader.freq
+    print loader.freq
