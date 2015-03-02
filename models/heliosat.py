@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-sys.path.append(".")
 import numpy as np
 from datetime import datetime, timedelta
 from libs.statistics import stats
@@ -11,19 +9,11 @@ import os
 from netcdf import netcdf as nc
 from libs.geometry import jaen as geo
 # import processgroundstations as pgs
-from loader import Loader, to_datetime, short
+from loader import Loader, to_datetime, short, show
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
-
-
-def show(*objs):
-	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
-	sys.stdout.write(begin)
-	for part in objs:
-		sys.stdout.write(str(part))
-	sys.stdout.flush()
 
 
 def geti0met():

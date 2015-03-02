@@ -1,9 +1,19 @@
+import sys
+sys.path.append(".")
 from datetime import datetime
 from collections import defaultdict
 import numpy as np
 from netcdf import netcdf as nc
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
+
+
+def show(*objs):
+	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
+	sys.stdout.write(begin)
+	for part in objs:
+		sys.stdout.write(str(part))
+	sys.stdout.flush()
 
 
 def short(f, start=1, end=-2):
