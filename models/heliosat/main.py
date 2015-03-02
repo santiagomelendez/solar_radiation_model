@@ -264,11 +264,7 @@ def filter_filenames(filename):
     return files
 
 
-class Cache(object):
-    pass
-
-
-class StaticCache(Cache):
+class StaticCache(object):
 
     def __init__(self, filenames):
         # At first it should have: lat, lon, dem, linke
@@ -350,7 +346,7 @@ class Loader(object):
         return self._attrs[name]
 
 
-class TemporalCache(Cache):
+class TemporalCache(object):
 
     def __init__(self, strategy):
         self.strategy = strategy
