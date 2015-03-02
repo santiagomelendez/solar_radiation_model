@@ -1,8 +1,8 @@
 import sys
 sys.path.append("../")
-from libs.file import netcdf as nc
-from libs.console import show
 import numpy as np
+from netcdf import netcdf as nc
+from core import show
 from datetime import datetime
 
 def rmse(root, index):
@@ -57,9 +57,9 @@ def dailyerrors(root, stations):
 	nc.sync(root)
 	measurements = nc.getvar(root, 'measurements')
 	estimated = nc.getvar(root, 'globalradiation')
-	error_diff = root.getvar('errordiff', 'f4', ('time', 'yc_cut', 'xc_cut',), 4)
-	RMS_daily_error = root.getvar('RMSdailyerror', 'f4', ('diarying', 'yc_cut', 'xc_cut',), 4)
-	BIAS_daily_error = root.getvar('BIASdailyerror', 'f4', ('diarying', 'yc_cut', 'xc_cut',), 4)
+	error_diff = nc.getvar(root, 'errordiff', 'f4', ('time', 'yc_cut', 'xc_cut',), 4)
+	RMS_daily_error = nc.getvar(root, 'RMSdailyerror', 'f4', ('diarying', 'yc_cut', 'xc_cut',), 4)
+	BIAS_daily_error = nc.getvar(root, 'BIASdailyerror', 'f4', ('diarying', 'yc_cut', 'xc_cut',), 4)
 	error_diff[:] = np.zeros(estimated.shape)
 	RMS_daily_error[:] = np.zeros((days_amount, estimated.shape[1], estimated.shape[2]))
 	BIAS_daily_error[:] = np.zeros((days_amount, estimated.shape[1], estimated.shape[2]))
@@ -69,11 +69,11 @@ def dailyerrors(root, stations):
 		show('Station: %s \n' % stations[index])
 		error_diff[:, index, :] = measurements[:, index, :] - estimated[:, index, :]
 		nc.sync(root)
-		sum_value_in_day = np.zeros((days_amount)) 
+		sum_value_in_day = np.zeros((days_amount))
 		for i in range(len(days)):
 			d_i = days_index.index(days[i].day)
 			if not measurements[i, index, 0] == 0.0:
-				sum_value_in_day[d_i] += measurements[i,index ,0] 
+				sum_value_in_day[d_i] += measurements[i,index ,0]
 				RMS_daily_error[d_i, index ,:] += np.array([ error_diff[i, index ,0] ** 2,1])
 				BIAS_daily_error[d_i, index ,:] +=  error_diff[i, index ,0]
 		count = RMS_daily_error[:, index, 1]

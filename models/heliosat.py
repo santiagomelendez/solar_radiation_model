@@ -2,7 +2,7 @@
 
 import numpy as np
 from datetime import datetime, timedelta
-from libs.statistics import stats
+import stats
 import glob
 import os
 
