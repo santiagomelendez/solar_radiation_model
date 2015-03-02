@@ -1,5 +1,5 @@
 import unittest
-from models.heliosat import main
+from models import heliosat
 import numpy as np
 from netcdf import netcdf as nc
 from datetime import datetime
@@ -18,11 +18,11 @@ class TestHeliosat(unittest.TestCase):
 
     def test_main(self):
         begin = datetime.now()
-        main.workwith('mock_data/goes13.2015.*.BAND_01.nc')
+        heliosat.workwith('mock_data/goes13.2015.*.BAND_01.nc')
         end = datetime.now()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
-        to_dt = main.to_datetime
+        to_dt = heliosat.to_datetime
         processed = (to_dt(last) - to_dt(first)).total_seconds()
         processed_days = processed / 3600. / 24
         scale_shapes = (2245. / 86) * (3515. / 180) * (30. / processed_days)
