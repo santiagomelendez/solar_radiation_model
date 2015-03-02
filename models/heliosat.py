@@ -9,7 +9,7 @@ import os
 from netcdf import netcdf as nc
 from libs.geometry import jaen as geo
 # import processgroundstations as pgs
-from loader import Loader, to_datetime, short, show
+from core import Loader, to_datetime, short, show
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
