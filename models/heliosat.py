@@ -7,7 +7,7 @@ import glob
 import os
 
 from netcdf import netcdf as nc
-from libs.geometry import jaen as geo
+import jaen as geo
 # import processgroundstations as pgs
 from core import Loader, to_datetime, short, show
 
