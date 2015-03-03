@@ -73,6 +73,7 @@ mod_getzenithangle = gpu.SourceModule(
 def getzenithangle(declination, latitude, hourlyangle):
     func = mod_getzenithangle.get_function("getzenithangle")
     result = gpu.gpu_exec(func, hourlyangle, latitude, declination)
+    return result
 
 
 mod_getalbedo = gpu.SourceModule(
@@ -149,9 +150,7 @@ def obtain_gamma_params(time, lat, lon):
 getbeamirradiance = cpu.getbeamirradiance
 getdiffuseirradiance = cpu.getdiffuseirradiance
 getglobalirradiance = cpu.getglobalirradiance
-getsatellitalzenithangle = cpu.getsatellitalzenithangle
 getatmosphericradiance = cpu.getatmosphericradiance
-getalbedo = cpu.getalbedo
 getelevation = cpu.getelevation
 getopticalpath = cpu.getopticalpath
 getcorrectedelevation = cpu.getcorrectedelevation
