@@ -73,6 +73,7 @@ mod_getzenithangle = gpu.SourceModule(
 def getzenithangle(declination, latitude, hourlyangle):
     func = mod_getzenithangle.get_function("getzenithangle")
     result = gpu.gpu_exec(func, hourlyangle, latitude, declination)
+    return result
 
 
 mod_getalbedo = gpu.SourceModule(
