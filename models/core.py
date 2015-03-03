@@ -52,11 +52,11 @@ def gpu_exec(func, *matrixs):
 
 
 def show(*objs):
-	begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
-	sys.stdout.write(begin)
-	for part in objs:
-		sys.stdout.write(str(part))
-	sys.stdout.flush()
+    begin = '' if '\r' in objs[0] or '\b' in objs[0] else '\n'
+    sys.stdout.write(begin)
+    for part in objs:
+        sys.stdout.write(str(part))
+    sys.stdout.flush()
 
 
 def short(f, start=1, end=-2):
