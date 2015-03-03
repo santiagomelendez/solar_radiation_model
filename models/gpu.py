@@ -136,7 +136,7 @@ def obtain_gamma_params(time, lat, lon):
     gamma = cpu.getdailyangle(cpu.getjulianday(time),
                               cpu.gettotaldays(time))
     tst_hour = cpu.gettsthour(cpu.getdecimalhour(time),
-                              GREENWICH_LON, lon,
+                              cpu.GREENWICH_LON, lon,
                               cpu.gettimeequation(gamma))
     declination = getdeclination(gamma)
     omega = cpu.gethourlyangle(tst_hour, lat / abs(lat))
