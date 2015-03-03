@@ -229,17 +229,6 @@ class Heliosat2(object):
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
 
-def filter_filenames(filename):
-    files = glob.glob(filename) if isinstance(filename, str) else filename
-    last_dt = to_datetime(max(files))
-    a_month_ago = (last_dt - timedelta(days=30)).date()
-    include_lastmonth = lambda dt: dt.date() > a_month_ago
-    files = filter(lambda f: include_lastmonth(to_datetime(f)), files)
-    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
-    files = filter(lambda f: include_daylight(to_datetime(f)), files)
-    return files
-
-
 class TemporalCache(object):
 
     def __init__(self, strategy):
@@ -291,6 +280,17 @@ class TemporalCache(object):
         if name not in self._attrs.keys():
             self._attrs[name] = nc.getvar(self.root, name)
         return self._attrs[name]
+
+
+def filter_filenames(filename):
+    files = glob.glob(filename) if isinstance(filename, str) else filename
+    last_dt = to_datetime(max(files))
+    a_month_ago = (last_dt - timedelta(days=30)).date()
+    include_lastmonth = lambda dt: dt.date() > a_month_ago
+    files = filter(lambda f: include_lastmonth(to_datetime(f)), files)
+    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
+    files = filter(lambda f: include_daylight(to_datetime(f)), files)
+    return files
 
 
 def workwith(filename="data/goes13.*.BAND_01.nc"):
