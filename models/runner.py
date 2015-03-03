@@ -1,16 +1,11 @@
-from core import Loader, show
-from heliosat2 import Heliosat2
+import heliosat2
+import glob
+from goesdownloader import instrument as goes
 
-def workwith(filename="data/goes13.*.BAND_01.nc"):
-    filenames = filter_filenames(filename)
-    months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
-                          map(to_datetime, filenames))))
-    show("=======================")
-    show("Months: ", months)
-    show("Dataset: ", len(filenames), " files.")
-    show("-----------------------\n")
-    loader = Loader(filenames)
-    strategy = Heliosat2(filenames)
-    strategy.run_with(loader)
-    show("Process finished.\n")
-    print loader.freq
+
+def run():
+    should_download = lambda dt: dt.hour - 4 >= 5 and dt.hour - 4 <= 20
+    filenames = goes.download('user', 'pass', 'data', suscription_id='',
+                              datetime_filter=should_download)
+    if filenames:
+        heliosat2.workwith('data/goes13.*.BAND_01.nc')
