@@ -1,3 +1,4 @@
+import numpy as np
 import models.core as gpu
 import cpu
 # gpu.cuda_can_help = False
