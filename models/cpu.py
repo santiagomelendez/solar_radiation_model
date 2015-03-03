@@ -2,6 +2,9 @@ import numpy as np
 from datetime import datetime
 
 
+GREENWICH_LON = 0.0
+
+
 def getjulianday(times):
     dts = map(lambda t: datetime.utcfromtimestamp(int(t)), times)
     result = map(lambda dt: dt.timetuple()[7], dts)
@@ -298,3 +301,17 @@ def getclearsky(cloudindex):
 
 def gettstdatetime(timestamp, tst_hour):
     return np.trunc(timestamp) + tst_hour / 24.
+
+
+def obtain_gamma_params(time, lat, lon):
+    gamma = getdailyangle(getjulianday(time),
+                          gettotaldays(time))
+    tst_hour = gettsthour(getdecimalhour(time),
+                          GREENWICH_LON, lon,
+                          gettimeequation(gamma))
+    declination = getdeclination(gamma)
+    omega = gethourlyangle(tst_hour, lat / abs(lat))
+    solarangle = getzenithangle(declination, lat, omega)
+    solarelevation = getelevation(solarangle)
+    excentricity = getexcentricity(gamma)
+    return declination, solarangle, solarelevation, excentricity

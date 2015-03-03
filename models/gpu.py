@@ -1,4 +1,6 @@
-import core as gpu
+import models.core as gpu
+from cpu import *
+import cpu
 # gpu.cuda_can_help = False
 
 mod_getexcentricity = gpu.SourceModule(
@@ -125,3 +127,17 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
         "getsatellitalzenithangle")
     result = gpu.gpu_exec(func, lat, lon, sub_lon, rpol, req, h)
     return result
+
+
+def obtain_gamma_params(time, lat, lon):
+    gamma = cpu.getdailyangle(getjulianday(time),
+                              gettotaldays(time))
+    tst_hour = cpu.gettsthour(getdecimalhour(time),
+                              GREENWICH_LON, lon,
+                              gettimeequation(gamma))
+    declination = getdeclination(gamma)
+    omega = cpu.gethourlyangle(tst_hour, lat / abs(lat))
+    solarangle = getzenithangle(declination, lat, omega)
+    solarelevation = cpu.getelevation(solarangle)
+    excentricity = getexcentricity(gamma)
+    return declination, solarangle, solarelevation, excentricity

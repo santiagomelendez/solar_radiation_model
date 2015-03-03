@@ -5,13 +5,16 @@ from datetime import datetime, timedelta
 import glob
 import os
 from netcdf import netcdf as nc
-from core import Loader, to_datetime, short, show
+from core import Loader, to_datetime, short, show, cuda_can_help
 import stats
-import cpu as geo
+
+if cuda_can_help:
+    import gpu as geo
+else:
+    import cpu as geo
 # import processgroundstations as pgs
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
-GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
 GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
 
@@ -24,8 +27,8 @@ class Heliosat2(object):
         self.cache = TemporalCache(self)
 
     def process_temporalcache(self, loader, cache):
-        lat = loader.lat[0]
-        lon = loader.lon[0]
+        lat = loader.lat
+        lon = loader.lon
         data = loader.data
         time = loader.time[:]
         shape = list(time.shape)
@@ -42,17 +45,8 @@ class Heliosat2(object):
         solarelevation = cache.getvar('solarelevation', source=solarangle)
         excentricity = cache.getvar('excentricity', source=slots)
         show("Calculaing time related paramenters... ")
-        gamma = geo.getdailyangle(geo.getjulianday(time),
-                                     geo.gettotaldays(time))
-        tst_hour = geo.gettsthour(geo.getdecimalhour(time),
-                                     GREENWICH_LON, lon,
-                                     geo.gettimeequation(gamma))
-        show("Calculating gamma related parameters...")
-        declination[:] = geo.getdeclination(gamma)
-        omega = geo.gethourlyangle(tst_hour, lat / abs(lat))
-        solarangle[:] = geo.getzenithangle(declination[:], lat, omega)
-        solarelevation[:] = geo.getelevation(solarangle[:])
-        excentricity[:] = geo.getexcentricity(gamma)
+        result = geo.obtain_gamma_params(time, lat[0], lon[0])
+        declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
         nc.sync(cache)
         #excentricity = cache.excentricity[:]
         #solarangle = cache.solarangle[:]
@@ -60,7 +54,6 @@ class Heliosat2(object):
         linketurbidity = loader.linke[:]
         terrain = loader.dem[:]
         # data = loader.data
-        lat, lon = loader.lat, loader.lon
         show("Calculating beam, diffuse and global irradiance... ")
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         bc = geo.getbeamirradiance(1367.0, excentricity[:], solarangle[:],
