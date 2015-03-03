@@ -2,29 +2,25 @@
 
 import numpy as np
 from datetime import datetime, timedelta
-import stats
 import glob
 import os
-
 from netcdf import netcdf as nc
+from core import Loader, to_datetime, short, show
+import stats
 import jaen as geo
 # import processgroundstations as pgs
-from core import Loader, to_datetime, short, show
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
 GREENWICH_LON = 0.0
 IMAGE_PER_HOUR = 2
-
-
-def geti0met():
-    GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
-    return np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
+GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
 
 
 class Heliosat2(object):
 
     def __init__(self, filenames):
         self.filenames = filenames
+        self.i0met = np.pi / GOES_OBSERVED_ALBEDO_CALIBRATION
         self.cache = TemporalCache(self)
 
     def process_temporalcache(self, loader, cache):
@@ -77,16 +73,15 @@ class Heliosat2(object):
         v_gc[:] = gc
         nc.sync(cache)
         v_gc, v_dc = None, None
-        i0met = geti0met()
         show("Calculating the satellital parameters... ")
         satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:],
                                                              SAT_LON)
         show("Calculating atmospheric irradiance... ")
         atmosphericradiance = geo.getatmosphericradiance(1367.0,
-                                                         i0met,
+                                                         self.i0met,
                                                          dc,
                                                          satellitalzenithangle)
-        atmosphericalbedo = geo.getalbedo(atmosphericradiance[:], i0met,
+        atmosphericalbedo = geo.getalbedo(atmosphericradiance[:], self.i0met,
                                           excentricity[:],
                                           satellitalzenithangle)
         satellitalelevation = geo.getelevation(satellitalzenithangle)
@@ -125,7 +120,6 @@ class Heliosat2(object):
 
 
     def process_globalradiation(self, loader, cache):
-        i0met = geti0met()
         excentricity = cache.excentricity[:]
         solarangle = cache.solarangle[:]
         atmosphericalbedo = cache.atmosphericalbedo[:]
@@ -133,7 +127,7 @@ class Heliosat2(object):
         t_sat = cache.t_sat[:]
         show("Calculating observed albedo, apparent albedo, effective albedo and "
             "cloud albedo... ")
-        observedalbedo = geo.getalbedo(loader.calibrated_data, i0met,
+        observedalbedo = geo.getalbedo(loader.calibrated_data, self.i0met,
                                        excentricity, solarangle)
         data_ref = loader.data
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
@@ -159,7 +153,7 @@ class Heliosat2(object):
         condition = ((slots >= min_slot) & (slots < max_slot))
         # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
         condition = np.reshape(condition, condition.shape[0])
-        mask1 = loader.calibrated_data[condition] <= (geti0met() / np.pi) * 0.03
+        mask1 = loader.calibrated_data[condition] <= (self.i0met / np.pi) * 0.03
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory
         show("Calculating the ground reference albedo... ")
