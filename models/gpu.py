@@ -94,7 +94,7 @@ mod_getalbedo = gpu.SourceModule(
 def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
     func = mod_getalbedo.get_function("getalbedo")
     result = gpu.gpu_exec(func, radiance, totalirradiance,
-                                    excentricity, zenitangle)
+                          excentricity, zenitangle)
     return result
 
 
