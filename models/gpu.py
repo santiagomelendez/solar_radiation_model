@@ -1,7 +1,9 @@
 import models.core as gpu
-from cpu import *
 import cpu
 # gpu.cuda_can_help = False
+
+
+getslots = cpu.getslots
 
 mod_getexcentricity = gpu.SourceModule(
     """
@@ -141,3 +143,23 @@ def obtain_gamma_params(time, lat, lon):
     solarelevation = cpu.getelevation(solarangle)
     excentricity = getexcentricity(gamma)
     return declination, solarangle, solarelevation, excentricity
+
+
+getbeamirradiance = cpu.getbeamirradiance
+getdiffuseirradiance = cpu.getdiffuseirradiance
+getglobalirradiance = cpu.getglobalirradiance
+getsatellitalzenithangle = cpu.getsatellitalzenithangle
+getatmosphericradiance = cpu.getatmosphericradiance
+getalbedo = cpu.getalbedo
+getelevation = cpu.getelevation
+getopticalpath = cpu.getopticalpath
+getcorrectedelevation = cpu.getcorrectedelevation
+getopticaldepth = cpu.getopticaldepth
+gettransmitance = cpu.gettransmitance
+geteffectivealbedo = cpu.geteffectivealbedo
+getcloudalbedo = cpu.getcloudalbedo
+getapparentalbedo = cpu.getapparentalbedo
+getsecondmin = cpu.getsecondmin
+getsolarelevation = cpu.getsolarelevation
+getcloudindex = cpu.getcloudindex
+getclearsky = cpu.getclearsky
