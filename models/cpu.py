@@ -1,5 +1,5 @@
 import numpy as np
-import gpu
+import core as gpu
 # gpu.cuda_can_help = False
 from datetime import datetime
 

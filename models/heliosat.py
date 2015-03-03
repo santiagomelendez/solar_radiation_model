@@ -7,7 +7,7 @@ import os
 from netcdf import netcdf as nc
 from core import Loader, to_datetime, short, show
 import stats
-import jaen as geo
+import cpu as geo
 # import processgroundstations as pgs
 
 SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
