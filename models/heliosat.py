@@ -172,10 +172,11 @@ class Heliosat2(object):
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         show("Synchronizing with the NetCDF4 file... ")
-        f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat)
-        f_groundalbedo[:] = groundminimumalbedo
-        nc.sync(cache.root)
-        f_groundalbedo = None
+        # TODO: The next 5 lines are really slow.
+        # f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat)
+        # f_groundalbedo[:] = groundminimumalbedo
+        # nc.sync(cache.root)
+        # f_groundalbedo = None
         cloudalbedo = cache.cloudalbedo
         show("Calculating the cloud index... ")
         cloudindex = geo.getcloudindex(apparentalbedo, groundminimumalbedo,
