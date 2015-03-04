@@ -33,6 +33,9 @@ deploy: bin/activate
 show-version:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) --version
 
+run:
+	@ $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run()"
+
 test:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) tests
 
