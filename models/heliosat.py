@@ -129,10 +129,6 @@ class Heliosat2(object):
                                                t_earth, t_sat)
         slots = cache.slots[:]
         declination = cache.declination[:]
-        # The day is divided into _slots_ to avoid the minutes diferences
-        # between days.
-        # TODO: Related with the solar hour at the noon if the pictures are taken
-        # every 15 minutes (meteosat)
         show("Calculating the noon window... ")
         slot_window_in_hours = 4
         # On meteosat are 96 image per day
@@ -174,11 +170,6 @@ class Heliosat2(object):
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         show("Synchronizing with the NetCDF4 file... ")
-        # TODO: The next 5 lines are really slow.
-        # f_groundalbedo = nc.getvar(cache.root, 'groundalbedo', source=lat)
-        # f_groundalbedo[:] = groundminimumalbedo
-        # nc.sync(cache.root)
-        # f_groundalbedo = None
         cloudalbedo = cache.cloudalbedo
         show("Calculating the cloud index... ")
         cloudindex = geo.getcloudindex(apparentalbedo, groundminimumalbedo,
