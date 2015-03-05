@@ -15,8 +15,11 @@ class Cache(object):
     def __getattr__(self, name):
         if name not in self._attrs.keys():
             var_name = name[4:] if name[0:4] == 'ref_' else name
-            var = nc.getvar(self.root, var_name)
-            self._attrs['ref_%s' % var_name] = var
+            if 'ref_%s' % var_name not in self._attrs.keys():
+                var = nc.getvar(self.root, var_name)
+                self._attrs['ref_%s' % var_name] = var
+            else:
+                var = self._attrs
             self._attrs['%s' % var_name] = var[:]
         return self._attrs[name]
 
