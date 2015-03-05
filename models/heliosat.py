@@ -49,13 +49,8 @@ class Heliosat2(object):
         show("Calculaing time related paramenters... ")
         result = geo.obtain_gamma_params(time, lat[0], lon[0])
         declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
-        nc.sync(cache)
-        #excentricity = cache.excentricity[:]
-        #solarangle = cache.solarangle[:]
-        #solarelevation = cache.solarelevation[:]
         linketurbidity = loader.linke[:]
         terrain = loader.dem[:]
-        # data = loader.data
         show("Calculating beam, diffuse and global irradiance... ")
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         bc = geo.getbeamirradiance(1367.0, excentricity[:], solarangle[:],
@@ -63,10 +58,8 @@ class Heliosat2(object):
         dc = geo.getdiffuseirradiance(1367.0, excentricity[:], solarelevation[:],
                                       linketurbidity)
         gc = geo.getglobalirradiance(bc, dc)
-        data = loader.data
         v_gc = nc.getvar(cache, 'gc', source=data)
         v_gc[:] = gc
-        nc.sync(cache)
         v_gc, v_dc = None, None
         show("Calculating the satellital parameters... ")
         satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:],
@@ -88,7 +81,7 @@ class Heliosat2(object):
             geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
         satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
         show("Calculating earth-satellite transmitances... ")
-        t_sat = geo.gettransmitance(loader.linke[:], satellital_opticalpath,
+        t_sat = geo.gettransmitance(linketurbidity, satellital_opticalpath,
                                     satellital_opticaldepth, satellitalelevation)
         v_sat = nc.getvar(cache, 't_sat', source=lon)
         v_sat[:] = t_sat
@@ -99,9 +92,8 @@ class Heliosat2(object):
             geo.getcorrectedelevation(solarelevation[:]), terrain, 8434.5)
         solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
         show("Calculating sun-earth transmitances... ")
-        t_earth = geo.gettransmitance(loader.linke[:], solar_opticalpath,
+        t_earth = geo.gettransmitance(linketurbidity, solar_opticalpath,
                                       solar_opticaldepth, solarelevation[:])
-        # data = loader.data
         v_earth = nc.getvar(cache, 't_earth', source=data)
         v_earth[:] = t_earth
         v_earth, v_sat = None, None
