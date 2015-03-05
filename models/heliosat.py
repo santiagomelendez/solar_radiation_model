@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import glob
 import os
 from netcdf import netcdf as nc
-from cache import Loader
+from cache import Cache, Loader
 from helpers import to_datetime, short, show
 import stats
 
@@ -199,16 +199,16 @@ class Heliosat2(object):
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
 
-class TemporalCache(object):
+class TemporalCache(Cache):
 
     def __init__(self, strategy):
+        super(TemporalCache, self).__init__()
         self.strategy = strategy
         self.filenames = self.strategy.filenames
         self.initialize_path(self.filenames)
         self.update_cache(self.filenames)
         self.cache = Loader(map(self.get_cached_file, self.filenames))
         self.root = self.cache.root
-        self._attrs = {}
 
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
@@ -245,14 +245,6 @@ class TemporalCache(object):
         tmp.insert(0, self.cache.root)
         var = nc.getvar(*tmp, **kwargs)
         return var
-
-    def __getattr__(self, name):
-        if name not in self._attrs.keys():
-            var_name = name[4:] if name[0:4] == 'ref_' else name
-            var = nc.getvar(self.root, var_name)
-            self._attrs['ref_%s' % var_name] = var
-            self._attrs['%s' % var_name] = var[:]
-        return self._attrs[name]
 
 
 def filter_filenames(filename):

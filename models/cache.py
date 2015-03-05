@@ -7,7 +7,21 @@ from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 
 
-class StaticCache(object):
+class Cache(object):
+
+    def __init__(self):
+        self._attrs = {}
+
+    def __getattr__(self, name):
+        if name not in self._attrs.keys():
+            var_name = name[4:] if name[0:4] == 'ref_' else name
+            var = nc.getvar(self.root, var_name)
+            self._attrs['ref_%s' % var_name] = var
+            self._attrs['%s' % var_name] = var[:]
+        return self._attrs[name]
+
+
+class StaticCacheConstructor(object):
 
     def __init__(self, filenames):
         # At first it should have: lat, lon, dem, linke
@@ -41,14 +55,14 @@ class StaticCache(object):
         linke_var[:] = linkes
 
 
-class Loader(object):
+class Loader(Cache):
 
     def __init__(self, filenames):
+        super(Loader, self).__init__()
         self.filenames = filenames
         self.root = nc.open(filenames)[0]
-        self.static = StaticCache(filenames)
+        self.static = StaticCacheConstructor(filenames)
         self.static_cached = self.static.root
-        self._attrs = {}
 
     @property
     def dem(self):
@@ -80,11 +94,3 @@ class Loader(object):
                                             * postlaunch
                                             * prelaunch)
         return self._cached_calibrated_data
-
-    def __getattr__(self, name):
-        if name not in self._attrs.keys():
-            var_name = name[4:] if name[0:4] == 'ref_' else name
-            var = nc.getvar(self.root, var_name)
-            self._attrs['ref_%s' % var_name] = var
-            self._attrs['%s' % var_name] = var[:]
-        return self._attrs[name]
