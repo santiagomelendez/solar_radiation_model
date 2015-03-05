@@ -69,7 +69,7 @@ class Heliosat2(object):
                                                          self.i0met,
                                                          dc,
                                                          satellitalzenithangle)
-        atmosphericalbedo = geo.getalbedo(atmosphericradiance[:], self.i0met,
+        atmosphericalbedo = geo.getalbedo(atmosphericradiance, self.i0met,
                                           excentricity[:],
                                           satellitalzenithangle)
         satellitalelevation = geo.getelevation(satellitalzenithangle)
@@ -116,7 +116,6 @@ class Heliosat2(object):
             "cloud albedo... ")
         observedalbedo = geo.getalbedo(loader.calibrated_data, self.i0met,
                                        excentricity, solarangle)
-        data_ref = loader.data
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
                                                t_earth, t_sat)
         slots = cache.slots[:]
