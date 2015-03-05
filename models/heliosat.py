@@ -29,10 +29,7 @@ class Heliosat2(object):
         self.cache = TemporalCache(self)
 
     def process_temporalcache(self, loader, cache):
-        lat = loader.lat
-        lon = loader.lon
-        data = loader.data
-        time = loader.time[:]
+        time = loader.time
         shape = list(time.shape)
         shape.append(1)
         time = time.reshape(tuple(shape))
@@ -43,28 +40,25 @@ class Heliosat2(object):
         slots[:] = geo.getslots(time, IMAGE_PER_HOUR)
         nc.sync(cache)
         declination = cache.getvar('declination', source=slots)
-        solarangle = cache.getvar('solarangle', 'f4', source=data)
+        solarangle = cache.getvar('solarangle', 'f4', source=loader.ref_data)
         solarelevation = cache.getvar('solarelevation', source=solarangle)
         excentricity = cache.getvar('excentricity', source=slots)
         show("Calculaing time related paramenters... ")
-        result = geo.obtain_gamma_params(time, lat[0], lon[0])
+        result = geo.obtain_gamma_params(time, loader.lat[0], loader.lon[0])
         declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
-        linketurbidity = loader.linke[:]
-        terrain = loader.dem[:]
-        show("Calculating beam, diffuse and global irradiance... ")
+        show("Calculating irradiances... ")
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         bc = geo.getbeamirradiance(1367.0, excentricity[:], solarangle[:],
-                                   solarelevation[:], linketurbidity, terrain)
+                                   solarelevation[:], loader.linke, loader.dem)
         dc = geo.getdiffuseirradiance(1367.0, excentricity[:], solarelevation[:],
-                                      linketurbidity)
+                                      loader.linke)
         gc = geo.getglobalirradiance(bc, dc)
-        v_gc = nc.getvar(cache, 'gc', source=data)
+        v_gc = nc.getvar(cache, 'gc', source=loader.ref_data)
         v_gc[:] = gc
         v_gc, v_dc = None, None
         show("Calculating the satellital parameters... ")
-        satellitalzenithangle = geo.getsatellitalzenithangle(lat[:], lon[:],
+        satellitalzenithangle = geo.getsatellitalzenithangle(loader.lat, loader.lon,
                                                              SAT_LON)
-        show("Calculating atmospheric irradiance... ")
         atmosphericradiance = geo.getatmosphericradiance(1367.0,
                                                          self.i0met,
                                                          dc,
@@ -74,33 +68,33 @@ class Heliosat2(object):
                                           satellitalzenithangle)
         satellitalelevation = geo.getelevation(satellitalzenithangle)
         v_atmosphericalbedo = nc.getvar(cache, 'atmosphericalbedo',
-                                        source=data)
+                                        source=loader.ref_data)
         v_atmosphericalbedo[:] = atmosphericalbedo
         show("Calculating satellital optical path and optical depth... ")
         satellital_opticalpath = geo.getopticalpath(
-            geo.getcorrectedelevation(satellitalelevation), terrain, 8434.5)
+            geo.getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
         satellital_opticaldepth = geo.getopticaldepth(satellital_opticalpath)
         show("Calculating earth-satellite transmitances... ")
-        t_sat = geo.gettransmitance(linketurbidity, satellital_opticalpath,
+        t_sat = geo.gettransmitance(loader.linke, satellital_opticalpath,
                                     satellital_opticaldepth, satellitalelevation)
-        v_sat = nc.getvar(cache, 't_sat', source=lon)
+        v_sat = nc.getvar(cache, 't_sat', source=loader.ref_lon)
         v_sat[:] = t_sat
         v_atmosphericalbedo, v_sat = None, None
         show("Calculating solar optical path and optical depth... ")
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         solar_opticalpath = geo.getopticalpath(
-            geo.getcorrectedelevation(solarelevation[:]), terrain, 8434.5)
+            geo.getcorrectedelevation(solarelevation[:]), loader.dem, 8434.5)
         solar_opticaldepth = geo.getopticaldepth(solar_opticalpath)
         show("Calculating sun-earth transmitances... ")
-        t_earth = geo.gettransmitance(linketurbidity, solar_opticalpath,
+        t_earth = geo.gettransmitance(loader.linke, solar_opticalpath,
                                       solar_opticaldepth, solarelevation[:])
-        v_earth = nc.getvar(cache, 't_earth', source=data)
+        v_earth = nc.getvar(cache, 't_earth', source=loader.ref_data)
         v_earth[:] = t_earth
         v_earth, v_sat = None, None
         effectivealbedo = geo.geteffectivealbedo(solarangle[:])
         cloudalbedo = geo.getcloudalbedo(effectivealbedo, atmosphericalbedo,
                                          t_earth, t_sat)
-        v_albedo = nc.getvar(cache, 'cloudalbedo', source=data)
+        v_albedo = nc.getvar(cache, 'cloudalbedo', source=loader.ref_data)
         v_albedo[:] = cloudalbedo
         nc.sync(cache)
         v_albedo = None
@@ -118,7 +112,6 @@ class Heliosat2(object):
                                        excentricity, solarangle)
         apparentalbedo = geo.getapparentalbedo(observedalbedo, atmosphericalbedo,
                                                t_earth, t_sat)
-        slots = cache.slots[:]
         declination = cache.declination[:]
         show("Calculating the noon window... ")
         slot_window_in_hours = 4
@@ -132,7 +125,7 @@ class Heliosat2(object):
         max_slot = noon_slot + half_window
         # Create the condition used to work only with the data inside that window
         show("Filtering the data outside the calculated window... ")
-        condition = ((slots >= min_slot) & (slots < max_slot))
+        condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
         # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
         condition = np.reshape(condition, condition.shape[0])
         mask1 = loader.calibrated_data[condition] <= (self.i0met / np.pi) * 0.03
@@ -144,8 +137,7 @@ class Heliosat2(object):
         groundreferencealbedo = geo.getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
         show("Calculating solar elevation... ")
-        lat = loader.lat
-        r_alphanoon = geo.getsolarelevation(declination, lat[0], 0)
+        r_alphanoon = geo.getsolarelevation(declination, loader.lat[0], 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
@@ -256,7 +248,10 @@ class TemporalCache(object):
 
     def __getattr__(self, name):
         if name not in self._attrs.keys():
-            self._attrs[name] = nc.getvar(self.root, name)
+            var_name = name[4:] if name[0:4] == 'ref_' else name
+            var = nc.getvar(self.root, var_name)
+            self._attrs['ref_%s' % var_name] = var
+            self._attrs['%s' % var_name] = var[:]
         return self._attrs[name]
 
 

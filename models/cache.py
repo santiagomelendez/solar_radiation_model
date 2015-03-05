@@ -53,7 +53,7 @@ class Loader(object):
     @property
     def dem(self):
         if not hasattr(self, '_cached_dem'):
-            self._cached_dem = nc.getvar(self.static_cached, 'dem')
+            self._cached_dem = nc.getvar(self.static_cached, 'dem')[:]
         return self._cached_dem
 
     @property
@@ -83,5 +83,8 @@ class Loader(object):
 
     def __getattr__(self, name):
         if name not in self._attrs.keys():
-            self._attrs[name] = nc.getvar(self.root, name)
+            var_name = name[4:] if name[0:4] == 'ref_' else name
+            var = nc.getvar(self.root, var_name)
+            self._attrs['ref_%s' % var_name] = var
+            self._attrs['%s' % var_name] = var[:]
         return self._attrs[name]
