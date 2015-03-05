@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 import glob
 import os
 from netcdf import netcdf as nc
-from core import Loader, to_datetime, short, show, cuda_can_help
+from cache import Loader
+from helpers import to_datetime, short, show
 import stats
 
+from core import cuda_can_help
 if cuda_can_help:
     import gpu as geo
 else:
@@ -299,4 +301,3 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     strategy = Heliosat2(filenames)
     strategy.run_with(loader)
     show("Process finished.\n")
-    print loader.freq
