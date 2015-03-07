@@ -87,16 +87,6 @@ def getelevation(zenithangle):
     return np.rad2deg((np.pi / 2) - zenithangle)
 
 
-def getsolarelevationmatrix(dt, sub_lon, lat, lon):
-    gamma = getdailyangle(getjulianday(dt), gettotaldays(dt))
-    declination = getdeclination(gamma)
-    timeequation = gettimeequation(gamma)
-    tst_hour = gettsthour(getdecimalhour(dt), sub_lon, lon, timeequation)
-    omega = gethourlyangle(tst_hour, lat/abs(lat))
-    solarangle = getzenithangle(declination, lat, omega)
-    return getelevation(solarangle)
-
-
 def getcorrectedelevation(elevation):
     elevation = np.deg2rad(elevation)
     return np.rad2deg(elevation
