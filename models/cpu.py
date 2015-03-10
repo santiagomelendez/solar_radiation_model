@@ -3,7 +3,7 @@ from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
-from core import pmap
+from core import pmap, ProcessingStrategy
 
 
 GREENWICH_LON = 0.0
@@ -66,16 +66,6 @@ def gettimeequation(gamma):
                        0.032077 * np.sin(gamma) -
                        0.014615 * np.cos(2 * gamma) -
                        0.04089 * np.sin(2 * gamma)) * (12 / np.pi))
-
-
-int_to_decimalhour = (lambda time: int_to_dt(time).hour +
-                      int_to_dt(time).minute/60.0 +
-                      int_to_dt(time).second/3600.0)
-
-
-def getdecimalhour(times):
-    result = pmap(int_to_decimalhour, times)
-    return np.array(result).reshape(times.shape)
 
 
 def gettsthour(hour, d_ref, d, timeequation):
@@ -258,10 +248,6 @@ def getcloudalbedo(effectivealbedo, atmosphericalbedo, t_earth, t_sat):
     return cloudalbedo
 
 
-def getslots(times, images_per_hour):
-    return np.round(getdecimalhour(times) * images_per_hour).astype(int)
-
-
 def getintfromdatetime(dt):
     if np.iterable(dt) == 0:
         return int(dt.strftime("%Y%m%d%H%M%S"))
@@ -312,10 +298,10 @@ def gettstdatetime(timestamp, tst_hour):
     return np.trunc(timestamp) + tst_hour / 24.
 
 
-def obtain_gamma_params(time, lat, lon):
-    gamma = getdailyangle(getjulianday(time),
-                          gettotaldays(time))
-    tst_hour = gettsthour(getdecimalhour(time),
+def obtain_gamma_params(strategy, lat, lon):
+    gamma = getdailyangle(getjulianday(strategy.times),
+                          gettotaldays(strategy.times))
+    tst_hour = gettsthour(strategy.decimalhour,
                           GREENWICH_LON, lon,
                           gettimeequation(gamma))
     declination = getdeclination(gamma)
@@ -327,22 +313,13 @@ def obtain_gamma_params(time, lat, lon):
 
 
 def process_temporalcache(strategy, loader, cache):
-    time = loader.time
-    shape = list(time.shape)
-    shape.append(1)
-    time = time.reshape(tuple(shape))
-    nc.getdim(cache, 'xc_k', 1)
-    nc.getdim(cache, 'yc_k', 1)
-    nc.getdim(cache, 'time', 1)
-    slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
-    slots[:] = getslots(time, strategy.IMAGE_PER_HOUR)
-    nc.sync(cache)
-    declination = cache.getvar('declination', source=slots)
+    cpu = CPUStrategy(strategy, loader, cache)
+    declination = cache.getvar('declination', source=cpu.slots)
     solarangle = cache.getvar('solarangle', 'f4', source=loader.ref_data)
     solarelevation = cache.getvar('solarelevation', source=solarangle)
-    excentricity = cache.getvar('excentricity', source=slots)
+    excentricity = cache.getvar('excentricity', source=cpu.slots)
     show("Calculaing time related paramenters... ")
-    result = obtain_gamma_params(time, loader.lat[0], loader.lon[0])
+    result = obtain_gamma_params(cpu, loader.lat[0], loader.lon[0])
     declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
     show("Calculating irradiances... ")
     # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
@@ -458,12 +435,14 @@ def process_globalradiation(strategy, loader, cache):
     show("Calculating the clear sky... ")
     clearsky = getclearsky(cloudindex)
     show("Calculating the global radiation... ")
-    clearskyglobalradiation = nc.getvar(cache.root, 'gc')
-    globalradiation = clearsky * clearskyglobalradiation[:]
+    globalradiation = clearsky * cache.gc
     f_var = nc.getvar(cache.root, 'globalradiation',
-                      source=clearskyglobalradiation)
+                      source=cache.ref_gc)
     show("Saving the global radiation... ")
     f_var[:] = globalradiation
     nc.sync(cache.root)
     f_var = None
     cloudalbedo = None
+
+class CPUStrategy(ProcessingStrategy):
+    pass

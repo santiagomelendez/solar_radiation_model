@@ -1,6 +1,10 @@
+from datetime import datetime
 import numpy as np
+from netcdf import netcdf as nc
 from multiprocessing import Process, Pipe
 from itertools import izip
+import functools
+from cache import memoize
 
 
 try:
@@ -21,6 +25,42 @@ except Exception:
         def get_function(self, name):
             pass
     cuda_can_help = False
+
+
+class ProcessingStrategy(object):
+
+    def __init__(self, strategy, loader, cache):
+        self.initialize_slots(strategy, loader, cache)
+
+    @property
+    @memoize
+    def decimalhour(self):
+        int_to_dt = lambda t: datetime.utcfromtimestamp(t)
+        int_to_decimalhour = (lambda time: int_to_dt(time).hour +
+                      int_to_dt(time).minute/60.0 +
+                      int_to_dt(time).second/3600.0)
+        result = pmap(int_to_decimalhour, self.times)
+        return np.array(result).reshape(self.times.shape)
+
+    def create_1px_dimensions(self, cache):
+        nc.getdim(cache, 'xc_k', 1)
+        nc.getdim(cache, 'yc_k', 1)
+        nc.getdim(cache, 'time', 1)
+
+    def calculate_slots(self, images_per_hour):
+        return np.round(self.decimalhour * images_per_hour).astype(int)
+
+    def initialize_slots(self, strategy, loader, cache):
+        self.create_1px_dimensions(cache)
+        time = loader.time
+        shape = list(time.shape)
+        shape.append(1)
+        self.times = time.reshape(tuple(shape))
+        self.slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
+        self.slots[:] = self.calculate_slots(strategy.IMAGE_PER_HOUR)
+        nc.sync(cache)
+
+
 
 ma = np.ma
 pi = str(np.float32(np.pi))

@@ -3,12 +3,10 @@ from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
-import models.core as gpu
+import models.core as gpu, ProcessingStrategy
 import cpu
 # gpu.cuda_can_help = False
 
-
-getslots = cpu.getslots
 
 mod_getexcentricity = gpu.SourceModule(
     """
@@ -137,10 +135,10 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
     return result
 
 
-def obtain_gamma_params(time, lat, lon):
-    gamma = cpu.getdailyangle(cpu.getjulianday(time),
-                              cpu.gettotaldays(time))
-    tst_hour = cpu.gettsthour(cpu.getdecimalhour(time),
+def obtain_gamma_params(strategy, lat, lon):
+    gamma = cpu.getdailyangle(cpu.getjulianday(strategy.times),
+                              cpu.gettotaldays(strategy.times))
+    tst_hour = cpu.gettsthour(strategy.decimalhour,
                               cpu.GREENWICH_LON, lon,
                               cpu.gettimeequation(gamma))
     declination = getdeclination(gamma)
@@ -170,22 +168,13 @@ getclearsky = cpu.getclearsky
 
 
 def process_temporalcache(strategy, loader, cache):
-    time = loader.time
-    shape = list(time.shape)
-    shape.append(1)
-    time = time.reshape(tuple(shape))
-    nc.getdim(cache, 'xc_k', 1)
-    nc.getdim(cache, 'yc_k', 1)
-    nc.getdim(cache, 'time', 1)
-    slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
-    slots[:] = getslots(time, strategy.IMAGE_PER_HOUR)
-    nc.sync(cache)
-    declination = cache.getvar('declination', source=slots)
+    gpu = GPUStrategy(strategy, loader, cache)
+    declination = cache.getvar('declination', source=gpu.slots)
     solarangle = cache.getvar('solarangle', 'f4', source=loader.ref_data)
     solarelevation = cache.getvar('solarelevation', source=solarangle)
-    excentricity = cache.getvar('excentricity', source=slots)
+    excentricity = cache.getvar('excentricity', source=gpu.slots)
     show("Calculaing time related paramenters... ")
-    result = obtain_gamma_params(time, loader.lat[0], loader.lon[0])
+    result = obtain_gamma_params(gpu, loader.lat[0], loader.lon[0])
     declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
     show("Calculating irradiances... ")
     # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
@@ -310,3 +299,7 @@ def process_globalradiation(strategy, loader, cache):
     nc.sync(cache.root)
     f_var = None
     cloudalbedo = None
+
+
+class GPUStrategy(ProcessingStrategy):
+    pass

@@ -62,10 +62,10 @@ class Heliosat2(object):
 
 class TemporalCache(Cache):
 
-    def __init__(self, strategy):
+    def __init__(self, algorithm):
         super(TemporalCache, self).__init__()
-        self.strategy = strategy
-        self.filenames = self.strategy.filenames
+        self.algorithm = algorithm
+        self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
         self.update_cache(self.filenames)
         self.cache = Loader(map(self.get_cached_file, self.filenames))
@@ -93,7 +93,7 @@ class TemporalCache(Cache):
             loader = Loader(not_cached)
             new_files = map(self.get_cached_file, not_cached)
             with nc.loader(new_files) as cache:
-                self.strategy.process_temporalcache(loader, cache)
+                self.algorithm.process_temporalcache(loader, cache)
 
     def clean_cache(self, exceptions):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
@@ -129,6 +129,6 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
     loader = Loader(filenames)
-    strategy = Heliosat2(filenames)
-    strategy.run_with(loader)
+    algorithm = Heliosat2(filenames)
+    algorithm.run_with(loader)
     show("Process finished.\n")
