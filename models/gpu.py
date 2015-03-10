@@ -1,5 +1,6 @@
 import numpy as np
 import models.core as gpu
+from netcdf import netcdf as nc
 import cpu
 # gpu.cuda_can_help = False
 
