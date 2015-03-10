@@ -1,6 +1,9 @@
 import numpy as np
-import models.core as gpu
+from datetime import datetime
 from netcdf import netcdf as nc
+import stats
+from helpers import show
+import models.core as gpu
 import cpu
 # gpu.cuda_can_help = False
 
