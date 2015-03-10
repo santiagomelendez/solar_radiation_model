@@ -3,28 +3,41 @@ from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
+from core import pmap
 
 
 GREENWICH_LON = 0.0
 
 
+def int_to_dt(time):
+    return datetime.utcfromtimestamp(int(time))
+
+
+def dt_to_int(dt):
+    return dt.timetuple()[7]
+
+
+int_to_julianday = lambda time: int_to_dt(time).timetuple().tm_yday
+
+
 def getjulianday(times):
-    dts = map(lambda t: datetime.utcfromtimestamp(int(t)), times)
-    result = map(lambda dt: dt.timetuple()[7], dts)
+    result = pmap(int_to_julianday, times)
     result = np.array(result).reshape(times.shape)
     return result
 
 
+days_of_year = lambda time: int_to_julianday(
+    dt_to_int(datetime(int_to_dt(time).year, 12, 31)))
+
+
 def gettotaldays(times):
-    dts = map(lambda t: datetime.utcfromtimestamp(int(t)), times)
-    result = map(lambda dt: datetime(dt.year, 12, 31).timetuple()[7], dts)
+    result = pmap(days_of_year, times)
     result = np.array(result).reshape(times.shape)
     return result
 
 
 def getdailyangle(julianday, totaldays):
     return np.rad2deg(2 * np.pi * (julianday - 1) / totaldays)
-
 
 
 def getexcentricity(gamma):
@@ -55,10 +68,13 @@ def gettimeequation(gamma):
                        0.04089 * np.sin(2 * gamma)) * (12 / np.pi))
 
 
+int_to_decimalhour = (lambda time: int_to_dt(time).hour +
+                      int_to_dt(time).minute/60.0 +
+                      int_to_dt(time).second/3600.0)
+
+
 def getdecimalhour(times):
-    dts = map(lambda (idx, t): datetime.utcfromtimestamp(int(t)),
-              np.ndenumerate(times))
-    result = map(lambda dt: dt.hour + dt.minute/60.0 + dt.second/3600.0, dts)
+    result = pmap(int_to_decimalhour, times)
     return np.array(result).reshape(times.shape)
 
 
@@ -337,7 +353,7 @@ def process_temporalcache(strategy, loader, cache):
     gc = getglobalirradiance(bc, dc)
     v_gc = nc.getvar(cache, 'gc', source=loader.ref_data)
     v_gc[:] = gc
-    v_gc, v_dc = None, None
+    v_gc = None
     show("Calculating the satellital parameters... ")
     satellitalzenithangle = getsatellitalzenithangle(loader.lat, loader.lon,
                                                      strategy.SAT_LON)
