@@ -4,6 +4,7 @@ from itertools import izip
 
 
 try:
+    # raise Exception('Force CPU')
     from pycuda.compiler import SourceModule
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as cuda

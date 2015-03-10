@@ -1,9 +1,12 @@
 import numpy as np
+import os
 from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
 from core import pmap
+
+os.system("taskset -p 0xff %d" % os.getpid())
 
 
 GREENWICH_LON = 0.0
