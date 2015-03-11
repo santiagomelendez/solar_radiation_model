@@ -5,7 +5,7 @@ import stats
 from helpers import show
 from models.core import rad2deg_ratio, deg2rad_ratio, gpu_exec
 from models.core import SourceModule
-from cpu import CPUStrategy
+from cpu import CPUStrategy, estimate_globalradiation
 
 
 mod_getexcentricity = SourceModule(
