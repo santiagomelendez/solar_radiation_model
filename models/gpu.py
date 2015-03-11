@@ -3,7 +3,8 @@ from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
-import models.core as gpu, ProcessingStrategy
+import models.core as gpu
+from models.core import ProcessingStrategy
 import cpu
 # gpu.cuda_can_help = False
 
