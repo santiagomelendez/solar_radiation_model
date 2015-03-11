@@ -5,8 +5,7 @@ import stats
 from helpers import show
 from models.core import rad2deg_ratio, deg2rad_ratio, gpu_exec
 from models.core import SourceModule
-from models.cpu import CPUStrategy
-import cpu
+from cpu import CPUStrategy
 
 
 mod_getexcentricity = SourceModule(
@@ -138,3 +137,6 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
 
 class GPUStrategy(CPUStrategy):
     pass
+
+
+strategy = GPUStrategy
