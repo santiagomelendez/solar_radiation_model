@@ -4,7 +4,8 @@ from netcdf import netcdf as nc
 import stats
 from helpers import show
 from models.core import rad2deg_ratio, deg2rad_ratio, gpu_exec
-from models.core import SourceModule, ProcessingStrategy
+from models.core import SourceModule
+from models.cpu import CPUStrategy
 import cpu
 
 
