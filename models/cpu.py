@@ -21,8 +21,7 @@ int_to_julianday = lambda time: int_to_dt(time).timetuple().tm_yday
 
 
 def getjulianday(times):
-    result = pmap(int_to_julianday, times)
-    result = np.array(result).reshape(times.shape)
+    result = np.array(pmap(int_to_julianday, times)).reshape(times.shape)
     return result
 
 
@@ -298,111 +297,27 @@ def gettstdatetime(timestamp, tst_hour):
     return np.trunc(timestamp) + tst_hour / 24.
 
 
-def obtain_gamma_params(strategy, lat, lon):
-    gamma = getdailyangle(getjulianday(strategy.times),
-                          gettotaldays(strategy.times))
-    tst_hour = gettsthour(strategy.decimalhour,
-                          GREENWICH_LON, lon,
-                          gettimeequation(gamma))
-    declination = getdeclination(gamma)
-    omega = gethourlyangle(tst_hour, lat / abs(lat))
-    solarangle = getzenithangle(declination, lat, omega)
-    solarelevation = getelevation(solarangle)
-    excentricity = getexcentricity(gamma)
-    return declination, solarangle, solarelevation, excentricity
-
-
-def process_temporalcache(strategy, loader, cache):
-    cpu = CPUStrategy(strategy, loader, cache)
-    declination = cache.getvar('declination', source=cpu.slots)
-    solarangle = cache.getvar('solarangle', 'f4', source=loader.ref_data)
-    solarelevation = cache.getvar('solarelevation', source=solarangle)
-    excentricity = cache.getvar('excentricity', source=cpu.slots)
-    show("Calculaing time related paramenters... ")
-    result = obtain_gamma_params(cpu, loader.lat[0], loader.lon[0])
-    declination[:], solarangle[:], solarelevation[:], excentricity[:] = result
-    show("Calculating irradiances... ")
-    # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
-    bc = getbeamirradiance(1367.0, excentricity[:], solarangle[:],
-                               solarelevation[:], loader.linke, loader.dem)
-    dc = getdiffuseirradiance(1367.0, excentricity[:], solarelevation[:],
-                                  loader.linke)
-    gc = getglobalirradiance(bc, dc)
-    v_gc = nc.getvar(cache, 'gc', source=loader.ref_data)
-    v_gc[:] = gc
-    v_gc = None
-    show("Calculating the satellital parameters... ")
-    satellitalzenithangle = getsatellitalzenithangle(loader.lat, loader.lon,
-                                                     strategy.SAT_LON)
-    atmosphericradiance = getatmosphericradiance(1367.0,
-                                                 strategy.i0met,
-                                                 dc,
-                                                 satellitalzenithangle)
-    atmosphericalbedo = getalbedo(atmosphericradiance, strategy.i0met,
-                                  excentricity[:],
-                                  satellitalzenithangle)
-    satellitalelevation = getelevation(satellitalzenithangle)
-    v_atmosphericalbedo = nc.getvar(cache, 'atmosphericalbedo',
-                                    source=loader.ref_data)
-    v_atmosphericalbedo[:] = atmosphericalbedo
-    show("Calculating satellital optical path and optical depth... ")
-    satellital_opticalpath = getopticalpath(
-        getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
-    satellital_opticaldepth = getopticaldepth(satellital_opticalpath)
-    show("Calculating earth-satellite transmitances... ")
-    t_sat = gettransmitance(loader.linke, satellital_opticalpath,
-                            satellital_opticaldepth, satellitalelevation)
-    v_sat = nc.getvar(cache, 't_sat', source=loader.ref_lon)
-    v_sat[:] = t_sat
-    v_atmosphericalbedo, v_sat = None, None
-    show("Calculating solar optical path and optical depth... ")
-    # The maximum height of the non-transparent atmosphere is at 8434.5 mts
-    solar_opticalpath = getopticalpath(
-        getcorrectedelevation(solarelevation[:]), loader.dem, 8434.5)
-    solar_opticaldepth = getopticaldepth(solar_opticalpath)
-    show("Calculating sun-earth transmitances... ")
-    t_earth = gettransmitance(loader.linke, solar_opticalpath,
-                              solar_opticaldepth, solarelevation[:])
-    v_earth = nc.getvar(cache, 't_earth', source=loader.ref_data)
-    v_earth[:] = t_earth
-    v_earth, v_sat = None, None
-    effectivealbedo = geteffectivealbedo(solarangle[:])
-    cloudalbedo = getcloudalbedo(effectivealbedo, atmosphericalbedo,
-                                 t_earth, t_sat)
-    v_albedo = nc.getvar(cache, 'cloudalbedo', source=loader.ref_data)
-    v_albedo[:] = cloudalbedo
-    nc.sync(cache)
-    v_albedo = None
-
-
-def process_globalradiation(strategy, loader, cache):
-    excentricity = cache.excentricity[:]
-    solarangle = cache.solarangle[:]
-    atmosphericalbedo = cache.atmosphericalbedo[:]
-    t_earth = cache.t_earth[:]
-    t_sat = cache.t_sat[:]
-    show("Calculating observed albedo, apparent albedo, effective albedo and "
-         "cloud albedo... ")
-    observedalbedo = getalbedo(loader.calibrated_data, strategy.i0met,
+def estimate_globalradiation(algorithm, loader, cache):
+    excentricity = cache.excentricity
+    solarangle = cache.solarangle
+    atmosphericalbedo = cache.atmosphericalbedo
+    t_earth = cache.t_earth
+    t_sat = cache.t_sat
+    observedalbedo = getalbedo(loader.calibrated_data, algorithm.i0met,
                                excentricity, solarangle)
     apparentalbedo = getapparentalbedo(observedalbedo, atmosphericalbedo,
                                        t_earth, t_sat)
     declination = cache.declination[:]
     show("Calculating the noon window... ")
     slot_window_in_hours = 4
-    # On meteosat are 96 image per day
-    image_per_day = 24 * strategy.IMAGE_PER_HOUR
-    # and 48 image to the noon
+    image_per_day = 24 * algorithm.IMAGE_PER_HOUR
     noon_slot = image_per_day / 2
-    half_window = strategy.IMAGE_PER_HOUR * slot_window_in_hours/2
+    half_window = algorithm.IMAGE_PER_HOUR * slot_window_in_hours/2
     min_slot = noon_slot - half_window
     max_slot = noon_slot + half_window
-    # Create the condition used to work only with the data inside that window
-    show("Filtering the data outside the calculated window... ")
     condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
-    # TODO: Meteosat: From 40 to 56 inclusive (the last one is not included)
     condition = np.reshape(condition, condition.shape[0])
-    mask1 = loader.calibrated_data[condition] <= (strategy.i0met / np.pi) * 0.03
+    mask1 = loader.calibrated_data[condition] <= (algorithm.i0met / np.pi) * 0.03
     m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
     # To do the nexts steps needs a lot of memory
     show("Calculating the ground reference albedo... ")
@@ -416,7 +331,7 @@ def process_globalradiation(strategy, loader, cache):
     r_alphanoon[r_alphanoon > 40] = 40
     r_alphanoon[r_alphanoon < 15] = 15
     solarelevation = cache.solarelevation[:]
-    show("Calculating the apparent albedo second minimum... ")
+    show("Calculating the ground minimum albedo... ")
     groundminimumalbedo = getsecondmin(
         np.ma.masked_array(apparentalbedo[condition],
                            solarelevation[condition] < r_alphanoon[condition]))
@@ -426,23 +341,63 @@ def process_globalradiation(strategy, loader, cache):
     condition_05g0 = groundminimumalbedo < aux_05g0
     groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
     groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
-    show("Synchronizing with the NetCDF4 file... ")
-    cloudalbedo = cache.cloudalbedo
     show("Calculating the cloud index... ")
     cloudindex = getcloudindex(apparentalbedo, groundminimumalbedo,
-                                   cloudalbedo[:])
-    apparentalbedo = None
-    show("Calculating the clear sky... ")
-    clearsky = getclearsky(cloudindex)
-    show("Calculating the global radiation... ")
-    globalradiation = clearsky * cache.gc
-    f_var = nc.getvar(cache.root, 'globalradiation',
-                      source=cache.ref_gc)
-    show("Saving the global radiation... ")
-    f_var[:] = globalradiation
+                               cache.cloudalbedo)
+    cache.ref_globalradiation[:] = getclearsky(cloudindex) * cache.gc
     nc.sync(cache.root)
-    f_var = None
-    cloudalbedo = None
 
 class CPUStrategy(ProcessingStrategy):
-    pass
+
+    def update_temporalcache(self, loader, cache):
+        lat, lon = loader.lat[0], loader.lon[0]
+        gamma = getdailyangle(getjulianday(self.times),
+                              gettotaldays(self.times))
+        tst_hour = gettsthour(self.decimalhour,
+                              GREENWICH_LON, lon,
+                              gettimeequation(gamma))
+        self.declination[:] = getdeclination(gamma)
+        self.solarelevation[:] = gethourlyangle(tst_hour,
+                                                loader.lat / abs(loader.lat))
+        self.solarangle[:] = getzenithangle(self.declination[:], loader.lat,
+                                                self.solarelevation[:])
+        self.solarelevation[:] = getelevation(self.solarangle[:])
+        self.excentricity[:] = getexcentricity(gamma)
+        # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
+        # The maximum height of the non-transparent atmosphere is at 8434.5 mts
+        bc = getbeamirradiance(1367.0, self.excentricity[:],
+                               self.solarangle[:], self.solarelevation[:],
+                               loader.linke, loader.dem)
+        dc = getdiffuseirradiance(1367.0, self.excentricity[:],
+                                  self.solarelevation[:], loader.linke)
+        self.gc[:] = getglobalirradiance(bc, dc)
+        satellitalzenithangle = getsatellitalzenithangle(loader.lat, loader.lon,
+                                                         self.algorithm.SAT_LON)
+        atmosphericradiance = getatmosphericradiance(1367.0,
+                                                     self.algorithm.i0met,
+                                                     dc,
+                                                     satellitalzenithangle)
+        self.atmosphericalbedo[:] = getalbedo(atmosphericradiance,
+                                                  self.algorithm.i0met,
+                                                  self.excentricity[:],
+                                                  satellitalzenithangle)
+        satellitalelevation = getelevation(satellitalzenithangle)
+        satellital_opticalpath = getopticalpath(
+            getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
+        satellital_opticaldepth = getopticaldepth(satellital_opticalpath)
+        self.t_sat[:] = gettransmitance(loader.linke, satellital_opticalpath,
+                                            satellital_opticaldepth,
+                                            satellitalelevation)
+        solar_opticalpath = getopticalpath(
+            getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
+        solar_opticaldepth = getopticaldepth(solar_opticalpath)
+        self.t_earth[:] = gettransmitance(loader.linke, solar_opticalpath,
+                                  solar_opticaldepth, self.solarelevation[:])
+        effectivealbedo = geteffectivealbedo(self.solarangle[:])
+        self.cloudalbedo[:] = getcloudalbedo(effectivealbedo,
+                                                 self.atmosphericalbedo[:],
+                                                 self.t_earth[:], self.t_sat[:])
+        nc.sync(cache)
+
+
+strategy = CPUStrategy

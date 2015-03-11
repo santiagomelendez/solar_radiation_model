@@ -19,19 +19,23 @@ else:
 
 class Heliosat2(object):
 
-    def __init__(self, filenames):
+    def __init__(self, filenames, strategy_type):
         self.filenames = filenames
         self.SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
         self.IMAGE_PER_HOUR = 2
         self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
         self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
+        self.strategy_type = strategy_type
         self.cache = TemporalCache(self)
 
-    def process_temporalcache(self, loader, cache):
-        geo.process_temporalcache(self, loader, cache)
+    def update_temporalcache(self, loader, cache):
+        show("Updating temporal cache... ")
+        self.strategy = self.strategy_type(self, loader, cache)
+        self.strategy.update_temporalcache(loader, cache)
 
-    def process_globalradiation(self, loader, cache):
-        geo.process_globalradiation(self, loader, cache)
+    def estimate_globalradiation(self, loader, cache):
+        show("Obtaining the global radiation... ")
+        geo.estimate_globalradiation(self, loader, cache)
 
     def process_validate(self, root):
         from libs.statistics import error
@@ -55,7 +59,7 @@ class Heliosat2(object):
             error.rmse(root, s)
 
     def run_with(self, loader):
-        self.process_globalradiation(loader, self.cache)
+        self.estimate_globalradiation(loader, self.cache)
         #    process_validate(root)
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
@@ -93,7 +97,7 @@ class TemporalCache(Cache):
             loader = Loader(not_cached)
             new_files = map(self.get_cached_file, not_cached)
             with nc.loader(new_files) as cache:
-                self.algorithm.process_temporalcache(loader, cache)
+                self.algorithm.update_temporalcache(loader, cache)
 
     def clean_cache(self, exceptions):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
@@ -129,6 +133,6 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
     show("Dataset: ", len(filenames), " files.")
     show("-----------------------\n")
     loader = Loader(filenames)
-    algorithm = Heliosat2(filenames)
+    algorithm = Heliosat2(filenames, geo.strategy)
     algorithm.run_with(loader)
     show("Process finished.\n")
