@@ -20,7 +20,7 @@ class Cache(object):
                 self._attrs['ref_%s' % var_name] = var
             else:
                 var = self._attrs
-            self._attrs['%s' % var_name] = var[:]
+            self._attrs[var_name] = var[:]
         return self._attrs[name]
 
 
