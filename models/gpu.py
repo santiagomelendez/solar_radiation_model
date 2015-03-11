@@ -167,8 +167,7 @@ getcloudindex = cpu.getcloudindex
 getclearsky = cpu.getclearsky
 
 
-def process_temporalcache(strategy, loader, cache):
-    gpu = GPUStrategy(strategy, loader, cache)
+def update_temporalcache(strategy, loader, cache):
     declination = cache.getvar('declination', source=gpu.slots)
     solarangle = cache.getvar('solarangle', 'f4', source=loader.ref_data)
     solarelevation = cache.getvar('solarelevation', source=solarangle)
@@ -301,5 +300,5 @@ def process_globalradiation(strategy, loader, cache):
     cloudalbedo = None
 
 
-class GPUStrategy(ProcessingStrategy):
+class GPUStrategy(CPUStrategy):
     pass

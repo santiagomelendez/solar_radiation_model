@@ -29,8 +29,10 @@ except Exception:
 
 class ProcessingStrategy(object):
 
-    def __init__(self, strategy, loader, cache):
-        self.initialize_slots(strategy, loader, cache)
+    def __init__(self, algorithm, loader, cache):
+        self.algorithm = algorithm
+        self.initialize_slots(loader, cache)
+        self.create_variables(loader, cache)
 
     @property
     @memoize
@@ -50,16 +52,31 @@ class ProcessingStrategy(object):
     def calculate_slots(self, images_per_hour):
         return np.round(self.decimalhour * images_per_hour).astype(int)
 
-    def initialize_slots(self, strategy, loader, cache):
+    def initialize_slots(self, loader, cache):
         self.create_1px_dimensions(cache)
         time = loader.time
         shape = list(time.shape)
         shape.append(1)
         self.times = time.reshape(tuple(shape))
         self.slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
-        self.slots[:] = self.calculate_slots(strategy.IMAGE_PER_HOUR)
+        self.slots[:] = self.calculate_slots(self.algorithm.IMAGE_PER_HOUR)
         nc.sync(cache)
 
+    def create_variables(self, loader, cache):
+        create = lambda name, source: cache.getvar(name, source=source)
+        self.declination = create('declination', self.slots)
+        self.solarangle = cache.getvar('solarangle', 'f4',
+                                       source=loader.ref_data)
+        nc.sync(cache)
+        self.solarelevation = create('solarelevation', self.solarangle)
+        self.excentricity = create('excentricity', self.slots)
+        self.gc = create('gc', self.solarangle)
+        self.atmosphericalbedo = create('atmosphericalbedo', self.solarangle)
+        self.t_sat = create('t_sat', loader.ref_lon)
+        self.t_earth = create('t_earth', self.solarangle)
+        self.cloudalbedo = create('cloudalbedo', self.solarangle)
+        self.globalradiation = create('globalradiation', self.solarangle)
+        nc.sync(cache)
 
 
 ma = np.ma
