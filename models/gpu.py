@@ -3,7 +3,7 @@ from datetime import datetime
 from netcdf import netcdf as nc
 import stats
 from helpers import show
-from models.core import SourceModule
+from models.core import gpuarray, cuda, SourceModule
 from cpu import CPUStrategy, estimate_globalradiation
 
 
@@ -177,7 +177,7 @@ class GPUStrategy(CPUStrategy):
         return getzenithangle(declination, latitude, hourlyangle)
 
     def getalbedo(self, radiance, totalirradiance, excentricity, zenitangle):
-        return getalbedo(self, radiance, totalirradiance, excentricity,
+        return getalbedo(radiance, totalirradiance, excentricity,
                          zenitangle)
 
     def getsatellitalzenithangle(self, lat, lon, sub_lon):

@@ -16,14 +16,6 @@ try:
     cuda_can_help = True
     print "<< using CUDA cores >>"
 except Exception:
-
-    class SourceModule(object):
-
-        def __init__(self, c):
-            pass
-
-        def get_function(self, name):
-            pass
     cuda_can_help = False
 
 
