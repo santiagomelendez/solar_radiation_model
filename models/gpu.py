@@ -101,7 +101,7 @@ mod_getzenithangle = SourceModule(
 
 def getzenithangle(declination, latitude, hourlyangle):
     func = mod_getzenithangle.get_function("getzenithangle")
-    result = np.zeros(gamma.shape)
+    result = np.zeros(declination.shape)
     gpu_exec(func, 1, result, hourlyangle, latitude, declination)
     return result
 
