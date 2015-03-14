@@ -347,7 +347,24 @@ def estimate_globalradiation(algorithm, loader, cache):
     cache.ref_globalradiation[:] = getclearsky(cloudindex) * cache.gc
     nc.sync(cache.root)
 
+
 class CPUStrategy(ProcessingStrategy):
+
+    def getexcentricity(self, gamma):
+        return getexcentricity(gamma)
+
+    def getdeclination(self, gamma):
+        return getdeclination(gamma)
+
+    def getzenithangle(self, declination, latitude, hourlyangle):
+        return getzenithangle(declination, latitude, hourlyangle)
+
+    def getalbedo(self, radiance, totalirradiance, excentricity, zenitangle):
+        return getalbedo(radiance, totalirradiance, excentricity,
+                         zenitangle)
+
+    def getsatellitalzenithangle(self, lat, lon, sub_lon):
+        return getsatellitalzenithangle(lat, lon, sub_lon)
 
     def update_temporalcache(self, loader, cache):
         lat, lon = loader.lat[0], loader.lon[0]
@@ -356,13 +373,13 @@ class CPUStrategy(ProcessingStrategy):
         tst_hour = gettsthour(self.decimalhour,
                               GREENWICH_LON, lon,
                               gettimeequation(gamma))
-        self.declination[:] = getdeclination(gamma)
+        self.declination[:] = self.getdeclination(gamma)
         self.solarelevation[:] = gethourlyangle(tst_hour,
                                                 loader.lat / abs(loader.lat))
-        self.solarangle[:] = getzenithangle(self.declination[:], loader.lat,
+        self.solarangle[:] = self.getzenithangle(self.declination[:], loader.lat,
                                                 self.solarelevation[:])
         self.solarelevation[:] = getelevation(self.solarangle[:])
-        self.excentricity[:] = getexcentricity(gamma)
+        self.excentricity[:] = self.getexcentricity(gamma)
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = getbeamirradiance(1367.0, self.excentricity[:],
@@ -371,13 +388,13 @@ class CPUStrategy(ProcessingStrategy):
         dc = getdiffuseirradiance(1367.0, self.excentricity[:],
                                   self.solarelevation[:], loader.linke)
         self.gc[:] = getglobalirradiance(bc, dc)
-        satellitalzenithangle = getsatellitalzenithangle(loader.lat, loader.lon,
+        satellitalzenithangle = self.getsatellitalzenithangle(loader.lat, loader.lon,
                                                          self.algorithm.SAT_LON)
         atmosphericradiance = getatmosphericradiance(1367.0,
                                                      self.algorithm.i0met,
                                                      dc,
                                                      satellitalzenithangle)
-        self.atmosphericalbedo[:] = getalbedo(atmosphericradiance,
+        self.atmosphericalbedo[:] = self.getalbedo(atmosphericradiance,
                                                   self.algorithm.i0met,
                                                   self.excentricity[:],
                                                   satellitalzenithangle)
