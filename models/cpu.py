@@ -374,10 +374,12 @@ class CPUStrategy(ProcessingStrategy):
                               GREENWICH_LON, lon,
                               gettimeequation(gamma))
         self.declination[:] = self.getdeclination(gamma)
+        # FIXME: There are two solar elevations.
         self.solarelevation[:] = gethourlyangle(tst_hour,
                                                 loader.lat / abs(loader.lat))
         self.solarangle[:] = self.getzenithangle(self.declination[:], loader.lat,
                                                 self.solarelevation[:])
+        # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(gamma)
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2

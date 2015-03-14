@@ -183,8 +183,18 @@ class GPUStrategy(CPUStrategy):
     def getsatellitalzenithangle(self, lat, lon, sub_lon):
         return getsatellitalzenithangle(lat, lon, sub_lon)
 
-    # def update_temporalcache(self, loader, cache):
-    #    lat, lon = loader.lat[0], loader.lon[0]
+    def update_temporalcache(self, loader, cache):
+        lat, lon = loader.lat[0], loader.lon[0]
+        results = [self.declination[:],
+                   self.solarelevation[:],
+                   self.solarangle[:],
+                   self.excentricity[:],
+                   self.gc[:],
+                   self.atmosphericalbedo[:],
+                   self.t_sat[:],
+                   self.t_earth[:],
+                   self.cloudalbedo[:]]
+        return super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
 strategy = GPUStrategy
