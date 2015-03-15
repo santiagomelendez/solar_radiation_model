@@ -11,27 +11,7 @@ deg2rad_ratio = str(np.float32(np.pi / 180))
 rad2deg_ratio = str(np.float32(180 / np.pi))
 
 
-def gpu_exec(func, results, *matrixs):
-    adapt = lambda m: m if isinstance(m, np.ndarray) else np.matrix(m)
-    matrixs = map(lambda m: adapt(m).astype(np.float32), matrixs)
-    matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs)
-    transferences = zip(matrixs, matrixs_gpu)
-    map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences)
-    m_shapes = map(lambda m: list(m.shape), matrixs)
-    for m_s in m_shapes:
-        while len(m_s) < 3:
-            m_s.insert(0, 1)
-    # TODO: Verify to work with the complete matrix at the same time.
-    func(*matrixs_gpu, grid=tuple(m_shapes[0][1:3]),
-         block=tuple([m_shapes[0][0], 1, 1]))
-    result = np.empty_like(matrixs[0])
-    map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
-    for m in matrixs_gpu:
-        m.free()
-    return matrixs[:results]
-
-
-mod_getexcentricity = SourceModule(
+mod_sourcecode = SourceModule(
     """
     __global__ void getexcentricity(float *result, float *gamma)
     {
@@ -44,18 +24,7 @@ mod_getexcentricity = SourceModule(
             0.000719 * cos(2 * gamma[i3d]) + \
             0.000077 * sin(2 * gamma[i3d]);
     }
-    """)
 
-
-def getexcentricity(gamma):
-    func = mod_getexcentricity.get_function("getexcentricity")
-    result = np.empty_like(gamma)
-    gpu_exec(func, 1, result, gamma)
-    return result
-
-
-mod_getdeclination = SourceModule(
-    """
     __global__ void getdeclination(float *result, float *gamma)
     {
         int it = threadIdx.x;
@@ -70,18 +39,7 @@ mod_getdeclination = SourceModule(
             0.00148 * sin(3 * gamma[i3d]);
         result[i3d] *= """ + rad2deg_ratio + """;
     }
-    """)
 
-
-def getdeclination(gamma):
-    func = mod_getdeclination.get_function("getdeclination")
-    result = np.empty_like(gamma)
-    gpu_exec(func, 1, result, gamma)
-    return result
-
-
-mod_getzenithangle = SourceModule(
-    """
     __global__ void getzenithangle(float *result, float *hourlyangle, float *lat, float *dec)
     {
         int it = threadIdx.x;
@@ -94,41 +52,7 @@ mod_getzenithangle = SourceModule(
             cos(dec_r) * cos(lat_r) * cos(hourlyangle[i3d]));
         result[i3d] *= """ + rad2deg_ratio + """;
     }
-    """)
 
-
-def getzenithangle(declination, latitude, hourlyangle):
-    func = mod_getzenithangle.get_function("getzenithangle")
-    result = np.empty_like(declination)
-    gpu_exec(func, 1, result, hourlyangle, latitude, declination)
-    return result
-
-
-mod_getalbedo = SourceModule(
-    """
-    __global__ void getalbedo(float *result, float *radiance, float totalirradiance, \
-    float *excentricity, float *zenitangle)
-    {
-        int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
-        int i3d = i2d + it;
-        result[i3d] = (""" + str(np.float32(np.pi)) + """ * \
-            radiance[i3d]) / (totalirradiance * excentricity[i3d] * \
-            cos(zenitangle[i3d]));
-    }
-    """)
-
-
-def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
-    func = mod_getalbedo.get_function("getalbedo")
-    result = np.empty_like(radiance)
-    gpu_exec(func, 1, result, radiance, totalirradiance,
-             excentricity, zenitangle)
-    return result
-
-
-mod_getsatellitalzenithangle = SourceModule(
-    """
     __global__ void getsatellitalzenithangle(float *result, float *lat, \
     float *lon, float sub_lon, float rpol, float req, float h)
     {
@@ -149,17 +73,79 @@ mod_getsatellitalzenithangle = SourceModule(
             pow(re, 2) - pow(rs, 2)) / (-2 * re * rs)));
         result[i2d] *= """ + rad2deg_ratio + """;
     }
+
+    __global__ void getalbedo(float *result, float *radiance, float totalirradiance, \
+    float *excentricity, float *zenitangle)
+    {
+        int it = threadIdx.x;
+        int i2d = blockDim.x*blockIdx.x;
+        int i3d = i2d + it;
+        result[i3d] = (""" + str(np.float32(np.pi)) + """ * \
+            radiance[i3d]) / (totalirradiance * excentricity[i3d] * \
+            cos(zenitangle[i3d]));
+    }
+
+    __global__ void update_temporalcache(float *result, float *lat, \
+    float *lon, float sub_lon, float rpol, float req, float h)
+    {
+    }
     """)
+
+
+
+def gpu_exec(func_name, results, *matrixs):
+    func = mod_sourcecode.get_function(func_name)
+    adapt = lambda m: m if isinstance(m, np.ndarray) else np.matrix(m)
+    matrixs = map(lambda m: adapt(m).astype(np.float32), matrixs)
+    matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs)
+    transferences = zip(matrixs, matrixs_gpu)
+    map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences)
+    m_shapes = map(lambda m: list(m.shape), matrixs)
+    for m_s in m_shapes:
+        while len(m_s) < 3:
+            m_s.insert(0, 1)
+    # TODO: Verify to work with the complete matrix at the same time.
+    func(*matrixs_gpu, grid=tuple(m_shapes[0][1:3]),
+         block=tuple([m_shapes[0][0], 1, 1]))
+    result = np.empty_like(matrixs[0])
+    map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
+    for m in matrixs_gpu:
+        m.free()
+    return matrixs[:results]
+
+
+def getexcentricity(gamma):
+    result = np.empty_like(gamma)
+    gpu_exec("getexcentricity", 1, result, gamma)
+    return result
+
+
+def getdeclination(gamma):
+    result = np.empty_like(gamma)
+    gpu_exec("getdeclination", 1, result, gamma)
+    return result
+
+
+def getzenithangle(declination, latitude, hourlyangle):
+    result = np.empty_like(declination)
+    gpu_exec("getzenithangle", 1, result, hourlyangle, latitude, declination)
+    return result
+
+
+def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
+    result = np.empty_like(radiance)
+    gpu_exec("getalbedo", 1, result, radiance, totalirradiance,
+             excentricity, zenitangle)
+    return result
 
 
 def getsatellitalzenithangle(lat, lon, sub_lon):
     rpol = 6356.5838
     req = 6378.1690
     h = 42166.55637  # 42164.0
-    func = mod_getsatellitalzenithangle.get_function(
-        "getsatellitalzenithangle")
     result = np.empty_like(lat)
-    gpu_exec(func, 1, result, lat, lon, sub_lon, rpol, req, h)
+    gpu_exec("getsatellitalzenithangle", 1, result,
+             lat, lon, sub_lon, rpol, req, h)
     return result
 
 
@@ -182,7 +168,15 @@ class GPUStrategy(CPUStrategy):
         return getsatellitalzenithangle(lat, lon, sub_lon)
 
     def update_temporalcache(self, loader, cache):
-        lat, lon = loader.lat[0], loader.lon[0]
+        inputs = [loader.lat,
+                  loader.lon,
+                  loader.times,
+                  loader.dem,
+                  loader.linke,
+                  self.algorithm.SAT_LON,
+                  self.algorithm.i0met,
+                  1367.0,
+                  8434.5]
         results = [self.declination[:],
                    self.solarelevation[:],
                    self.solarangle[:],
@@ -192,6 +186,9 @@ class GPUStrategy(CPUStrategy):
                    self.t_sat[:],
                    self.t_earth[:],
                    self.cloudalbedo[:]]
+        #gpu_exec("update_temporalcache", len(results),
+        #         itertools.chain(*[results, inputs]))
+        #nc.sync(cache)
         return super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
