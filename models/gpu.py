@@ -170,7 +170,7 @@ class GPUStrategy(CPUStrategy):
     def update_temporalcache(self, loader, cache):
         inputs = [loader.lat,
                   loader.lon,
-                  loader.times,
+                  self.times,
                   loader.dem,
                   loader.linke,
                   self.algorithm.SAT_LON,
