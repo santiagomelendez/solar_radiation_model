@@ -85,12 +85,15 @@ mod_sourcecode = SourceModule(
             cos(zenitangle[i3d]));
     }
 
-    __global__ void update_temporalcache(float *result, float *lat, \
-    float *lon, float sub_lon, float rpol, float req, float h)
+    __global__ void update_temporalcache(float *declination, \
+    float *solarelevation, float* solarangle, float *excentricity, \
+    float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
+    float *cloudalbedo, float *lan, float *lon, int *times, float *dem, \
+    float *linke, float SAT_LON, float i0met, float EXT_RAD, float HEIGHT)
     {
+
     }
     """)
-
 
 
 def gpu_exec(func_name, results, *matrixs):
@@ -186,9 +189,9 @@ class GPUStrategy(CPUStrategy):
                    self.t_sat[:],
                    self.t_earth[:],
                    self.cloudalbedo[:]]
-        #gpu_exec("update_temporalcache", len(results),
-        #         itertools.chain(*[results, inputs]))
-        #nc.sync(cache)
+        gpu_exec("update_temporalcache", len(results),
+                 itertools.chain(*[results, inputs]))
+        nc.sync(cache)
         return super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
