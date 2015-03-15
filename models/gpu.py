@@ -25,12 +25,10 @@ def gpu_exec(func, results, *matrixs):
     func(*matrixs_gpu, grid=tuple(m_shapes[0][1:3]),
          block=tuple([m_shapes[0][0], 1, 1]))
     result = np.empty_like(matrixs[0])
-    cuda.memcpy_dtoh(result, matrixs_gpu[0])
+    map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
     for m in matrixs_gpu:
         m.free()
-    # TODO: Try to change the api to return multiple results and with unfixed
-    # shapes.
-    return result
+    return matrixs[:results]
 
 
 mod_getexcentricity = SourceModule(
@@ -51,7 +49,7 @@ mod_getexcentricity = SourceModule(
 
 def getexcentricity(gamma):
     func = mod_getexcentricity.get_function("getexcentricity")
-    result = np.zeros(gamma.shape)
+    result = np.empty_like(gamma)
     gpu_exec(func, 1, result, gamma)
     return result
 
@@ -77,7 +75,7 @@ mod_getdeclination = SourceModule(
 
 def getdeclination(gamma):
     func = mod_getdeclination.get_function("getdeclination")
-    result = np.zeros(gamma.shape)
+    result = np.empty_like(gamma)
     gpu_exec(func, 1, result, gamma)
     return result
 
@@ -101,7 +99,7 @@ mod_getzenithangle = SourceModule(
 
 def getzenithangle(declination, latitude, hourlyangle):
     func = mod_getzenithangle.get_function("getzenithangle")
-    result = np.zeros(declination.shape)
+    result = np.empty_like(declination)
     gpu_exec(func, 1, result, hourlyangle, latitude, declination)
     return result
 
@@ -123,7 +121,7 @@ mod_getalbedo = SourceModule(
 
 def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
     func = mod_getalbedo.get_function("getalbedo")
-    result = np.zeros(radiance.shape)
+    result = np.empty_like(radiance)
     gpu_exec(func, 1, result, radiance, totalirradiance,
              excentricity, zenitangle)
     return result
@@ -160,7 +158,7 @@ def getsatellitalzenithangle(lat, lon, sub_lon):
     h = 42166.55637  # 42164.0
     func = mod_getsatellitalzenithangle.get_function(
         "getsatellitalzenithangle")
-    result = np.zeros(lat.shape)
+    result = np.empty_like(lat)
     gpu_exec(func, 1, result, lat, lon, sub_lon, rpol, req, h)
     return result
 
