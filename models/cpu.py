@@ -4,6 +4,7 @@ from netcdf import netcdf as nc
 import stats
 from helpers import show
 from core import pmap, ProcessingStrategy
+from cache import memoize
 
 
 GREENWICH_LON = 0.0
@@ -366,14 +367,18 @@ class CPUStrategy(ProcessingStrategy):
     def getsatellitalzenithangle(self, lat, lon, sub_lon):
         return getsatellitalzenithangle(lat, lon, sub_lon)
 
+    @property
+    @memoize
+    def gamma(self):
+        return getdailyangle(getjulianday(self.times),
+                             gettotaldays(self.times))
+
     def update_temporalcache(self, loader, cache):
         lat, lon = loader.lat[0], loader.lon[0]
-        gamma = getdailyangle(getjulianday(self.times),
-                              gettotaldays(self.times))
         tst_hour = gettsthour(self.decimalhour,
                               GREENWICH_LON, lon,
-                              gettimeequation(gamma))
-        self.declination[:] = self.getdeclination(gamma)
+                              gettimeequation(self.gamma))
+        self.declination[:] = self.getdeclination(self.gamma)
         # FIXME: There are two solar elevations.
         self.solarelevation[:] = gethourlyangle(tst_hour,
                                                 loader.lat / abs(loader.lat))
@@ -381,7 +386,7 @@ class CPUStrategy(ProcessingStrategy):
                                                 self.solarelevation[:])
         # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = getelevation(self.solarangle[:])
-        self.excentricity[:] = self.getexcentricity(gamma)
+        self.excentricity[:] = self.getexcentricity(self.gamma)
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = getbeamirradiance(1367.0, self.excentricity[:],

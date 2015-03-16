@@ -88,8 +88,9 @@ mod_sourcecode = SourceModule(
     __global__ void update_temporalcache(float *declination, \
     float *solarelevation, float* solarangle, float *excentricity, \
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
-    float *cloudalbedo, float *lan, float *lon, int *times, float *dem, \
-    float *linke, float SAT_LON, float i0met, float EXT_RAD, float HEIGHT)
+    float *cloudalbedo, float *lan, float *lon, int *times, float *gamma, \
+    float *dem, float *linke, float SAT_LON, float i0met, float EXT_RAD, \
+    float HEIGHT)
     {
 
     }
@@ -174,6 +175,7 @@ class GPUStrategy(CPUStrategy):
         inputs = [loader.lat,
                   loader.lon,
                   self.times,
+                  self.gamma,
                   loader.dem,
                   loader.linke,
                   self.algorithm.SAT_LON,
