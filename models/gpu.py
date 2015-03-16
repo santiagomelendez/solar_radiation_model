@@ -89,12 +89,23 @@ mod_sourcecode = SourceModule(
     __global__ void update_temporalcache(float *declination, \
     float *solarelevation, float* solarangle, float *excentricity, \
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
-    float *cloudalbedo, float *lan, float *lon, float *times, float *gamma, \
-    float *dem, float *linke)
-    /*, float *SAT_LON, float *i0met, float *EXT_RAD,
-    float *HEIGHT) */
+    float *cloudalbedo, float *lan, float *lon, float *times, \
+    float *decimalhour,  float *gamma, float *dem, float *linke, \
+    float *SAT_LON, float *i0met, float *EXT_RAD, \
+    float *HEIGHT)
     {
-
+        const unsigned long long int i1d = blockIdx.x;
+        //const unsigned long long int i2d = i1d + gridDim.x * blockIdx.y;
+        //const unsigned long long int i3d = i2d + gridDim.x * gridDim.y
+        //    * blockIdx.z;
+        gamma[i1d] *= """ + deg2rad_ratio + """;
+        declination[i1d] = (0.006918 - 0.399912 * cos(gamma[i1d]) +
+                        0.070257 * sin(gamma[i1d]) -
+                        0.006758 * cos(2 * gamma[i1d]) +
+                        0.000907 * sin(2 * gamma[i1d]) -
+                        0.002697 * cos(3 * gamma[i1d]) +
+                        0.00148 * sin(3 * gamma[i1d]));
+        declination[i1d] *= """ + rad2deg_ratio + """;
     }
     """)
 
@@ -113,7 +124,6 @@ def gpu_exec(func_name, results, *matrixs):
     # TODO: Verify to work with the complete matrix at the same time.
     func(*matrixs_gpu, grid=tuple(m_shapes[0][1:3]),
          block=tuple([m_shapes[0][0], 1, 1]))
-    result = np.empty_like(matrixs[0])
     map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
     for m in matrixs_gpu:
         m.free()
@@ -161,7 +171,7 @@ class GPUStrategy(CPUStrategy):
         return getexcentricity(gamma)
 
     def getdeclination(self, gamma):
-        return getdeclination(gamma)
+        return self.declination[:]  # getdeclination(gamma)
 
     def getzenithangle(self, declination, latitude, hourlyangle):
         return getzenithangle(declination, latitude, hourlyangle)
@@ -174,18 +184,18 @@ class GPUStrategy(CPUStrategy):
         return getsatellitalzenithangle(lat, lon, sub_lon)
 
     def update_temporalcache(self, loader, cache):
+        const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [loader.lat,
                   loader.lon,
                   self.times,
+                  self.decimalhour,
                   self.gamma,
                   loader.dem,
-                  loader.linke]
-        """
-                  self.algorithm.SAT_LON,
-                  self.algorithm.i0met,
-                  1367.0,
-                  8434.5]
-        """
+                  loader.linke,
+                  const(self.algorithm.SAT_LON),
+                  const(self.algorithm.i0met),
+                  const(1367.0),
+                  const(8434.5)]
         results = [self.declination[:],
                    self.solarelevation[:],
                    self.solarangle[:],
