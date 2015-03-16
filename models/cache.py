@@ -49,13 +49,14 @@ class StaticCacheConstructor(object):
     def project_linke(self):
         show("Projecting Linke's turbidity index... ")
         dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
-        linkes = map(lambda dt: linke.obtain(dt, compressed=False), dts)
+        linkes = map(lambda dt: linke.obtain(dt, compressed=True), dts)
         linkes = map(lambda l: linke.transform_data(l, self.lat[0],
                                                     self.lon[0]), linkes)
         linkes = np.vstack([[linkes]])
         nc.getdim(self.root, 'months', 12)
         linke_var = nc.getvar(self.root, 'linke', 'f4', ('months', 'yc', 'xc'))
-        linke_var[:] = linkes
+        # The linkes / 20. uncompress the linke coefficients and save them as floats.
+        linke_var[:] = linkes / 20.
 
 
 class Loader(Cache):
