@@ -90,8 +90,9 @@ mod_sourcecode = SourceModule(
     float *solarelevation, float* solarangle, float *excentricity, \
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
     float *cloudalbedo, float *lan, float *lon, float *times, float *gamma, \
-    float *dem, float *linke, float *SAT_LON, float *i0met, float *EXT_RAD, \
-    float *HEIGHT)
+    float *dem, float *linke)
+    /*, float *SAT_LON, float *i0met, float *EXT_RAD,
+    float *HEIGHT) */
     {
 
     }
@@ -100,7 +101,7 @@ mod_sourcecode = SourceModule(
 
 def gpu_exec(func_name, results, *matrixs):
     func = mod_sourcecode.get_function(func_name)
-    adapt = lambda m: m if isinstance(m, np.ndarray) else np.array([m])
+    adapt = lambda m: m if isinstance(m, np.ndarray) else np.array([[[m]]])
     matrixs = map(lambda m: adapt(m).astype(np.float32), matrixs)
     matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs)
     transferences = zip(matrixs, matrixs_gpu)
@@ -178,11 +179,13 @@ class GPUStrategy(CPUStrategy):
                   self.times,
                   self.gamma,
                   loader.dem,
-                  loader.linke,
+                  loader.linke]
+        """
                   self.algorithm.SAT_LON,
                   self.algorithm.i0met,
                   1367.0,
                   8434.5]
+        """
         results = [self.declination[:],
                    self.solarelevation[:],
                    self.solarangle[:],
@@ -192,8 +195,8 @@ class GPUStrategy(CPUStrategy):
                    self.t_sat[:],
                    self.t_earth[:],
                    self.cloudalbedo[:]]
-        gpu_exec("update_temporalcache", len(results),
-                 itertools.chain(*[results, inputs]))
+        matrixs = list(itertools.chain(*[results, inputs]))
+        gpu_exec("update_temporalcache", len(results), *matrixs)
         nc.sync(cache)
         return super(GPUStrategy, self).update_temporalcache(loader, cache)
 
