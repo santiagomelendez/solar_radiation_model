@@ -5,6 +5,7 @@ import stats
 from helpers import show
 from models.core import gpuarray, cuda, SourceModule
 from cpu import CPUStrategy, estimate_globalradiation
+import itertools
 
 
 deg2rad_ratio = str(np.float32(np.pi / 180))
