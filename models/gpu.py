@@ -90,8 +90,8 @@ mod_sourcecode = SourceModule(
     float *solarelevation, float* solarangle, float *excentricity, \
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
     float *cloudalbedo, float *lan, float *lon, float *times, float *gamma, \
-    float *dem, float *linke, float SAT_LON, float i0met, float EXT_RAD, \
-    float HEIGHT)
+    float *dem, float *linke, float *SAT_LON, float *i0met, float *EXT_RAD, \
+    float *HEIGHT)
     {
 
     }
@@ -100,7 +100,7 @@ mod_sourcecode = SourceModule(
 
 def gpu_exec(func_name, results, *matrixs):
     func = mod_sourcecode.get_function(func_name)
-    adapt = lambda m: m if isinstance(m, np.ndarray) else np.matrix(m)
+    adapt = lambda m: m if isinstance(m, np.ndarray) else np.array([m])
     matrixs = map(lambda m: adapt(m).astype(np.float32), matrixs)
     matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs)
     transferences = zip(matrixs, matrixs_gpu)
