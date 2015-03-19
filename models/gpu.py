@@ -231,7 +231,7 @@ class GPUStrategy(CPUStrategy):
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
         nc.sync(cache)
-        return super(GPUStrategy, self).update_temporalcache(loader, cache)
+        super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
 strategy = GPUStrategy

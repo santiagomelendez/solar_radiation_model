@@ -116,6 +116,8 @@ class TemporalCache(Cache):
 
 def filter_filenames(filename):
     files = glob.glob(filename) if isinstance(filename, str) else filename
+    if not files:
+        return []
     last_dt = to_datetime(max(files))
     a_month_ago = (last_dt - timedelta(days=30)).date()
     include_lastmonth = lambda dt: dt.date() > a_month_ago
@@ -127,13 +129,14 @@ def filter_filenames(filename):
 
 def workwith(filename="data/goes13.*.BAND_01.nc"):
     filenames = filter_filenames(filename)
-    months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
-                          map(to_datetime, filenames))))
-    show("=======================")
-    show("Months: ", months)
-    show("Dataset: ", len(filenames), " files.")
-    show("-----------------------\n")
-    loader = Loader(filenames)
-    algorithm = Heliosat2(filenames, geo.strategy)
-    algorithm.run_with(loader)
-    show("Process finished.\n")
+    if filenames:
+        months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
+                              map(to_datetime, filenames))))
+        show("=======================")
+        show("Months: ", months)
+        show("Dataset: ", len(filenames), " files.")
+        show("-----------------------\n")
+        loader = Loader(filenames)
+        algorithm = Heliosat2(filenames, geo.strategy)
+        algorithm.run_with(loader)
+        show("Process finished.\n")
