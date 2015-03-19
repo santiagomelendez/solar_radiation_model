@@ -22,7 +22,7 @@ int_to_julianday = lambda time: int_to_dt(time).timetuple().tm_yday
 
 
 def getjulianday(times):
-    result = np.array(pmap(int_to_julianday, times)).reshape(times.shape)
+    result = np.array(map(int_to_julianday, times)).reshape(times.shape)
     return result
 
 
@@ -31,7 +31,7 @@ days_of_year = lambda time: int_to_julianday(
 
 
 def gettotaldays(times):
-    result = pmap(days_of_year, times)
+    result = map(days_of_year, times)
     result = np.array(result).reshape(times.shape)
     return result
 
@@ -74,7 +74,11 @@ def gettsthour(hour, d_ref, d, timeequation):
     return hour - lon_diff * (12 / np.pi) + timeequation
 
 
-def gethourlyangle(tst_hour, latitud_sign):
+def gethourlyangle(lat, lon, decimalhour, gamma):
+    latitud_sign = lat / abs(lat)
+    tst_hour = gettsthour(decimalhour,
+                          GREENWICH_LON, lon,
+                          gettimeequation(gamma))
     return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
 
 
@@ -357,6 +361,9 @@ class CPUStrategy(ProcessingStrategy):
     def getdeclination(self, gamma):
         return getdeclination(gamma)
 
+    def gethourlyangle(self, lat, lon, decimalhour, gamma):
+        return gethourlyangle(lat, lon, decimalhour, gamma)
+
     def getzenithangle(self, declination, latitude, hourlyangle):
         return getzenithangle(declination, latitude, hourlyangle)
 
@@ -375,15 +382,14 @@ class CPUStrategy(ProcessingStrategy):
 
     def update_temporalcache(self, loader, cache):
         lat, lon = loader.lat[0], loader.lon[0]
-        tst_hour = gettsthour(self.decimalhour,
-                              GREENWICH_LON, lon,
-                              gettimeequation(self.gamma))
         self.declination[:] = self.getdeclination(self.gamma)
         # FIXME: There are two solar elevations.
-        self.solarelevation[:] = gethourlyangle(tst_hour,
-                                                loader.lat / abs(loader.lat))
-        self.solarangle[:] = self.getzenithangle(self.declination[:], loader.lat,
-                                                self.solarelevation[:])
+        self.solarelevation[:] = self.gethourlyangle(lat, lon,
+                                                     self.decimalhour,
+                                                     self.gamma)
+        self.solarangle[:] = self.getzenithangle(self.declination[:],
+                                                 loader.lat,
+                                                 self.solarelevation[:])
         # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
@@ -395,32 +401,34 @@ class CPUStrategy(ProcessingStrategy):
         dc = getdiffuseirradiance(1367.0, self.excentricity[:],
                                   self.solarelevation[:], loader.linke)
         self.gc[:] = getglobalirradiance(bc, dc)
-        satellitalzenithangle = self.getsatellitalzenithangle(loader.lat, loader.lon,
-                                                         self.algorithm.SAT_LON)
+        satellitalzenithangle = self.getsatellitalzenithangle(loader.lat,
+                                                              loader.lon,
+                                                              self.algorithm.SAT_LON)
         atmosphericradiance = getatmosphericradiance(1367.0,
                                                      self.algorithm.i0met,
                                                      dc,
                                                      satellitalzenithangle)
         self.atmosphericalbedo[:] = self.getalbedo(atmosphericradiance,
-                                                  self.algorithm.i0met,
-                                                  self.excentricity[:],
-                                                  satellitalzenithangle)
+                                                   self.algorithm.i0met,
+                                                   self.excentricity[:],
+                                                   satellitalzenithangle)
         satellitalelevation = getelevation(satellitalzenithangle)
         satellital_opticalpath = getopticalpath(
             getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
         satellital_opticaldepth = getopticaldepth(satellital_opticalpath)
         self.t_sat[:] = gettransmitance(loader.linke, satellital_opticalpath,
-                                            satellital_opticaldepth,
-                                            satellitalelevation)
+                                        satellital_opticaldepth,
+                                        satellitalelevation)
         solar_opticalpath = getopticalpath(
             getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
         solar_opticaldepth = getopticaldepth(solar_opticalpath)
         self.t_earth[:] = gettransmitance(loader.linke, solar_opticalpath,
-                                  solar_opticaldepth, self.solarelevation[:])
+                                          solar_opticaldepth,
+                                          self.solarelevation[:])
         effectivealbedo = geteffectivealbedo(self.solarangle[:])
         self.cloudalbedo[:] = getcloudalbedo(effectivealbedo,
-                                                 self.atmosphericalbedo[:],
-                                                 self.t_earth[:], self.t_sat[:])
+                                             self.atmosphericalbedo[:],
+                                             self.t_earth[:], self.t_sat[:])
         nc.sync(cache)
 
 
