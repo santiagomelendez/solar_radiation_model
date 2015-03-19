@@ -198,7 +198,7 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[results, inputs]))
         gpu_exec("update_temporalcache", len(results), *matrixs)
         nc.sync(cache)
-        return super(GPUStrategy, self).update_temporalcache(loader, cache)
+        super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
 strategy = GPUStrategy
