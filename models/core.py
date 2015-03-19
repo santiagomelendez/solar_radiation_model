@@ -3,7 +3,6 @@ import numpy as np
 from netcdf import netcdf as nc
 from multiprocessing import Process, Pipe
 from itertools import izip
-import functools
 from cache import memoize
 
 
@@ -31,8 +30,8 @@ class ProcessingStrategy(object):
     def decimalhour(self):
         int_to_dt = lambda t: datetime.utcfromtimestamp(t)
         int_to_decimalhour = (lambda time: int_to_dt(time).hour +
-                      int_to_dt(time).minute/60.0 +
-                      int_to_dt(time).second/3600.0)
+                              int_to_dt(time).minute/60.0 +
+                              int_to_dt(time).second/3600.0)
         result = pmap(int_to_decimalhour, self.times)
         return np.array(result).reshape(self.times.shape)
 
@@ -72,15 +71,16 @@ class ProcessingStrategy(object):
 
 
 def spawn(f):
-    def fun(pipe,x):
+    def fun(pipe, x):
         pipe.send(f(x))
         pipe.close()
     return fun
 
 
-def pmap(f,X):
-    pipe=[Pipe() for x in X]
-    proc=[Process(target=spawn(f),args=(c,x)) for x,(p,c) in izip(X,pipe)]
+def pmap(f, X):
+    pipe = [Pipe() for x in X]
+    proc = [Process(target=spawn(f), args=(c, x))
+            for x, (p, c) in izip(X, pipe)]
     [p.start() for p in proc]
     [p.join() for p in proc]
-    return [p.recv() for (p,c) in pipe]
+    return [p.recv() for (p, c) in pipe]

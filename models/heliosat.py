@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import timedelta
 import glob
 import os
 from netcdf import netcdf as nc
@@ -16,12 +16,12 @@ else:
 # import processgroundstations as pgs
 
 
-
 class Heliosat2(object):
 
     def __init__(self, filenames, strategy_type):
         self.filenames = filenames
-        self.SAT_LON = -75.113  # -75.3305 # longitude of sub-satellite point in degrees
+        self.SAT_LON = -75.113
+        # -75.3305 # longitude of sub-satellite point in degrees
         self.IMAGE_PER_HOUR = 2
         self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
         self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
@@ -91,7 +91,8 @@ class TemporalCache(Cache):
 
     def extend_cache(self, filenames):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
-        not_cached = filter(lambda f: self.get_cached_file(f) not in cached_files,
+        not_cached = filter(lambda f: self.get_cached_file(f)
+                            not in cached_files,
                             filenames)
         if not_cached:
             loader = Loader(not_cached)
