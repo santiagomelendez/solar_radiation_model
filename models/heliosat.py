@@ -7,6 +7,7 @@ import os
 from netcdf import netcdf as nc
 from cache import Cache, Loader
 from helpers import to_datetime, short, show
+import pytz
 
 from core import cuda_can_help
 if cuda_can_help:
@@ -120,10 +121,13 @@ def filter_filenames(filename):
         return []
     last_dt = to_datetime(max(files))
     a_month_ago = (last_dt - timedelta(days=30)).date()
-    include_lastmonth = lambda dt: dt.date() > a_month_ago
+    gmt = pytz.timezone('GMT')
+    local = pytz.timezone('America/Argentina/Buenos_Aires')
+    localize = lambda dt: (gmt.localize(dt)).astimezone(local)
+    include_lastmonth = lambda dt: dt.date() >= a_month_ago
     files = filter(lambda f: include_lastmonth(to_datetime(f)), files)
-    include_daylight = lambda dt: dt.hour - 4 >= 6 and dt.hour - 4 <= 18
-    files = filter(lambda f: include_daylight(to_datetime(f)), files)
+    daylight = lambda dt: localize(dt).hour >= 6 and localize(dt).hour <= 20
+    files = filter(lambda f: daylight(to_datetime(f)), files)
     return files
 
 
