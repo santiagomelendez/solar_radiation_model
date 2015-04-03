@@ -115,6 +115,16 @@ class TemporalCache(Cache):
         return self._attrs[name]
 
 
+def filter_wrong_sized_files(files):
+    size = lambda f: os.stat(f).st_size
+    sizes = collections.defaultdict(int)
+    for f in files:
+        sizes[size(f)] += 1
+    more_freq = max(sizes.values())
+    right_size = filter(lambda (s, f): f == more_ferq, sizes)
+    return filter(lambda f: size(f) == right_size, files)
+
+
 def filter_filenames(filename):
     files = glob.glob(filename) if isinstance(filename, str) else filename
     if not files:
@@ -124,8 +134,9 @@ def filter_filenames(filename):
     gmt = pytz.timezone('GMT')
     local = pytz.timezone('America/Argentina/Buenos_Aires')
     localize = lambda dt: (gmt.localize(dt)).astimezone(local)
-    include_lastmonth = lambda dt: dt.date() >= a_month_ago
-    files = filter(lambda f: include_lastmonth(to_datetime(f)), files)
+    in_the_last_month = lambda f: to_datetime(f).date() >= a_month_ago
+    files = filter(in_the_last_month, files)
+    files = filter_wrong_sized_files(files)
     daylight = lambda dt: localize(dt).hour >= 6 and localize(dt).hour <= 20
     files = filter(lambda f: daylight(to_datetime(f)), files)
     return files
