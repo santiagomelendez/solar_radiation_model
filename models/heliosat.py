@@ -9,6 +9,7 @@ from cache import Cache, Loader
 from helpers import to_datetime, short, show
 import pytz
 
+from collections import defaultdict
 from core import cuda_can_help
 if cuda_can_help:
     import gpu as geo
@@ -117,11 +118,11 @@ class TemporalCache(Cache):
 
 def filter_wrong_sized_files(files):
     size = lambda f: os.stat(f).st_size
-    sizes = collections.defaultdict(int)
+    sizes = defaultdict(int)
     for f in files:
         sizes[size(f)] += 1
     more_freq = max(sizes.values())
-    right_size = filter(lambda (s, f): f == more_ferq, sizes)
+    right_size = filter(lambda (s, freq): freq == more_freq, sizes.items())[0][0]
     return filter(lambda f: size(f) == right_size, files)
 
 
