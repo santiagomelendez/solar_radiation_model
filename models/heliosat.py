@@ -106,6 +106,7 @@ class TemporalCache(Cache):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
         old_cache = filter(lambda f: self.index[f] not in exceptions,
                            cached_files)
+        map(os.remove, old_cache)
 
     def getvar(self, *args, **kwargs):
         name = args[0]
