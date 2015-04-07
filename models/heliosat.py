@@ -9,7 +9,7 @@ from cache import Cache, Loader
 from helpers import to_datetime, short, show
 import pytz
 from collections import defaultdict
-from core import cuda_can_help
+from core import cuda_can_help, pmap
 if cuda_can_help:
     import gpu as geo
 else:
@@ -73,7 +73,7 @@ class TemporalCache(Cache):
         self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
         self.update_cache(self.filenames)
-        self.cache = Loader(map(self.get_cached_file, self.filenames))
+        self.cache = Loader(pmap(self.get_cached_file, self.filenames))
         self.root = self.cache.root
 
     def initialize_path(self, filenames):
@@ -97,7 +97,7 @@ class TemporalCache(Cache):
                             filenames)
         if not_cached:
             loader = Loader(not_cached)
-            new_files = map(self.get_cached_file, not_cached)
+            new_files = pmap(self.get_cached_file, not_cached)
             with nc.loader(new_files) as cache:
                 self.algorithm.update_temporalcache(loader, cache)
 
@@ -105,7 +105,7 @@ class TemporalCache(Cache):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
         old_cache = filter(lambda f: self.index[f] not in exceptions,
                            cached_files)
-        map(os.remove, old_cache)
+        pmap(os.remove, old_cache)
 
     def getvar(self, *args, **kwargs):
         name = args[0]
@@ -146,8 +146,8 @@ def filter_filenames(filename):
 def workwith(filename="data/goes13.*.BAND_01.nc"):
     filenames = filter_filenames(filename)
     if filenames:
-        months = list(set(map(lambda dt: '%i/%i' % (dt.month, dt.year),
-                              map(to_datetime, filenames))))
+        months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
+                              pmap(to_datetime, filenames))))
         show("=======================")
         show("Months: ", months)
         show("Dataset: ", len(filenames), " files.")
