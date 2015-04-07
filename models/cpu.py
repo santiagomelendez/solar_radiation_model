@@ -22,7 +22,7 @@ int_to_julianday = lambda time: int_to_dt(time).timetuple().tm_yday
 
 
 def getjulianday(times):
-    result = np.array(map(int_to_julianday, times)).reshape(times.shape)
+    result = np.array(pmap(int_to_julianday, times)).reshape(times.shape)
     return result
 
 
@@ -31,7 +31,7 @@ days_of_year = lambda time: int_to_julianday(
 
 
 def gettotaldays(times):
-    result = map(days_of_year, times)
+    result = pmap(days_of_year, times)
     result = np.array(result).reshape(times.shape)
     return result
 
