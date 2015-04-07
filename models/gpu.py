@@ -33,7 +33,7 @@ mod_sourcecode = SourceModule(
                         0.00148f * sin(3 * gamma[t3d]));
     }
 
-    __device__ void gethourlyangle(float *solarelevation, float *lat, \
+    __device__ void gethourlyangle(float *hourlyangle, float *lat, \
     float *lon, float *decimalhour, float *gamma)
     {
         INDEXS
@@ -45,7 +45,7 @@ mod_sourcecode = SourceModule(
         float tst_hour = decimalhour[t3d] -
             lon_diff * (12 / PI) + timeequation;
         float latitud_sign = lat[t3d] / abs(lat[t3d]);
-        solarelevation[t1d] = PI; // (tst_hour - 12) * latitud_sign * PI / 12;
+        hourlyangle[t1d] = PI; // (tst_hour - 12) * latitud_sign * PI / 12;
     }
 
     __global__ void getexcentricity(float *result, float *gamma)
@@ -117,7 +117,8 @@ mod_sourcecode = SourceModule(
         INDEXS
         gamma[t3d] *= DEG2RAD;
         getdeclination(declination, gamma);
-        gethourlyangle(solarelevation, lat, lon, decimalhour, gamma);
+        float *hourlyangle; // TODO: It should reserve the memory.
+        gethourlyangle(hourlyangle, lat, lon, decimalhour, gamma);
         declination[t3d] *= RAD2DEG;
         // solarelevation[t3d] *= RAD2DEG;
     }
