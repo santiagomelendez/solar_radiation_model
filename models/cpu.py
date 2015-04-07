@@ -108,18 +108,20 @@ def getcorrectedelevation(elevation):
 
 def getopticalpath(correctedelevation, terrainheight,
                    atmosphere_theoretical_height):
-    # In the next line the correctedelevation is used over a degree base
-    power = np.power(np.vectorize(complex)(correctedelevation) + 6.07995,
+    # It set all the negative correctedelevation's values to zero to avoid the
+    # use of complex numbers.
+    correctedelevation[correctedelevation < 0] = 0
+    # In the next line the correctedelevation is used over a degree base.
+    power = np.power(correctedelevation + 6.07995,
                      -1.6364)
-    # Then should be used over a radian base
+    # Then should be used over a radian base.
     correctedelevation = np.deg2rad(correctedelevation)
     return (np.exp(-terrainheight/atmosphere_theoretical_height) /
-            (np.sin(correctedelevation) + 0.50572 * power)).real.astype(float)
+            (np.sin(correctedelevation) + 0.50572 * power))
 
 
 def getopticaldepth(opticalpath):
     tmp = np.zeros(opticalpath.shape) + 1.0
-    tmp = np.vectorize(complex)(tmp)
     highslopebeam = opticalpath <= 20
     lowslopebeam = opticalpath > 20
     tmp[highslopebeam] = (6.6296 + 1.7513 * opticalpath[highslopebeam] -
@@ -128,7 +130,7 @@ def getopticaldepth(opticalpath):
                           0.00013 * np.power(opticalpath[highslopebeam], 4))
     tmp[highslopebeam] = 1 / tmp[highslopebeam]
     tmp[lowslopebeam] = 1 / (10.4 + 0.718 * opticalpath[lowslopebeam])
-    return tmp.real.astype(float)
+    return tmp
 
 
 def getbeamtransmission(linketurbidity, opticalpath, opticaldepth):
