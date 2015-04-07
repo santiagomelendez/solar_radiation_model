@@ -8,7 +8,6 @@ from netcdf import netcdf as nc
 from cache import Cache, Loader
 from helpers import to_datetime, short, show
 import pytz
-
 from collections import defaultdict
 from core import cuda_can_help
 if cuda_can_help:

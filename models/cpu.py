@@ -387,8 +387,8 @@ class CPUStrategy(ProcessingStrategy):
         self.declination[:] = self.getdeclination(self.gamma)
         # FIXME: There are two solar elevations.
         hourlyangle = self.gethourlyangle(lat, lon,
-                                                     self.decimalhour,
-                                                     self.gamma)
+                                          self.decimalhour,
+                                          self.gamma)
         self.solarangle[:] = self.getzenithangle(self.declination[:],
                                                  loader.lat,
                                                  hourlyangle)
