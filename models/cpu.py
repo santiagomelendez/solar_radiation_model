@@ -324,7 +324,8 @@ def estimate_globalradiation(algorithm, loader, cache):
     max_slot = noon_slot + half_window
     condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
     condition = np.reshape(condition, condition.shape[0])
-    mask1 = loader.calibrated_data[condition] <= (algorithm.i0met / np.pi) * 0.03
+    mask1 = (loader.calibrated_data[condition] <=
+             (algorithm.i0met / np.pi) * 0.03)
     m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
     # To do the nexts steps needs a lot of memory
     show("Calculating the ground reference albedo... ")
