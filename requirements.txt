@@ -1,7 +1,7 @@
 numpy==1.8.0
 mglob==0.4
 pytz==2012j
-netcdf==0.0.30
-linketurbidity==0.0.2
-noaadem==0.0.11
-goesdownloader==0.0.3
+netcdf==0.0.31
+linketurbidity==0.0.3
+noaadem==0.0.12
+goesdownloader==0.0.4
