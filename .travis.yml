@@ -4,6 +4,9 @@ python:
   - "2.7"
   - "3.2"
   - "3.3"
+cache:
+  directories:
+    - ~/noaadem
 # command to install dependencies
 install:
   - "make deploy"
