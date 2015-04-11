@@ -6,7 +6,7 @@ python:
   - "3.3"
 cache:
   directories:
-    - ~/noaadem
+    - $HOME/noaadem
     - bin
     - include
     - lib
