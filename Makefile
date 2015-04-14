@@ -8,7 +8,7 @@ EASYINSTALL=bin/easy_install
 VIRTUALENV=virtualenv
 SOURCE_ACTIVATE=$(PYTHONLIBS) . bin/activate; 
 PROXY = http://proxy.unlu.edu.ar:8080/
-PROXYENV=http_proxy=$(PROXY) HTTP_PROXY=$(PROXY) https_proxy=$(PROXY) HTTPS_PROXY=$(PROXY) PATH=$(PATH):/usr/local/cuda/bin
+PROXYENV=export http_proxy=$(PROXY); export HTTP_PROXY=$(PROXY); export https_proxy=$(PROXY); export HTTPS_PROXY=$(PROXY); export PATH=$(PATH):/usr/local/cuda/bin; 
 
 unattended:
 	@ (sudo ls 2>&1) >> tracking.log
