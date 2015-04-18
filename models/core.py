@@ -5,6 +5,7 @@ from multiprocessing import Process, Pipe
 from itertools import izip
 from cache import memoize
 import multiprocessing as mp
+import os
 
 
 try:
@@ -78,10 +79,13 @@ def spawn(f):
     return fun
 
 
-def pmap(f, X):
+def mp_map(f, X):
     pipe = [Pipe() for x in X]
     proc = [Process(target=spawn(f), args=(c, x))
             for x, (p, c) in izip(X, pipe)]
     [p.start() for p in proc]
     [p.join() for p in proc]
     return [p.recv() for (p, c) in pipe]
+
+
+pmap = map if 'armv6l' in list(os.uname()) else mp_map
