@@ -13,9 +13,6 @@ PROXYENV=export http_proxy=$(PROXY); export HTTP_PROXY=$(PROXY); export https_pr
 unattended:
 	@ (sudo ls 2>&1) >> tracking.log
 
-$(LIBSQLITE3):
-	$(call install,sqlite-autoconf-3080701,sqlite-autoconf-3080701.tar.gz,http://www.sqlite.org/2014)
-
 bin/activate: requirements.txt
 	@ echo "[ using        ] $(PYTHONPATH)"
 	@ echo "[ installing   ] $(VIRTUALENV)"
