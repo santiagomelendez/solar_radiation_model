@@ -352,9 +352,9 @@ def estimate_globalradiation(algorithm, loader, cache):
     groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
     groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
     show("Calculating the cloud index... ")
-    cloudindex = getcloudindex(apparentalbedo, groundminimumalbedo,
-                               cache.cloudalbedo)
-    cache.ref_globalradiation[:] = getclearsky(cloudindex) * cache.gc
+    cloudindex = getcloudindex(apparentalbedo[-1], groundminimumalbedo[-1],
+                               cache.cloudalbedo[-1])
+    cache.ref_globalradiation[-1,:] = getclearsky(cloudindex) * cache.gc[-1]
     nc.sync(cache.root)
 
 
