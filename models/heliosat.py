@@ -36,7 +36,10 @@ class Heliosat2(object):
 
     def estimate_globalradiation(self, loader, cache):
         show("Obtaining the global radiation... ")
+        #strategy = self.strategy_type(self, loader, cache)
         geo.estimate_globalradiation(self, loader, cache)
+        self.strategy.globalradiation[:] = cache.ref_globalradiation[:]
+        nc.sync(self.strategy.output)
 
     def process_validate(self, root):
         from libs.statistics import error

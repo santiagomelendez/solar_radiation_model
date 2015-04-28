@@ -68,8 +68,19 @@ class ProcessingStrategy(object):
         self.t_sat = create('t_sat', loader.ref_lon)
         self.t_earth = create('t_earth', self.solarangle)
         self.cloudalbedo = create('cloudalbedo', self.solarangle)
-        self.globalradiation = create('globalradiation', self.solarangle)
+        self.cache_globalradiation = create('globalradiation', self.solarangle)
+        if not os.path.exists('results'):
+            os.makedirs('results')
+        results_dir = lambda filename: filename.replace('temporal_cache', 'results')
+        outputs = list(map(results_dir, cache.files))
+        map(self.create_output_file, outputs)
+        self.output, _ = nc.open(outputs)
+        self.globalradiation = self.output.getvar('globalradiation', source=self.solarangle)
         nc.sync(cache)
+
+    def create_output_file(self, filename):
+        with nc.loader(filename) as output:
+            nc.getdim(output, 'time', 1)
 
 
 def spawn(f):
