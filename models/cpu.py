@@ -436,5 +436,57 @@ class CPUStrategy(ProcessingStrategy):
                                              self.t_earth[:], self.t_sat[:])
         nc.sync(cache)
 
+    def estimate_globalradiation(self, algorithm, loader, cache):
+        excentricity = cache.excentricity
+        solarangle = cache.solarangle
+        atmosphericalbedo = cache.atmosphericalbedo
+        t_earth = cache.t_earth
+        t_sat = cache.t_sat
+        observedalbedo = getalbedo(loader.calibrated_data, algorithm.i0met,
+                                   excentricity, solarangle)
+        apparentalbedo = getapparentalbedo(observedalbedo, atmosphericalbedo,
+                                           t_earth, t_sat)
+        declination = cache.declination[:]
+        show("Calculating the noon window... ")
+        slot_window_in_hours = 4
+        image_per_day = 24 * algorithm.IMAGE_PER_HOUR
+        noon_slot = image_per_day / 2
+        half_window = algorithm.IMAGE_PER_HOUR * slot_window_in_hours/2
+        min_slot = noon_slot - half_window
+        max_slot = noon_slot + half_window
+        condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
+        condition = np.reshape(condition, condition.shape[0])
+        mask1 = (loader.calibrated_data[condition] <=
+                 (algorithm.i0met / np.pi) * 0.03)
+        m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
+        # To do the nexts steps needs a lot of memory
+        show("Calculating the ground reference albedo... ")
+        mask2 = m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5)
+        p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, mask2)
+        groundreferencealbedo = getsecondmin(p5_apparentalbedo)
+        # Calculate the solar elevation using times, latitudes and omega
+        show("Calculating solar elevation... ")
+        r_alphanoon = getsolarelevation(declination, loader.lat[0], 0)
+        r_alphanoon = r_alphanoon * 2./3.
+        r_alphanoon[r_alphanoon > 40] = 40
+        r_alphanoon[r_alphanoon < 15] = 15
+        solarelevation = cache.solarelevation[:]
+        show("Calculating the ground minimum albedo... ")
+        groundminimumalbedo = getsecondmin(
+            np.ma.masked_array(apparentalbedo[condition],
+                               solarelevation[condition] < r_alphanoon[condition]))
+        aux_2g0 = 2 * groundreferencealbedo
+        aux_05g0 = 0.5 * groundreferencealbedo
+        condition_2g0 = groundminimumalbedo > aux_2g0
+        condition_05g0 = groundminimumalbedo < aux_05g0
+        groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
+        groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
+        show("Calculating the cloud index... ")
+        i = self.globalradiation.shape[0]
+        cloudindex = getcloudindex(apparentalbedo[-i], groundminimumalbedo[-i],
+                                   cache.cloudalbedo[-i])
+        self.globalradiation[:] = getclearsky(cloudindex) * cache.gc[-i,:]
+        nc.sync(self.output)
+
 
 strategy = CPUStrategy

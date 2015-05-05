@@ -35,10 +35,10 @@ class Heliosat2(object):
         self.strategy.update_temporalcache(loader, cache)
 
     def estimate_globalradiation(self, loader, cache):
-        show("Obtaining the global radiation... ")
-        geo.estimate_globalradiation(self, loader, cache)
-        self.strategy.globalradiation[:] = cache.ref_globalradiation[:]
-        nc.sync(self.strategy.output)
+        # There is nothing to do, if there isn't new cache and strategy setted.
+        if hasattr(self, 'strategy'):
+            show("Obtaining the global radiation... ")
+            self.strategy.estimate_globalradiation(self, loader, cache)
 
     def process_validate(self, root):
         from libs.statistics import error
