@@ -68,7 +68,6 @@ class ProcessingStrategy(object):
         self.t_sat = create('t_sat', loader.ref_lon)
         self.t_earth = create('t_earth', self.solarangle)
         self.cloudalbedo = create('cloudalbedo', self.solarangle)
-        self.cache_globalradiation = create('globalradiation', self.solarangle)
         nc.sync(cache)
         if not os.path.exists('results'):
             os.makedirs('results')
