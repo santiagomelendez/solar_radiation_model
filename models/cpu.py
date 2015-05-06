@@ -384,7 +384,7 @@ class CPUStrategy(ProcessingStrategy):
                                              self.t_earth[:], self.t_sat[:])
         nc.sync(cache)
 
-    def estimate_globalradiation(self, loader, cache):
+    def estimate_globalradiation(self, loader, cache, output):
         excentricity = cache.excentricity
         solarangle = cache.solarangle
         atmosphericalbedo = cache.atmosphericalbedo
@@ -430,11 +430,11 @@ class CPUStrategy(ProcessingStrategy):
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         show("Calculating the cloud index... ")
-        i = self.globalradiation.shape[0]
+        i = output.globalradiation.shape[0]
         cloudindex = getcloudindex(apparentalbedo[-i:], groundminimumalbedo,
                                    cache.cloudalbedo[-i:])
-        self.globalradiation[:] = getclearsky(cloudindex) * cache.gc[-i:,:]
-        nc.sync(self.output)
+        output.globalradiation[:] = getclearsky(cloudindex) * cache.gc[-i:,:]
+        nc.sync(output.root)
 
 
 strategy = CPUStrategy

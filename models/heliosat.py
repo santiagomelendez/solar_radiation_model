@@ -47,7 +47,6 @@ class Heliosat2(object):
     def create_variables(self, loader, cache, strategy):
         self.create_slots(loader, cache, strategy)
         self.create_temporal(loader, cache, strategy)
-        self.create_output(strategy)
 
     def create_temporal(self, loader, cache, strategy):
         create = lambda name, source: cache.getvar(name, source=source)
@@ -65,11 +64,6 @@ class Heliosat2(object):
         strategy.cloudalbedo = create('cloudalbedo', strategy.solarangle)
         nc.sync(cache)
 
-    def create_output(self, strategy):
-        self.output = OutputCache(self)
-        strategy.output = self.output.root
-        strategy.globalradiation = self.output.globalradiation
-
     def update_temporalcache(self, loader, cache):
         show("Updating temporal cache... ")
         self.strategy = self.strategy_type(self, loader, cache)
@@ -79,7 +73,8 @@ class Heliosat2(object):
         # There is nothing to do, if there isn't new cache and strategy setted.
         if hasattr(self, 'strategy'):
             show("Obtaining the global radiation... ")
-            self.strategy.estimate_globalradiation(loader, cache)
+            output = OutputCache(self)
+            self.strategy.estimate_globalradiation(loader, cache, output)
 
     def process_validate(self, root):
         from libs.statistics import error
