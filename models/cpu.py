@@ -384,28 +384,28 @@ class CPUStrategy(ProcessingStrategy):
                                              self.t_earth[:], self.t_sat[:])
         nc.sync(cache)
 
-    def estimate_globalradiation(self, algorithm, loader, cache):
+    def estimate_globalradiation(self, loader, cache):
         excentricity = cache.excentricity
         solarangle = cache.solarangle
         atmosphericalbedo = cache.atmosphericalbedo
         t_earth = cache.t_earth
         t_sat = cache.t_sat
-        observedalbedo = getalbedo(loader.calibrated_data, algorithm.i0met,
+        observedalbedo = getalbedo(loader.calibrated_data, self.algorithm.i0met,
                                    excentricity, solarangle)
         apparentalbedo = getapparentalbedo(observedalbedo, atmosphericalbedo,
                                            t_earth, t_sat)
         declination = cache.declination[:]
         show("Calculating the noon window... ")
         slot_window_in_hours = 4
-        image_per_day = 24 * algorithm.IMAGE_PER_HOUR
+        image_per_day = 24 * self.algorithm.IMAGE_PER_HOUR
         noon_slot = image_per_day / 2
-        half_window = algorithm.IMAGE_PER_HOUR * slot_window_in_hours/2
+        half_window = self.algorithm.IMAGE_PER_HOUR * slot_window_in_hours/2
         min_slot = noon_slot - half_window
         max_slot = noon_slot + half_window
         condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
         condition = np.reshape(condition, condition.shape[0])
         mask1 = (loader.calibrated_data[condition] <=
-                 (algorithm.i0met / np.pi) * 0.03)
+                 (self.algorithm.i0met / np.pi) * 0.03)
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory
         show("Calculating the ground reference albedo... ")

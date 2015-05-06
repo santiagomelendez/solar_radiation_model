@@ -10,7 +10,7 @@ import glob
 class TestHeliosat(unittest.TestCase):
 
     def setUp(self):
-        os.system('rm -rf static.nc temporal_cache results')
+        os.system('rm -rf static.nc temporal_cache products/estimated')
         os.system('cp -rf data mock_data')
         self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')
 
