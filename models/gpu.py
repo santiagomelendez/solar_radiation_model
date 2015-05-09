@@ -138,9 +138,13 @@ def gpu_exec(func_name, results, *matrixs):
     for m_s in m_shapes:
         while len(m_s) < 3:
             m_s.insert(0, 1)
-    # TODO: Verify to work with the complete matrix at the same time.
-    func(*matrixs_gpu, grid=tuple(m_shapes[0][1:3]),
-         block=tuple([m_shapes[0][0], 1, 1]))
+    blocks = map(lambda ms: ms[1:3], m_shapes)
+    size = lambda m: m[0] * m[1]
+    max_blocks = max(map(size, blocks))
+    blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks, blocks)[0]))
+    threads = max(map(lambda ms: ms[0], m_shapes))
+    show('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
+    func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
     map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
     for i in range(results):
         matrixs[i][:] = matrixs_ram[i]
