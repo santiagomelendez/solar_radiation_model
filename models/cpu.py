@@ -430,10 +430,11 @@ class CPUStrategy(ProcessingStrategy):
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         show("Calculating the cloud index... ")
-        i = output.globalradiation.shape[0]
+        i = output.ref_globalradiation.shape[0]
         cloudindex = getcloudindex(apparentalbedo[-i:], groundminimumalbedo,
                                    cache.cloudalbedo[-i:])
-        output.globalradiation[:] = getclearsky(cloudindex) * cache.gc[-i:,:]
+        output.ref_globalradiation[:] = (getclearsky(cloudindex) *
+                                         cache.gc[-i:,:])
         nc.sync(output.root)
 
 

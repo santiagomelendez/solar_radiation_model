@@ -17,10 +17,18 @@ class TestHeliosat(unittest.TestCase):
     def tearDown(self):
         os.system('rm -rf mock_data')
 
+    def verify_output(self):
+        with nc.loader('tests/products/estimated/*.nc') as old_root:
+            with nc.loader('products/estimated/*.nc') as new_root:
+                valid = nc.getvar(old_root, 'globalradiation')
+                calculated = nc.getvar(new_root, 'globalradiation')
+                np.testing.assert_array_equal(calculated[:], valid[:])
+
     def test_main(self):
         begin = datetime.now()
         heliosat.workwith('mock_data/goes13.2015.*.BAND_01.nc')
         end = datetime.now()
+        self.verify_output()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
         to_dt = heliosat.to_datetime
