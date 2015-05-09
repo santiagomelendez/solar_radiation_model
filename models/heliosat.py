@@ -29,16 +29,52 @@ class Heliosat2(object):
         self.strategy_type = strategy_type
         self.cache = TemporalCache(self)
 
+    def create_1px_dimensions(self, root):
+        nc.getdim(root, 'xc_k', 1)
+        nc.getdim(root, 'yc_k', 1)
+        nc.getdim(root, 'time', 1)
+
+    def create_slots(self, loader, cache, strategy):
+        self.create_1px_dimensions(cache)
+        time = loader.time
+        shape = list(time.shape)
+        shape.append(1)
+        strategy.times = time.reshape(tuple(shape))
+        strategy.slots = cache.getvar('slots', 'i1', ('time', 'yc_k', 'xc_k'))
+        strategy.slots[:] = strategy.calculate_slots(self.IMAGE_PER_HOUR)
+        nc.sync(cache)
+
+    def create_variables(self, loader, cache, strategy):
+        self.create_slots(loader, cache, strategy)
+        self.create_temporal(loader, cache, strategy)
+
+    def create_temporal(self, loader, cache, strategy):
+        create = lambda name, source: cache.getvar(name, source=source)
+        strategy.declination = create('declination', strategy.slots)
+        strategy.solarangle = cache.getvar('solarangle', 'f4',
+                                           source=loader.ref_data)
+        nc.sync(cache)
+        strategy.solarelevation = create('solarelevation', strategy.solarangle)
+        strategy.excentricity = create('excentricity', strategy.slots)
+        strategy.gc = create('gc', strategy.solarangle)
+        strategy.atmosphericalbedo = create('atmosphericalbedo',
+                                            strategy.solarangle)
+        strategy.t_sat = create('t_sat', loader.ref_lon)
+        strategy.t_earth = create('t_earth', strategy.solarangle)
+        strategy.cloudalbedo = create('cloudalbedo', strategy.solarangle)
+        nc.sync(cache)
+
     def update_temporalcache(self, loader, cache):
         show("Updating temporal cache... ")
         self.strategy = self.strategy_type(self, loader, cache)
         self.strategy.update_temporalcache(loader, cache)
 
     def estimate_globalradiation(self, loader, cache):
-        show("Obtaining the global radiation... ")
-        geo.estimate_globalradiation(self, loader, cache)
-        self.strategy.globalradiation[:] = cache.ref_globalradiation[:]
-        nc.sync(self.strategy.output)
+        # There is nothing to do, if there isn't new cache and strategy setted.
+        if hasattr(self, 'strategy'):
+            show("Obtaining the global radiation... ")
+            output = OutputCache(self)
+            self.strategy.estimate_globalradiation(loader, cache, output)
 
     def process_validate(self, root):
         from libs.statistics import error
@@ -67,13 +103,19 @@ class Heliosat2(object):
         # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
 
-class TemporalCache(Cache):
+class AlgorithmCache(Cache):
 
     def __init__(self, algorithm):
-        super(TemporalCache, self).__init__()
+        super(AlgorithmCache, self).__init__()
         self.algorithm = algorithm
         self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
+
+
+class TemporalCache(AlgorithmCache):
+
+    def __init__(self, algorithm):
+        super(TemporalCache, self).__init__(algorithm)
         self.update_cache(self.filenames)
         self.cache = Loader(pmap(self.get_cached_file, self.filenames))
         self.root = self.cache.root
@@ -116,6 +158,29 @@ class TemporalCache(Cache):
             tmp.insert(0, self.cache.root)
             self._attrs[name] = nc.getvar(*tmp, **kwargs)
         return self._attrs[name]
+
+
+class OutputCache(AlgorithmCache):
+
+    def __init__(self, algorithm):
+        super(OutputCache, self).__init__(algorithm)
+        self.output = Loader(pmap(self.get_output_file, self.filenames))
+        self.root = self.output.root
+        with nc.loader(self.filenames) as images:
+            map(algorithm.create_1px_dimensions, self.root.roots)
+            self.root.getvar('time', source=images.getvar('time'))
+            self.root.getvar('globalradiation',
+                             'f4', source=images.getvar('data'))
+
+    def initialize_path(self, filenames):
+        self.path = '/'.join(filenames[0].split('/')[0:-1])
+        self.output_path = 'products/estimated'
+        self.index = {self.get_output_file(v): v for v in filenames}
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+
+    def get_output_file(self, filename):
+        return '%s/%s' % (self.output_path, short(filename, None, None))
 
 
 def filter_wrong_sized_files(files):

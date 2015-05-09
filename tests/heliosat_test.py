@@ -10,17 +10,26 @@ import glob
 class TestHeliosat(unittest.TestCase):
 
     def setUp(self):
-        os.system('rm -rf static.nc temporal_cache results')
+        # os.system('rm -rf static.nc temporal_cache products')
+        os.system('rm -rf temporal_cache products/estimated')
         os.system('cp -rf data mock_data')
         self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')
 
     def tearDown(self):
         os.system('rm -rf mock_data')
 
+    def verify_output(self):
+        with nc.loader('tests/products/estimated/*.nc') as old_root:
+            with nc.loader('products/estimated/*.nc') as new_root:
+                valid = nc.getvar(old_root, 'globalradiation')
+                calculated = nc.getvar(new_root, 'globalradiation')
+                self.assertTrue((np.abs(calculated[:] - valid[:]) < 2.5).all())
+
     def test_main(self):
         begin = datetime.now()
         heliosat.workwith('mock_data/goes13.2015.*.BAND_01.nc')
         end = datetime.now()
+        self.verify_output()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
         to_dt = heliosat.to_datetime

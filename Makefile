@@ -1,5 +1,5 @@
 PYPREFIX_PATH=/usr
-PYTHONLIBS=LD_LIBRARY_PATH=/usr/lib
+PYTHONLIBS=PIP_DOWNLOAD_CACHE=.cache/pip LD_LIBRARY_PATH=/usr/lib
 PYTHONPATH=$(PYPREFIX_PATH)/bin/python
 FIRST_EASYINSTALL=$(PYTHONLIBS) easy_install
 PIP=pip
@@ -12,7 +12,7 @@ PROXYENV=export http_proxy=$(PROXY); export HTTP_PROXY=$(PROXY); export https_pr
 
 
 ubuntu:
-	@ (sudo apt-get -y install zlibc libbz2-dev libssl0.9.8 python-gevent curl libssl0.9.8 libxslt1-dev libxml2-dev 2>&1) >> tracking.log
+	@ (sudo apt-get -y install libzip-dev m4 python-dev zlibc libbz2-dev libssl1.0.0 python-gevent curl libxslt1-dev libxml2-dev 2>&1) >> tracking.log
 	@ echo "[ assume       ] ubuntu distribution"
 
 unattended:
@@ -29,7 +29,7 @@ bin/activate: requirements.txt
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ $(SOURCE_ACTIVATE) $(PIP) install --upgrade pip
 	@ $(SOURCE_ACTIVATE) $(PIP) install --upgrade distribute
-	@ $(SOURCE_ACTIVATE) $(PIP) install -e  .
+	@ $(SOURCE_ACTIVATE) $(PIP) install --no-cache-dir -e .
 	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt
 	@ touch bin/activate
 

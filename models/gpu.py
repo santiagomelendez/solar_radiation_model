@@ -4,7 +4,7 @@ from netcdf import netcdf as nc
 import stats
 from helpers import show
 from models.core import gpuarray, cuda, SourceModule
-from cpu import CPUStrategy, estimate_globalradiation, GREENWICH_LON
+from cpu import CPUStrategy, GREENWICH_LON
 import itertools
 
 
@@ -45,7 +45,7 @@ mod_sourcecode = SourceModule(
         float tst_hour = decimalhour[t3d] -
             lon_diff * (12 / PI) + timeequation;
         float latitud_sign = lat[t3d] / abs(lat[t3d]);
-        hourlyangle[t1d] = PI; // (tst_hour - 12) * latitud_sign * PI / 12;
+        //hourlyangle[t1d] = PI; // (tst_hour - 12) * latitud_sign * PI / 12;
     }
 
     __global__ void getexcentricity(float *result, float *gamma)
