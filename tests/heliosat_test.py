@@ -22,7 +22,8 @@ class TestHeliosat(unittest.TestCase):
             with nc.loader('products/estimated/*.nc') as new_root:
                 valid = nc.getvar(old_root, 'globalradiation')
                 calculated = nc.getvar(new_root, 'globalradiation')
-                np.testing.assert_array_equal(calculated[:], valid[:])
+                np.testing.assert_array_almost_equal(calculated[:],
+                                                     valid[:], 0)
 
     def test_main(self):
         begin = datetime.now()
