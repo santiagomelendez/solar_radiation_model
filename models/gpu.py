@@ -14,113 +14,94 @@ mod_sourcecode = SourceModule(
     #define PI """ + str(np.pi) + """
     #define DEG2RAD (PI / 180)
     #define RAD2DEG (180 / PI)
-    #define INDEXS \
-        const unsigned long long int b1d = blockIdx.x; \
-        const unsigned long long int b2d = b1d + gridDim.x * blockIdx.y; \
-        const unsigned long long int b3d = b2d + gridDim.x * gridDim.y \
-            * blockIdx.z; \
-        const unsigned long long int t3d = b3d * blockDim.x \
-            + threadIdx.x;
+
+    #define i_dt threadIdx.z
+    #define i_dxy blockIdx.x + (blockIdx.y * gridDim.x)
+    #define i_dxyt (i_dxy) + (gridDim.x * gridDim.y * i_dt)
 
     __device__ void getdeclination(float *declination, float *gamma)
     {
-        INDEXS
-        declination[t3d] = (0.006918f - 0.399912f * cos(gamma[t3d]) +
-                        0.070257f * sin(gamma[t3d]) -
-                        0.006758f * cos(2 * gamma[t3d]) +
-                        0.000907f * sin(2 * gamma[t3d]) -
-                        0.002697f * cos(3 * gamma[t3d]) +
-                        0.00148f * sin(3 * gamma[t3d]));
+	float g = gamma[i_dt] * DEG2RAD;
+        declination[i_dt] = (0.006918f - 0.399912f * cos(g) +
+                        0.070257f * sin(g) -
+                        0.006758f * cos(2 * g) +
+                        0.000907f * sin(2 * g) -
+                        0.002697f * cos(3 * g) +
+                        0.00148f * sin(3 * g)) * RAD2DEG;
+
     }
 
-    __device__ void gethourlyangle(float *hourlyangle, float *lat, \
-    float *lon, float *decimalhour, float *gamma)
+    __device__ float gethourlyangle(float *lat, float *lon,
+    float *decimalhour, float *gamma)
     {
-        INDEXS
-        float timeequation = (0.000075 + 0.001868 * cos(gamma[t3d]) -
-            0.032077 * sin(gamma[t3d]) -
-            0.014615 * cos(2 * gamma[t3d]) -
-            0.04089 * sin(2 * gamma[t3d])) * (12 / PI);
-        float lon_diff = (GREENWICH_LON - lon[t3d]) * DEG2RAD;
-        float tst_hour = decimalhour[t3d] -
-            lon_diff * (12 / PI) + timeequation;
-        float latitud_sign = lat[t3d] / abs(lat[t3d]);
-        //hourlyangle[t1d] = PI; // (tst_hour - 12) * latitud_sign * PI / 12;
+	float g = gamma[i_dt] * DEG2RAD;
+        float timeequation = (0.000075 + 0.001868 * cos(g) -
+            0.032077 * sin(g) -
+            0.014615 * cos(2 * g) -
+            0.04089 * sin(2 * g)) * (12 / PI);
+        float lon_diff = (GREENWICH_LON - lon[i_dxy]) * DEG2RAD;
+        float tst_hour = decimalhour[i_dt] - lon_diff * (12 / PI) + timeequation;
+        float lat_sign = lat[i_dxy] / abs(lat[i_dxy]);
+        return ((tst_hour - 12) * lat_sign * PI / 12) * RAD2DEG;
+    }
+
+    __device__ void getzenithangle(float *solarangle, float *declination,
+    float *lat, float *lon, float *decimalhour, float *gamma)
+    {
+	float hourlyangle;
+	hourlyangle = gethourlyangle(lat, lon, decimalhour, gamma);
+        hourlyangle *= DEG2RAD;
+        float lat_r = lat[i_dxy] * DEG2RAD;
+        float dec_r = declination[i_dt] * DEG2RAD;
+        solarangle[i_dxyt] = acos(sin(dec_r) * sin(lat_r) + cos(dec_r) *
+            cos(lat_r) * cos(hourlyangle)) * RAD2DEG;
     }
 
     __global__ void getexcentricity(float *result, float *gamma)
     {
-        int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
-        int i3d = i2d + it;
-        gamma[i3d] *= DEG2RAD;
-        result[i3d] = 1.000110 + 0.034221 * cos(gamma[i3d]) + \
-            0.001280 * sin(gamma[i3d]) + \
-            0.000719 * cos(2 * gamma[i3d]) + \
-            0.000077 * sin(2 * gamma[i3d]);
+        gamma[i_dt] *= DEG2RAD;
+        result[i_dt] = 1.000110 + 0.034221 * cos(gamma[i_dt]) + \
+            0.001280 * sin(gamma[i_dt]) + \
+            0.000719 * cos(2 * gamma[i_dt]) + \
+            0.000077 * sin(2 * gamma[i_dt]);
     }
 
-    __global__ void getzenithangle(float *result, float *hourlyangle, \
-    float *lat, float *dec)
-    {
-        int it = threadIdx.x;
-        int i2d = blockDim.x * blockIdx.x;
-        int i3d = i2d + it;
-        float lat_r = lat[i2d] * DEG2RAD;
-        float dec_r = dec[it] * DEG2RAD;
-        hourlyangle[i3d] *= DEG2RAD;
-        result[i3d] = acos(sin(dec_r) * sin(lat_r) + \
-            cos(dec_r) * cos(lat_r) * cos(hourlyangle[i3d]));
-        result[i3d] *= RAD2DEG;
-    }
 
-    __global__ void getsatellitalzenithangle(float *result, float *lat, \
+    __global__ void getsatellitalzenthangle(float *result, float *lat, \
     float *lon, float sub_lon, float rpol, float req, float h)
     {
-        //int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
-        //int i3d = i2d + it;
-        lat[i2d] *= DEG2RAD;
-        float lon_diff = (lon[i2d] - sub_lon) * RAD2DEG;
-        float lat_cos_only = cos(lat[i2d]);
+        lat[i_dxy] *= DEG2RAD;
+        float lon_diff = (lon[i_dxy] - sub_lon) * RAD2DEG;
+        float lat_cos_only = cos(lat[i_dxy]);
         float re = rpol / (sqrt(1 - (pow(req, 2) - pow(rpol, 2)) / \
             (pow(req, 2)) * pow(lat_cos_only, 2)));
         float lat_cos = re * lat_cos_only;
         float r1 = h - lat_cos * cos(lon_diff);
         float r2 = - lat_cos * sin(lon_diff);
-        float r3 = re * sin(lat[i2d]);
+        float r3 = re * sin(lat[i_dxy]);
         float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
-        result[i2d] = (PI - acos((pow(h,2) - \
+        result[i_dxy] = (PI - acos((pow(h,2) - \
             pow(re, 2) - pow(rs, 2)) / (-2 * re * rs)));
-        result[i2d] *= RAD2DEG;
+        result[i_dxy] *= RAD2DEG;
     }
 
     __global__ void getalbedo(float *result, float *radiance, \
-    float totalirradiance, float *excentricity, float *zenitangle)
+    float totalirradiance, float *excentricity, float *zenithangle)
     {
-        int it = threadIdx.x;
-        int i2d = blockDim.x*blockIdx.x;
-        int i3d = i2d + it;
-        result[i3d] = (PI * \
-            radiance[i3d]) / (totalirradiance * excentricity[i3d] * \
-            cos(zenitangle[i3d]));
+        result[i_dt] = (PI * \
+            radiance[i_dt]) / (totalirradiance * excentricity[i_dt] * \
+            cos(zenithangle[i_dt]));
     }
 
-    __global__ void update_temporalcache(float *declination, \
-    float *solarelevation, float* solarangle, float *excentricity, \
-    float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth, \
-    float *cloudalbedo, float *lat, float *lon, float *times, \
-    float *decimalhour,  float *gamma, float *dem, float *linke, \
-    float *SAT_LON, float *i0met, float *EXT_RAD, \
-    float *HEIGHT)
+    __global__ void update_temporalcache(float *declination,
+    float *solarelevation, float* solarangle, float *excentricity,
+    float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth,
+    float *cloudalbedo, float *lat, float *lon, float *times,
+    float *decimalhour,  float *gamma, float *dem, float *linke,
+    float *SAT_LON, float *i0met, float *EXT_RAD, float *HEIGHT)
     {
-        INDEXS
-        gamma[t3d] *= DEG2RAD;
         getdeclination(declination, gamma);
-        float *hourlyangle; // TODO: It should reserve the memory.
-        gethourlyangle(hourlyangle, lat, lon, decimalhour, gamma);
-        declination[t3d] *= RAD2DEG;
-        // solarelevation[t3d] *= RAD2DEG;
+        getzenithangle(solarangle, declination, lat, lon, decimalhour, gamma);
     }
     """)
 
