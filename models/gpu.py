@@ -133,7 +133,7 @@ def gpu_exec(func_name, results, *matrixs):
     matrixs_ram = map(lambda m: adapt(m).astype(np.float32), matrixs)
     matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs_ram)
     transferences = zip(matrixs_ram, matrixs_gpu)
-    map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences)
+    list(map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences))
     m_shapes = map(lambda m: list(m.shape), matrixs_ram)
     for m_s in m_shapes:
         while len(m_s) < 3:
@@ -145,7 +145,7 @@ def gpu_exec(func_name, results, *matrixs):
     threads = max(map(lambda ms: ms[0], m_shapes))
     show('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
     func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
-    map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results])
+    list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results]))
     for i in range(results):
         matrixs[i][:] = matrixs_ram[i]
         matrixs_gpu[i].free()
