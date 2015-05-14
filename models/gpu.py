@@ -59,40 +59,46 @@ mod_sourcecode = SourceModule(
 
     __device__ void getelevation(float *solarelevation, float *zenithangle)
     {
-       float za = zenithangle[i_dxyt] * DEG2RAD;
-       solarelevation[i_dxyt] = ((PI / 2) - za) * RAD2DEG;
+        float za = zenithangle[i_dxyt] * DEG2RAD;
+        solarelevation[i_dxyt] = ((PI / 2) - za) * RAD2DEG;
     }
 
     __device__ void getexcentricity(float *result, float *gamma)
     {
-       float g = gamma[i_dt] * DEG2RAD;
-       result[i_dxyt] = 1.000110 + 0.034221 * cos(g) +
-           0.001280 * sin(g) +
-           0.000719 * cos(2 * g) +
-           0.000077 * sin(2 * g);
+        float g = gamma[i_dt] * DEG2RAD;
+        result[i_dxyt] = 1.000110 + 0.034221 * cos(g) +
+            0.001280 * sin(g) +
+            0.000719 * cos(2 * g) +
+            0.000077 * sin(2 * g);
     }
 
     __device__ float getcorrectedelevation(float *elevation)
     {
-          float corrected;
-          float e = elevation[i_dxyt] * DEG2RAD;
-          float p = pow(e, 2);
-          corrected = (e +
-                       0.061359 * ((0.1594 + 1.1230 * e +
-                                    0.065656 * p) /
-                                   (1 + 28.9344 * e +
-                                    277.3971 * p))) * RAD2DEG;
-          return corrected;
+        float corrected;
+        float e = elevation[i_dxyt] * DEG2RAD;
+        float p = pow(e, 2);
+        corrected = (e +
+                     0.061359 * ((0.1594 + 1.1230 * e +
+                                  0.065656 * p) /
+                                 (1 + 28.9344 * e +
+                                  277.3971 * p))) * RAD2DEG;
+        return corrected;
+    }
+
+    __device__ float getopticalpath(float *correctedelevation,
+    float *terrainheight, float *atmosphere_theoretical_height)
+    {
+        float ce = correctedelevation[i_dxyt];
+        if (ce < 0) { ce = 0.0f; }
+        // In the next line the correctedelevation is used over a degree base.
+        float p = pow(ce + 6.07995, -1.6364);
+        ce *= DEG2RAD;
+        return (exp(-terrainheight[i_dxy]/atmosphere_theoretical_height[0]) /
+               (sin(ce) + 0.50572 * p));
     }
 
     /*
-    __device__ void getopticalpath(float *result, float *correctedelevation
-    float *terrainheight, float *atmosphere_theoretical_height)
-    {
-
-    }
-
-    __device__ void getopticaldepth(float *result, float *opticalpath)
+    __device__ float getopticaldepth(float *opticalpath)
     {
 
     }
