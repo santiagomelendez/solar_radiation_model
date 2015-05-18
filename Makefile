@@ -1,5 +1,5 @@
 PYPREFIX_PATH=/usr
-PYTHONLIBS=PIP_DOWNLOAD_CACHE=.cache/pip LD_LIBRARY_PATH=/usr/lib
+PYTHONLIBS=PIP_DOWNLOAD_CACHE=.cache/pip LD_LIBRARY_PATH=$(LD_LIBRARY_PATH):/usr/lib
 PYTHONPATH=$(PYPREFIX_PATH)/bin/python
 FIRST_EASYINSTALL=$(PYTHONLIBS) easy_install
 PIP=pip
@@ -35,6 +35,10 @@ bin/activate: requirements.txt
 
 deploy: bin/activate
 	@ echo "[ deployed     ] the system was completly deployed"
+
+pycuda:
+	@ echo "[ installing   ] pycuda library"
+	@ $(SOURCE_ACTIVATE) $(PIP) install pycuda==2014.1
 
 show-version:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) --version
