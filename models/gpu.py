@@ -188,33 +188,44 @@ mod_sourcecode = SourceModule(
     }
 
 
-    /*
-    __global__ void getsatellitalzenithangle(float *result, float *lat,
-    float *lon, float sub_lon, float rpol, float req, float h)
+    #define rpol 6356.5838
+    #define req  6378.1690
+    #define h    41166.55637
+    //define h    42164.0
+
+    __device__ float getsatellitalzenithangle(float *lat,
+    float *lon, float *sub_lon)
     {
-        lat[i_dxy] *= DEG2RAD;
-        float lon_diff = (lon[i_dxy] - sub_lon) * RAD2DEG;
-        float lat_cos_only = cos(lat[i_dxy]);
+        float la = lat[i_dxy] * DEG2RAD;
+        float lon_diff = (lon[i_dxy] - sub_lon[0]) * RAD2DEG;
+        float lat_cos_only = cos(la);
         float re = rpol / (sqrt(1 - (pow(req, 2) - pow(rpol, 2)) /
             (pow(req, 2)) * pow(lat_cos_only, 2)));
         float lat_cos = re * lat_cos_only;
         float r1 = h - lat_cos * cos(lon_diff);
         float r2 = - lat_cos * sin(lon_diff);
-        float r3 = re * sin(lat[i_dxy]);
+        float r3 = re * sin(la);
         float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
-        result[i_dxy] = (PI - acos((pow(h,2) -
-            pow(re, 2) - pow(rs, 2)) / (-2 * re * rs)));
-        result[i_dxy] *= RAD2DEG;
+        return (PI - acos((pow(h,2) -
+            pow(re, 2) - pow(rs, 2)) / (-2 * re * rs))) * RAD2DEG;
     }
 
-    __global__ void getalbedo(float *result, float *radiance,
-    float totalirradiance, float *excentricity, float *zenithangle)
+    __device__ float getatmosphericradiance(float *extraterrestrialirradiance,
+    float *i0met, float diffuseclearsky, float satellitalzenithangle)
     {
-        result[i_dt] = (PI *
-            radiance[i_dt]) / (totalirradiance * excentricity[i_dt] *
-            cos(zenithangle[i_dt]));
+        float anglerelation = pow(0.5 / cos(satellitalzenithangle * DEG2RAD),
+                                   0.8);
+        return (i0met[0] * diffuseclearsky * anglerelation) /
+               (PI * extraterrestrialirradiance[0]);
     }
-    */
+
+    __device__ void getalbedo(float *result, float radiance,
+    float *totalirradiance, float *excentricity, float zenithangle)
+    {
+        result[i_dxyt] = (PI * radiance) /
+                         (totalirradiance[0] * excentricity[i_dxyt] *
+                         cos(zenithangle * DEG2RAD));
+    }
 
 
     __global__ void update_temporalcache(float *declination,
@@ -224,7 +235,7 @@ mod_sourcecode = SourceModule(
     float *decimalhour,  float *gamma, float *dem, float *linke,
     float *SAT_LON, float *i0met, float *EXT_RAD, float *HEIGHT)
     {
-        float bc, dc;
+        float bc, dc, satellitalzenithangle, atmosphericradiance;
         getdeclination(declination, gamma);
         getzenithangle(solarangle, declination, lat, lon, decimalhour, gamma);
         getelevation(solarelevation, solarangle);
@@ -234,6 +245,13 @@ mod_sourcecode = SourceModule(
         dc = getdiffuseirradiance(EXT_RAD, excentricity, solarelevation,
                                   linke);
         getglobalirradiance(gc, bc, dc);
+        satellitalzenithangle = getsatellitalzenithangle(lat, lon, SAT_LON);
+        atmosphericradiance = getatmosphericradiance(EXT_RAD, i0met,
+                                                     dc,
+                                                     satellitalzenithangle);
+        getalbedo(atmosphericalbedo, atmosphericradiance, i0met,
+                  excentricity, satellitalzenithangle);
+
     }
 
     """)
