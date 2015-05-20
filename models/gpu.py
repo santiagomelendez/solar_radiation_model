@@ -266,63 +266,8 @@ def gpu_exec(func_name, results, *matrixs):
     return matrixs_ram[:results]
 
 
-def getexcentricity(gamma):
-    result = np.empty_like(gamma)
-    gpu_exec("getexcentricity", 1, result, gamma)
-    return result
-
-
-def getzenithangle(declination, latitude, hourlyangle):
-    result = np.empty_like(declination)
-    gpu_exec("getzenithangle", 1, result, hourlyangle, latitude, declination)
-    return result
-
-
-def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
-    result = np.empty_like(radiance)
-    gpu_exec("getalbedo", 1, result, radiance, totalirradiance,
-             excentricity, zenitangle)
-    return result
-
-
-def getsatellitalzenithangle(lat, lon, sub_lon):
-    rpol = 6356.5838
-    req = 6378.1690
-    h = 42166.55637  # 42164.0
-    result = np.empty_like(lat)
-    gpu_exec("getsatellitalzenithangle", 1, result,
-             lat, lon, sub_lon, rpol, req, h)
-    return result
-
-
 class GPUStrategy(CPUStrategy):
 
-    """
-    def getexcentricity(self, gamma):
-        return getexcentricity(gamma)
-    """
-
-    def getdeclination(self, gamma):
-        return self.declination[:]  # getdeclination(gamma)
-
-    def gethourlyangle(self, lat, lon, decimalhour, gamma):
-        # TODO: Continue from here!
-        tmp = super(GPUStrategy, self).gethourlyangle(lat, lon, decimalhour,
-                                                      gamma)
-        print tmp.shape, self.solarelevation[:].shape
-        return self.solarelevation[:]
-
-    """
-    def getzenithangle(self, declination, latitude, hourlyangle):
-        return getzenithangle(declination, latitude, hourlyangle)
-
-    def getalbedo(self, radiance, totalirradiance, excentricity, zenitangle):
-        return getalbedo(radiance, totalirradiance, excentricity,
-                         zenitangle)
-
-    def getsatellitalzenithangle(self, lat, lon, sub_lon):
-        return getsatellitalzenithangle(lat, lon, sub_lon)
-    """
 
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
