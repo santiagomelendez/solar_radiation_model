@@ -227,6 +227,12 @@ mod_sourcecode = SourceModule(
                (PI * extraterrestrialirradiance[0]);
     }
 
+    __device__ float getdifferentialalbedo(float firstalbedo,
+    float secondalbedo, float t_earth, float t_sat)
+    {
+        return (firstalbedo - secondalbedo) / (t_earth * t_sat);
+    }
+
     __device__ void getalbedo(float *result, float radiance,
     float *totalirradiance, float *excentricity, float zenithangle)
     {
@@ -235,6 +241,22 @@ mod_sourcecode = SourceModule(
                          cos(zenithangle * DEG2RAD));
     }
 
+    __device__ float geteffectivealbedo(float solarangle)
+    {
+        return 0.78 - 0.13 * (1 - exp(-4 * pow(cos(solarangle * DEG2RAD), 5)));
+    }
+
+
+    __device__ void getcloudalbedo(float *result, float effectivealbedo,
+    float atmosphericalbedo, float t_earth, float t_sat)
+    {
+        float ca = getdifferentialalbedo(effectivealbedo, atmosphericalbedo,
+                            t_earth, t_sat);
+        if (ca < 0.2){ ca = 0.2; }
+        float effectiveproportion = 2.24 * effectivealbedo;
+        if ( ca > effectiveproportion) { ca = effectiveproportion; }
+        result[i_dxyt] = ca;
+    }
 
     __global__ void update_temporalcache(float *declination,
     float *solarelevation, float* solarangle, float *excentricity,
@@ -274,6 +296,10 @@ mod_sourcecode = SourceModule(
         solar_opticaldepth = getopticaldepth(solar_opticalpath);
         gettransmitance(t_earth, linke, solar_opticalpath, solar_opticaldepth,
                         solarelevation[i_dxyt]);
+        effectivealbedo = geteffectivealbedo(solarangle[i_dxyt]);
+        getcloudalbedo(cloudalbedo, effectivealbedo,
+                          atmosphericalbedo[i_dxyt], t_earth[i_dxyt],
+                          t_sat[i_dxyt]);
 
     }
 
