@@ -57,10 +57,10 @@ mod_sourcecode = SourceModule(
             cos(lat_r) * cos(hourlyangle)) * RAD2DEG;
     }
 
-    __device__ void getelevation(float *solarelevation, float *zenithangle)
+    __device__ float getelevation(float zenithangle)
     {
-        float za = zenithangle[i_dxyt] * DEG2RAD;
-        solarelevation[i_dxyt] = ((PI / 2) - za) * RAD2DEG;
+        float za = zenithangle * DEG2RAD;
+        return ((PI / 2) - za) * RAD2DEG;
     }
 
     __device__ void getexcentricity(float *result, float *gamma)
@@ -72,10 +72,10 @@ mod_sourcecode = SourceModule(
             0.000077 * sin(2 * g);
     }
 
-    __device__ float getcorrectedelevation(float *elevation)
+    __device__ float getcorrectedelevation(float elevation)
     {
         float corrected;
-        float e = elevation[i_dxyt] * DEG2RAD;
+        float e = elevation * DEG2RAD;
         float p = pow(e, 2);
         corrected = (e +
                      0.061359 * ((0.1594 + 1.1230 * e +
@@ -131,7 +131,7 @@ mod_sourcecode = SourceModule(
 
 
     __device__ float getbeamirradiance(float *extraterrestrialirradiance,
-    float *excentricity, float *zenithangle, float *solarelevation,
+    float *excentricity, float *zenithangle, float solarelevation,
     float *linketurbidity, float *terrainheight)
     {
         float corrected = getcorrectedelevation(solarelevation);
@@ -150,10 +150,10 @@ mod_sourcecode = SourceModule(
                0.0003797 * pow(linketurbidity[i_dxyt], 2);
     }
 
-    __device__ float getangularcorrection(float *solarelevation,
+    __device__ float getangularcorrection(float solarelevation,
     float *linketurbidity)
     {
-        float sin_se = sin(solarelevation[i_dxyt] * DEG2RAD);
+        float sin_se = sin(solarelevation * DEG2RAD);
         float a0 = 0.264631 - 0.061581 * linketurbidity[i_dxyt] +
                    0.0031408 * pow(linketurbidity[i_dxyt], 2);
         float a1 = 2.0402 + 0.018945 * linketurbidity[i_dxyt] -
@@ -168,14 +168,22 @@ mod_sourcecode = SourceModule(
     }
 
     __device__ float getdiffusetransmitance(float *linketurbidity,
-    float *solarelevation)
+    float solarelevation)
     {
         return getzenithdiffusetransmitance(linketurbidity) *
                getangularcorrection(solarelevation, linketurbidity);
     }
 
+    __device__ void gettransmitance(float *result, float *linketurbidity,
+    float opticalpath, float opticaldepth, float solarelevation)
+    {
+        result[i_dxyt] = getbeamtransmission(linketurbidity, opticalpath,
+                   opticaldepth) +
+                   getdiffusetransmitance(linketurbidity, solarelevation);
+    }
+
     __device__ float getdiffuseirradiance(float *extraterrestrialirradiance,
-    float *excentricity, float *solarelevation, float *linketurbidity)
+    float *excentricity, float solarelevation, float *linketurbidity)
     {
         return extraterrestrialirradiance[0] * excentricity[i_dt] *
                getdiffusetransmitance(linketurbidity, solarelevation);
@@ -235,15 +243,18 @@ mod_sourcecode = SourceModule(
     float *decimalhour,  float *gamma, float *dem, float *linke,
     float *SAT_LON, float *i0met, float *EXT_RAD, float *HEIGHT)
     {
-        float bc, dc, satellitalzenithangle, atmosphericradiance;
+        float bc, dc, satellitalzenithangle, atmosphericradiance,
+              satellitalelevation, satellital_opticalpath,
+              satellital_opticaldepth, solar_opticalpath, solar_opticaldepth,
+              effectivealbedo;
         getdeclination(declination, gamma);
         getzenithangle(solarangle, declination, lat, lon, decimalhour, gamma);
-        getelevation(solarelevation, solarangle);
+        solarelevation[i_dxyt] = getelevation(solarangle[i_dxyt]);
         getexcentricity(excentricity, gamma);
         bc = getbeamirradiance(EXT_RAD, excentricity, solarangle,
-                               solarelevation, linke, dem);
-        dc = getdiffuseirradiance(EXT_RAD, excentricity, solarelevation,
-                                  linke);
+                               solarelevation[i_dxyt], linke, dem);
+        dc = getdiffuseirradiance(EXT_RAD, excentricity,
+                                solarelevation[i_dxyt], linke);
         getglobalirradiance(gc, bc, dc);
         satellitalzenithangle = getsatellitalzenithangle(lat, lon, SAT_LON);
         atmosphericradiance = getatmosphericradiance(EXT_RAD, i0met,
@@ -251,6 +262,18 @@ mod_sourcecode = SourceModule(
                                                      satellitalzenithangle);
         getalbedo(atmosphericalbedo, atmosphericradiance, i0met,
                   excentricity, satellitalzenithangle);
+        satellitalelevation = getelevation(satellitalzenithangle);
+        satellital_opticalpath = getopticalpath(
+                getcorrectedelevation(solarelevation[i_dxyt]), dem, HEIGHT);
+        satellital_opticaldepth = getopticaldepth(satellital_opticalpath);
+        gettransmitance(t_sat, linke, satellital_opticalpath,
+                        satellital_opticaldepth, satellitalelevation);
+        solar_opticalpath = getopticalpath(
+                        getcorrectedelevation(solarelevation[i_dxyt]), dem,
+                        HEIGHT);
+        solar_opticaldepth = getopticaldepth(solar_opticalpath);
+        gettransmitance(t_earth, linke, solar_opticalpath, solar_opticaldepth,
+                        solarelevation[i_dxyt]);
 
     }
 
