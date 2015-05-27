@@ -57,10 +57,10 @@ mod_sourcecode = SourceModule(
             cos(lat_r) * cos(hourlyangle)) * RAD2DEG;
     }
 
-    __device__ void getelevation(float *solarelevation, float *zenithangle)
+    __device__ float getelevation(float zenithangle)
     {
-        float za = zenithangle[i_dxyt] * DEG2RAD;
-        solarelevation[i_dxyt] = ((PI / 2) - za) * RAD2DEG;
+        float za = zenithangle * DEG2RAD;
+        return ((PI / 2) - za) * RAD2DEG;
     }
 
     __device__ void getexcentricity(float *result, float *gamma)
@@ -72,10 +72,10 @@ mod_sourcecode = SourceModule(
             0.000077 * sin(2 * g);
     }
 
-    __device__ float getcorrectedelevation(float *elevation)
+    __device__ float getcorrectedelevation(float elevation)
     {
         float corrected;
-        float e = elevation[i_dxyt] * DEG2RAD;
+        float e = elevation * DEG2RAD;
         float p = pow(e, 2);
         corrected = (e +
                      0.061359 * ((0.1594 + 1.1230 * e +
@@ -85,10 +85,10 @@ mod_sourcecode = SourceModule(
         return corrected;
     }
 
-    __device__ float getopticalpath(float *correctedelevation,
+    __device__ float getopticalpath(float correctedelevation,
     float *terrainheight, float *atmosphere_theoretical_height)
     {
-        float ce = correctedelevation[i_dxyt];
+        float ce = correctedelevation;
         if (ce < 0) { ce = 0.0f; }
         // In the next line the correctedelevation is used over a degree base.
         float p = pow(ce + 6.07995, -1.6364);
@@ -97,60 +97,166 @@ mod_sourcecode = SourceModule(
                (sin(ce) + 0.50572 * p));
     }
 
-    /*
-    __device__ float getopticaldepth(float *opticalpath)
-    {
 
+    __device__ float getopticaldepth(float opticalpath)
+    {
+        float tmp = 1.0f;
+        if (opticalpath <= 20){
+            tmp = (6.6296 + 1.7513 * opticalpath -
+                   0.1202 * pow(opticalpath, 2) +
+                   0.0065 * pow(opticalpath, 3) -
+                   0.00013 * pow(opticalpath, 4));
+        } else {
+            tmp = (10.4 + 0.718 * opticalpath);
+        }
+        tmp = 1 / tmp;
+        return tmp;
     }
 
+    __device__ float getbeamtransmission(float *linketurbidity,
+    float opticalpath, float opticaldepth)
+    {
+        return exp(-0.8662 * linketurbidity[i_dxyt] * opticalpath *
+                   opticaldepth);
+    }
+
+
+    __device__ float gethorizontalirradiance(float *extraterrestrialirradiance,
+    float *excentricity, float *zenithangle)
+    {
+        float radzenith = zenithangle[i_dxyt] * DEG2RAD;
+        return extraterrestrialirradiance[0] * excentricity[i_dxyt] *
+               cos(radzenith);
+    }
+
+
     __device__ float getbeamirradiance(float *extraterrestrialirradiance,
-    float *excentricity, float *zenithangle, float *solarelevation,
+    float *excentricity, float *zenithangle, float solarelevation,
     float *linketurbidity, float *terrainheight)
     {
         float corrected = getcorrectedelevation(solarelevation);
-        return 0;
+        float opticalpath = getopticalpath(corrected, terrainheight,
+                                           extraterrestrialirradiance);
+        float opticaldepth = getopticaldepth(opticalpath);
+        return gethorizontalirradiance(extraterrestrialirradiance,
+                                       excentricity, zenithangle) *
+               getbeamtransmission(linketurbidity, opticalpath,
+                                   opticaldepth);
     }
 
-    __device__ float getdiffuseirradiance(float extraterrestrialirradiance,
-    float *excentricity, float *solarelevation, float *linketurbidity)
+    __device__ float getzenithdiffusetransmitance(float *linketurbidity)
     {
-        return 0;
+        return -0.015843 + 0.030543 * linketurbidity[i_dxyt] +
+               0.0003797 * pow(linketurbidity[i_dxyt], 2);
+    }
+
+    __device__ float getangularcorrection(float solarelevation,
+    float *linketurbidity)
+    {
+        float sin_se = sin(solarelevation * DEG2RAD);
+        float a0 = 0.264631 - 0.061581 * linketurbidity[i_dxyt] +
+                   0.0031408 * pow(linketurbidity[i_dxyt], 2);
+        float a1 = 2.0402 + 0.018945 * linketurbidity[i_dxyt] -
+                   0.011161 * pow(linketurbidity[i_dxyt], 2);
+        float a2 = -1.3025 + 0.039231 * linketurbidity[i_dxyt] +
+                   0.0085079 * pow(linketurbidity[i_dxyt], 2);
+        float ztdifftr = getzenithdiffusetransmitance(linketurbidity);
+        if (a0 * ztdifftr < 0.002){
+           a0 = 0.002 / ztdifftr;
+        }
+        return a0 + a1 * sin_se + a2 * pow(sin_se, 2);
+    }
+
+    __device__ float getdiffusetransmitance(float *linketurbidity,
+    float solarelevation)
+    {
+        return getzenithdiffusetransmitance(linketurbidity) *
+               getangularcorrection(solarelevation, linketurbidity);
+    }
+
+    __device__ void gettransmitance(float *result, float *linketurbidity,
+    float opticalpath, float opticaldepth, float solarelevation)
+    {
+        result[i_dxyt] = getbeamtransmission(linketurbidity, opticalpath,
+                   opticaldepth) +
+                   getdiffusetransmitance(linketurbidity, solarelevation);
+    }
+
+    __device__ float getdiffuseirradiance(float *extraterrestrialirradiance,
+    float *excentricity, float solarelevation, float *linketurbidity)
+    {
+        return extraterrestrialirradiance[0] * excentricity[i_dt] *
+               getdiffusetransmitance(linketurbidity, solarelevation);
     }
 
     __device__ void getglobalirradiance(float *gc, float beamirradiance,
     float diffuseirradiance)
     {
-        gc[i_dxyt] = bc + dc;
+        gc[i_dxyt] = beamirradiance + diffuseirradiance;
     }
 
 
-    __global__ void getsatellitalzenthangle(float *result, float *lat,
-    float *lon, float sub_lon, float rpol, float req, float h)
+    #define rpol 6356.5838
+    #define req  6378.1690
+    #define h    41166.55637
+    //define h    42164.0
+
+    __device__ float getsatellitalzenithangle(float *lat,
+    float *lon, float *sub_lon)
     {
-        lat[i_dxy] *= DEG2RAD;
-        float lon_diff = (lon[i_dxy] - sub_lon) * RAD2DEG;
-        float lat_cos_only = cos(lat[i_dxy]);
+        float la = lat[i_dxy] * DEG2RAD;
+        float lon_diff = (lon[i_dxy] - sub_lon[0]) * RAD2DEG;
+        float lat_cos_only = cos(la);
         float re = rpol / (sqrt(1 - (pow(req, 2) - pow(rpol, 2)) /
             (pow(req, 2)) * pow(lat_cos_only, 2)));
         float lat_cos = re * lat_cos_only;
         float r1 = h - lat_cos * cos(lon_diff);
         float r2 = - lat_cos * sin(lon_diff);
-        float r3 = re * sin(lat[i_dxy]);
+        float r3 = re * sin(la);
         float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
-        result[i_dxy] = (PI - acos((pow(h,2) -
-            pow(re, 2) - pow(rs, 2)) / (-2 * re * rs)));
-        result[i_dxy] *= RAD2DEG;
+        return (PI - acos((pow(h,2) -
+            pow(re, 2) - pow(rs, 2)) / (-2 * re * rs))) * RAD2DEG;
     }
 
-    __global__ void getalbedo(float *result, float *radiance,
-    float totalirradiance, float *excentricity, float *zenithangle)
+    __device__ float getatmosphericradiance(float *extraterrestrialirradiance,
+    float *i0met, float diffuseclearsky, float satellitalzenithangle)
     {
-        result[i_dt] = (PI *
-            radiance[i_dt]) / (totalirradiance * excentricity[i_dt] *
-            cos(zenithangle[i_dt]));
+        float anglerelation = pow(0.5 / cos(satellitalzenithangle * DEG2RAD),
+                                   0.8);
+        return (i0met[0] * diffuseclearsky * anglerelation) /
+               (PI * extraterrestrialirradiance[0]);
     }
-    */
 
+    __device__ float getdifferentialalbedo(float firstalbedo,
+    float secondalbedo, float t_earth, float t_sat)
+    {
+        return (firstalbedo - secondalbedo) / (t_earth * t_sat);
+    }
+
+    __device__ void getalbedo(float *result, float radiance,
+    float *totalirradiance, float *excentricity, float zenithangle)
+    {
+        result[i_dxyt] = (PI * radiance) /
+                         (totalirradiance[0] * excentricity[i_dxyt] *
+                         cos(zenithangle * DEG2RAD));
+    }
+
+    __device__ float geteffectivealbedo(float solarangle)
+    {
+        return 0.78 - 0.13 * (1 - exp(-4 * pow(cos(solarangle * DEG2RAD), 5)));
+    }
+
+
+    __device__ void getcloudalbedo(float *result, float effectivealbedo,
+    float atmosphericalbedo, float t_earth, float t_sat)
+    {
+        float ca = getdifferentialalbedo(effectivealbedo, atmosphericalbedo,
+                            t_earth, t_sat);
+        if (ca < 0.2){ ca = 0.2; }
+        float effectiveproportion = 2.24 * effectivealbedo;
+        if ( ca > effectiveproportion) { ca = effectiveproportion; }
+        result[i_dxyt] = ca;
+    }
 
     __global__ void update_temporalcache(float *declination,
     float *solarelevation, float* solarangle, float *excentricity,
@@ -159,16 +265,42 @@ mod_sourcecode = SourceModule(
     float *decimalhour,  float *gamma, float *dem, float *linke,
     float *SAT_LON, float *i0met, float *EXT_RAD, float *HEIGHT)
     {
-        // float bc, dc;
+        float bc, dc, satellitalzenithangle, atmosphericradiance,
+              satellitalelevation, satellital_opticalpath,
+              satellital_opticaldepth, solar_opticalpath, solar_opticaldepth,
+              effectivealbedo;
         getdeclination(declination, gamma);
         getzenithangle(solarangle, declination, lat, lon, decimalhour, gamma);
-        getelevation(solarelevation, solarangle);
+        solarelevation[i_dxyt] = getelevation(solarangle[i_dxyt]);
         getexcentricity(excentricity, gamma);
-        /*bc = getbeamirradiance(EXT_RAD, excentricity, solarangle,
-                               solarelevation, linke, dem);
-        dc = getdiffuseirradiance(EXT_RAD, excentricity, solarelevation,
-                                  linke);
-        getglobalirradiance(gc, bc, dc);*/
+        bc = getbeamirradiance(EXT_RAD, excentricity, solarangle,
+                               solarelevation[i_dxyt], linke, dem);
+        dc = getdiffuseirradiance(EXT_RAD, excentricity,
+                                solarelevation[i_dxyt], linke);
+        getglobalirradiance(gc, bc, dc);
+        satellitalzenithangle = getsatellitalzenithangle(lat, lon, SAT_LON);
+        atmosphericradiance = getatmosphericradiance(EXT_RAD, i0met,
+                                                     dc,
+                                                     satellitalzenithangle);
+        getalbedo(atmosphericalbedo, atmosphericradiance, i0met,
+                  excentricity, satellitalzenithangle);
+        satellitalelevation = getelevation(satellitalzenithangle);
+        satellital_opticalpath = getopticalpath(
+                getcorrectedelevation(solarelevation[i_dxyt]), dem, HEIGHT);
+        satellital_opticaldepth = getopticaldepth(satellital_opticalpath);
+        gettransmitance(t_sat, linke, satellital_opticalpath,
+                        satellital_opticaldepth, satellitalelevation);
+        solar_opticalpath = getopticalpath(
+                        getcorrectedelevation(solarelevation[i_dxyt]), dem,
+                        HEIGHT);
+        solar_opticaldepth = getopticaldepth(solar_opticalpath);
+        gettransmitance(t_earth, linke, solar_opticalpath, solar_opticaldepth,
+                        solarelevation[i_dxyt]);
+        effectivealbedo = geteffectivealbedo(solarangle[i_dxyt]);
+        getcloudalbedo(cloudalbedo, effectivealbedo,
+                          atmosphericalbedo[i_dxyt], t_earth[i_dxyt],
+                          t_sat[i_dxyt]);
+
     }
 
     """)
@@ -201,63 +333,8 @@ def gpu_exec(func_name, results, *matrixs):
     return matrixs_ram[:results]
 
 
-def getexcentricity(gamma):
-    result = np.empty_like(gamma)
-    gpu_exec("getexcentricity", 1, result, gamma)
-    return result
-
-
-def getzenithangle(declination, latitude, hourlyangle):
-    result = np.empty_like(declination)
-    gpu_exec("getzenithangle", 1, result, hourlyangle, latitude, declination)
-    return result
-
-
-def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
-    result = np.empty_like(radiance)
-    gpu_exec("getalbedo", 1, result, radiance, totalirradiance,
-             excentricity, zenitangle)
-    return result
-
-
-def getsatellitalzenithangle(lat, lon, sub_lon):
-    rpol = 6356.5838
-    req = 6378.1690
-    h = 42166.55637  # 42164.0
-    result = np.empty_like(lat)
-    gpu_exec("getsatellitalzenithangle", 1, result,
-             lat, lon, sub_lon, rpol, req, h)
-    return result
-
-
 class GPUStrategy(CPUStrategy):
 
-    """
-    def getexcentricity(self, gamma):
-        return getexcentricity(gamma)
-    """
-
-    def getdeclination(self, gamma):
-        return self.declination[:]  # getdeclination(gamma)
-
-    def gethourlyangle(self, lat, lon, decimalhour, gamma):
-        # TODO: Continue from here!
-        tmp = super(GPUStrategy, self).gethourlyangle(lat, lon, decimalhour,
-                                                      gamma)
-        print tmp.shape, self.solarelevation[:].shape
-        return self.solarelevation[:]
-
-    """
-    def getzenithangle(self, declination, latitude, hourlyangle):
-        return getzenithangle(declination, latitude, hourlyangle)
-
-    def getalbedo(self, radiance, totalirradiance, excentricity, zenitangle):
-        return getalbedo(radiance, totalirradiance, excentricity,
-                         zenitangle)
-
-    def getsatellitalzenithangle(self, lat, lon, sub_lon):
-        return getsatellitalzenithangle(lat, lon, sub_lon)
-    """
 
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
