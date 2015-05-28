@@ -50,7 +50,10 @@ ra_run:
 	@ ($(PROXYENV) $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run()" 2>&1) >> status.txt
 
 test:
-	@ $(SOURCE_ACTIVATE) $(PYTHON) tests
+	@ $(SOURCE_ACTIVATE) CUDA_PROFILE=1 $(PYTHON) tests
+
+test_gdb:
+	@ $(SOURCE_ACTIVATE) cuda-gdb --args $(PYTHON) -m pycuda.debug tests/heliosat_test.py
 
 test-coverage-travis-ci:
 	@ $(SOURCE_ACTIVATE) coverage run --source='models/' tests/__main__.py
