@@ -260,7 +260,7 @@ mod_sourcecode = SourceModule(
     }
 
     __global__ void update_temporalcache(float *declination,
-    float* solarangle, float *solarelevation, float *excentricity,
+    float *solarangle, float *solarelevation, float *excentricity,
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth,
     float *cloudalbedo, float *lat, float *lon, float *decimalhour,
     float *gamma, float *dem, float *linke, float *SAT_LON,
