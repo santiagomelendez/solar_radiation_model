@@ -9,48 +9,48 @@ import itertools
 
 mod_sourcecode = SourceModule(
     """
-    #define GREENWICH_LON """ + str(GREENWICH_LON) + """
-    #define PI """ + str(np.pi) + """
-    #define DEG2RAD (PI / 180)
-    #define RAD2DEG (180 / PI)
+    #include <stdio.h>
 
-    #define i_dt threadIdx.z
+    #define GREENWICH_LON (""" + str(GREENWICH_LON) + """f)
+    #define PI (""" + str(np.pi) + """f)
+    #define DEG2RAD (float) (PI / 180.0f)
+    #define RAD2DEG (float) (180.0f / PI)
+
+    #define i_dt (threadIdx.z)
     #define i_dxy (blockIdx.x + (blockIdx.y * gridDim.x))
     #define i_dxyt (i_dxy + gridDim.x * gridDim.y * i_dt)
 
     __device__ void getdeclination(float *declination, float *gamma)
     {
-        float g = gamma[i_dt] * DEG2RAD;
-        declination[i_dt] = (0.006918f - 0.399912f * cos(g) +
+        const float g = gamma[i_dt] * DEG2RAD;
+        declination[i_dt] = round((0.006918f - 0.399912f * cos(g) +
                         0.070257f * sin(g) -
-                        0.006758f * cos(2 * g) +
-                        0.000907f * sin(2 * g) -
-                        0.002697f * cos(3 * g) +
-                        0.00148f * sin(3 * g)) * RAD2DEG;
-
+                        0.006758f * cos(2.0f * g) +
+                        0.000907f * sin(2.0f * g) -
+                        0.002697f * cos(3.0f * g) +
+                        0.00148f * sin(3.0f * g)) * RAD2DEG);
     }
 
     __device__ float gethourlyangle(float *lat, float *lon,
     float *decimalhour, float *gamma)
     {
-        float g = gamma[i_dt] * DEG2RAD;
-        float timeequation = (0.000075 + 0.001868 * cos(g) -
-            0.032077 * sin(g) -
-            0.014615 * cos(2 * g) -
-            0.04089 * sin(2 * g)) * (12 / PI);
+        const float g = gamma[i_dt] * DEG2RAD;
+        float timeequation = (0.000075f + 0.001868f * cos(g) -
+            0.032077f * sin(g) -
+            0.014615f * cos(2.0f * g) -
+            0.04089f * sin(2.0f * g)) * (12.0f / PI);
         float lon_diff = (GREENWICH_LON - lon[i_dxy]) * DEG2RAD;
-        float tst_hour = decimalhour[i_dt] - lon_diff * (12 / PI) +
+        float tst_hour = decimalhour[i_dt] - lon_diff * (12.0f / PI) +
             timeequation;
         float lat_sign = lat[i_dxy] / abs(lat[i_dxy]);
-        return ((tst_hour - 12) * lat_sign * PI / 12) * RAD2DEG;
+        return ((tst_hour - 12.0f) * lat_sign * PI / 12.0f) * RAD2DEG;
     }
 
     __device__ void getzenithangle(float *solarangle, float *declination,
     float *lat, float *lon, float *decimalhour, float *gamma)
     {
-        float hourlyangle;
-        hourlyangle = gethourlyangle(lat, lon, decimalhour, gamma);
-        hourlyangle *= DEG2RAD;
+        float hourlyangle = 0;
+        hourlyangle = gethourlyangle(lat, lon, decimalhour, gamma) * DEG2RAD;
         float lat_r = lat[i_dxy] * DEG2RAD;
         float dec_r = declination[i_dt] * DEG2RAD;
         solarangle[i_dxyt] = acos(sin(dec_r) * sin(lat_r) + cos(dec_r) *
@@ -60,28 +60,28 @@ mod_sourcecode = SourceModule(
     __device__ float getelevation(float zenithangle)
     {
         float za = zenithangle * DEG2RAD;
-        return ((PI / 2) - za) * RAD2DEG;
+        return ((PI / 2.0f) - za) * RAD2DEG;
     }
 
     __device__ void getexcentricity(float *result, float *gamma)
     {
-        float g = gamma[i_dt] * DEG2RAD;
-        result[i_dxyt] = 1.000110 + 0.034221 * cos(g) +
-            0.001280 * sin(g) +
-            0.000719 * cos(2 * g) +
-            0.000077 * sin(2 * g);
+        const float g = gamma[i_dt] * DEG2RAD;
+        result[i_dxyt] = 1.000110f + 0.034221f * cos(g) +
+            0.001280f * sin(g) +
+            0.000719f * cos(2.0f * g) +
+            0.000077f * sin(2.0f * g);
     }
 
     __device__ float getcorrectedelevation(float elevation)
     {
         float corrected;
         float e = elevation * DEG2RAD;
-        float p = pow(e, 2);
+        float p = pow(e, 2.0f);
         corrected = (e +
-                     0.061359 * ((0.1594 + 1.1230 * e +
-                                  0.065656 * p) /
-                                 (1 + 28.9344 * e +
-                                  277.3971 * p))) * RAD2DEG;
+                     0.061359f * ((0.1594f + 1.1230f * e +
+                                  0.065656f * p) /
+                                 (1.0f + 28.9344f * e +
+                                  277.3971f * p))) * RAD2DEG;
         return corrected;
     }
 
@@ -91,32 +91,32 @@ mod_sourcecode = SourceModule(
         float ce = correctedelevation;
         if (ce < 0) { ce = 0.0f; }
         // In the next line the correctedelevation is used over a degree base.
-        float p = pow(ce + 6.07995, -1.6364);
+        float p = pow(ce + 6.07995f, -1.6364f);
         ce *= DEG2RAD;
         return (exp(-terrainheight[i_dxy]/atmosphere_theoretical_height[0]) /
-               (sin(ce) + 0.50572 * p));
+               (sin(ce) + 0.50572f * p));
     }
 
 
     __device__ float getopticaldepth(float opticalpath)
     {
         float tmp = 1.0f;
-        if (opticalpath <= 20){
-            tmp = (6.6296 + 1.7513 * opticalpath -
-                   0.1202 * pow(opticalpath, 2) +
-                   0.0065 * pow(opticalpath, 3) -
-                   0.00013 * pow(opticalpath, 4));
+        if (opticalpath <= 20.0f){
+            tmp = (6.6296f + 1.7513f * opticalpath -
+                   0.1202f * pow(opticalpath, 2.0f) +
+                   0.0065f * pow(opticalpath, 3.0f) -
+                   0.00013f * pow(opticalpath, 4.0f));
         } else {
-            tmp = (10.4 + 0.718 * opticalpath);
+            tmp = (10.4f + 0.718f * opticalpath);
         }
-        tmp = 1 / tmp;
+        tmp = 1.0f / tmp;
         return tmp;
     }
 
     __device__ float getbeamtransmission(float *linketurbidity,
     float opticalpath, float opticaldepth)
     {
-        return exp(-0.8662 * linketurbidity[i_dxyt] * opticalpath *
+        return exp(-0.8662f * linketurbidity[i_dxyt] * opticalpath *
                    opticaldepth);
     }
 
@@ -125,7 +125,7 @@ mod_sourcecode = SourceModule(
     float *excentricity, float *zenithangle)
     {
         float radzenith = zenithangle[i_dxyt] * DEG2RAD;
-        return extraterrestrialirradiance[0] * excentricity[i_dxyt] *
+        return extraterrestrialirradiance[0] * excentricity[i_dt] *
                cos(radzenith);
     }
 
@@ -146,25 +146,25 @@ mod_sourcecode = SourceModule(
 
     __device__ float getzenithdiffusetransmitance(float *linketurbidity)
     {
-        return -0.015843 + 0.030543 * linketurbidity[i_dxyt] +
-               0.0003797 * pow(linketurbidity[i_dxyt], 2);
+        return -0.015843f + 0.030543f * linketurbidity[i_dxyt] +
+               0.0003797f * pow(linketurbidity[i_dxyt], 2.0f);
     }
 
     __device__ float getangularcorrection(float solarelevation,
     float *linketurbidity)
     {
         float sin_se = sin(solarelevation * DEG2RAD);
-        float a0 = 0.264631 - 0.061581 * linketurbidity[i_dxyt] +
-                   0.0031408 * pow(linketurbidity[i_dxyt], 2);
-        float a1 = 2.0402 + 0.018945 * linketurbidity[i_dxyt] -
-                   0.011161 * pow(linketurbidity[i_dxyt], 2);
-        float a2 = -1.3025 + 0.039231 * linketurbidity[i_dxyt] +
-                   0.0085079 * pow(linketurbidity[i_dxyt], 2);
+        float a0 = 0.264631f - 0.061581f * linketurbidity[i_dxyt] +
+                   0.0031408f * pow(linketurbidity[i_dxyt], 2.0f);
+        float a1 = 2.0402f + 0.018945f * linketurbidity[i_dxyt] -
+                   0.011161f * pow(linketurbidity[i_dxyt], 2.0f);
+        float a2 = -1.3025f + 0.039231f * linketurbidity[i_dxyt] +
+                   0.0085079f * pow(linketurbidity[i_dxyt], 2.0f);
         float ztdifftr = getzenithdiffusetransmitance(linketurbidity);
-        if (a0 * ztdifftr < 0.002){
-           a0 = 0.002 / ztdifftr;
+        if (a0 * ztdifftr < 0.002f){
+           a0 = 0.002f / ztdifftr;
         }
-        return a0 + a1 * sin_se + a2 * pow(sin_se, 2);
+        return a0 + a1 * sin_se + a2 * pow(sin_se, 2.0f);
     }
 
     __device__ float getdiffusetransmitance(float *linketurbidity,
@@ -196,33 +196,33 @@ mod_sourcecode = SourceModule(
     }
 
 
-    #define rpol 6356.5838
-    #define req  6378.1690
-    #define h    41166.55637
-    //define h    42164.0
+    #define rpol 6356.5838f
+    #define req  6378.1690f
+    #define h    42166.55637f
+    //define h    42164.0f
 
     __device__ float getsatellitalzenithangle(float *lat,
     float *lon, float *sub_lon)
     {
         float la = lat[i_dxy] * DEG2RAD;
-        float lon_diff = (lon[i_dxy] - sub_lon[0]) * RAD2DEG;
+        float lon_diff = (lon[i_dxy] - sub_lon[1]) * DEG2RAD;
         float lat_cos_only = cos(la);
-        float re = rpol / (sqrt(1 - (pow(req, 2) - pow(rpol, 2)) /
-            (pow(req, 2)) * pow(lat_cos_only, 2)));
+        float re = rpol / (sqrt(1 - (pow(req, 2.0f) - pow(rpol, 2.0f)) /
+            (pow(req, 2.0f)) * pow(lat_cos_only, 2.0f)));
         float lat_cos = re * lat_cos_only;
         float r1 = h - lat_cos * cos(lon_diff);
         float r2 = - lat_cos * sin(lon_diff);
         float r3 = re * sin(la);
-        float rs = sqrt(pow(r1,2) + pow(r2,2) + pow(r3,2));
-        return (PI - acos((pow(h,2) -
-            pow(re, 2) - pow(rs, 2)) / (-2 * re * rs))) * RAD2DEG;
+        float rs = sqrt(pow(r1, 2.0f) + pow(r2, 2.0f) + pow(r3, 2.0f));
+        return (PI - acos((pow(h, 2.0f) -
+            pow(re, 2.0f) - pow(rs, 2.0f)) / (-2.0f * re * rs))) * RAD2DEG;
     }
 
     __device__ float getatmosphericradiance(float *extraterrestrialirradiance,
     float *i0met, float diffuseclearsky, float satellitalzenithangle)
     {
-        float anglerelation = pow(0.5 / cos(satellitalzenithangle * DEG2RAD),
-                                   0.8);
+        float anglerelation = pow(0.5f / cos(satellitalzenithangle * DEG2RAD),
+                                  0.8f);
         return (i0met[0] * diffuseclearsky * anglerelation) /
                (PI * extraterrestrialirradiance[0]);
     }
@@ -237,13 +237,14 @@ mod_sourcecode = SourceModule(
     float *totalirradiance, float *excentricity, float zenithangle)
     {
         result[i_dxyt] = (PI * radiance) /
-                         (totalirradiance[0] * excentricity[i_dxyt] *
+                         (totalirradiance[0] * excentricity[i_dt] *
                          cos(zenithangle * DEG2RAD));
     }
 
     __device__ float geteffectivealbedo(float solarangle)
     {
-        return 0.78 - 0.13 * (1 - exp(-4 * pow(cos(solarangle * DEG2RAD), 5)));
+        return 0.78f - 0.13f * (1.0f -
+            exp(-4.0f * pow(cos(solarangle * DEG2RAD), 5.0f)));
     }
 
 
@@ -252,18 +253,18 @@ mod_sourcecode = SourceModule(
     {
         float ca = getdifferentialalbedo(effectivealbedo, atmosphericalbedo,
                             t_earth, t_sat);
-        if (ca < 0.2){ ca = 0.2; }
-        float effectiveproportion = 2.24 * effectivealbedo;
+        if (ca < 0.2f) { ca = 0.2f; }
+        float effectiveproportion = 2.24f * effectivealbedo;
         if ( ca > effectiveproportion) { ca = effectiveproportion; }
         result[i_dxyt] = ca;
     }
 
     __global__ void update_temporalcache(float *declination,
-    float *solarelevation, float* solarangle, float *excentricity,
+    float* solarangle, float *solarelevation, float *excentricity,
     float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth,
-    float *cloudalbedo, float *lat, float *lon, float *times,
-    float *decimalhour,  float *gamma, float *dem, float *linke,
-    float *SAT_LON, float *i0met, float *EXT_RAD, float *HEIGHT)
+    float *cloudalbedo, float *lat, float *lon, float *decimalhour,
+    float *gamma, float *dem, float *linke, float *SAT_LON,
+    float *i0met, float *EXT_RAD, float *HEIGHT)
     {
         float bc, dc, satellitalzenithangle, atmosphericradiance,
               satellitalelevation, satellital_opticalpath,
@@ -300,9 +301,7 @@ mod_sourcecode = SourceModule(
         getcloudalbedo(cloudalbedo, effectivealbedo,
                           atmosphericalbedo[i_dxyt], t_earth[i_dxyt],
                           t_sat[i_dxyt]);
-
     }
-
     """)
 
 
@@ -311,7 +310,9 @@ def gpu_exec(func_name, results, *matrixs):
     is_num = lambda x: isinstance(x, (int, long, float, complex))
     adapt_matrix = lambda m: m if isinstance(m, np.ndarray) else m[:]
     adapt = lambda x: np.array([[[x]]]) if is_num(x) else adapt_matrix(x)
-    matrixs_ram = map(lambda m: adapt(m).astype(np.float32), matrixs)
+    matrixs_ram = map(lambda m: adapt(m).astype(np.float32,
+                                                casting='same_kind'),
+                      matrixs)
     matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs_ram)
     transferences = zip(matrixs_ram, matrixs_gpu)
     list(map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences))
@@ -335,12 +336,10 @@ def gpu_exec(func_name, results, *matrixs):
 
 class GPUStrategy(CPUStrategy):
 
-
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [loader.lat,
                   loader.lon,
-                  self.times,
                   self.decimalhour,
                   self.gamma,
                   loader.dem,
@@ -350,8 +349,8 @@ class GPUStrategy(CPUStrategy):
                   const(1367.0),
                   const(8434.5)]
         outputs = [self.declination,
-                   self.solarelevation,
                    self.solarangle,
+                   self.solarelevation,
                    self.excentricity,
                    self.gc,
                    self.atmosphericalbedo,
@@ -361,6 +360,11 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
+        print "----"
+        maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
+        for mm in zip(range(len(maxmin)), maxmin):
+            print mm[0], ': ', mm[1]
+        print "----"
         nc.sync(cache)
         super(GPUStrategy, self).update_temporalcache(loader, cache)
 
