@@ -8,18 +8,6 @@ import multiprocessing as mp
 import os
 
 
-try:
-    raise Exception('Force CPU')
-    from pycuda.compiler import SourceModule
-    import pycuda.gpuarray as gpuarray
-    import pycuda.driver as cuda
-    import pycuda.autoinit
-    cuda_can_help = True
-    print "<< using CUDA cores >>"
-except Exception:
-    cuda_can_help = False
-
-
 class ProcessingStrategy(object):
 
     def __init__(self, algorithm, loader, cache):
@@ -56,4 +44,17 @@ def mp_map(f, X):
     return [p.recv() for (p, c) in pipe]
 
 
-pmap = map if 'armv6l' in list(os.uname()) else mp_map
+pmap = map  # map if 'armv6l' in list(os.uname()) else mp_map
+
+try:
+    raise Exception('Force CPU')
+    from pycuda.compiler import SourceModule
+    import pycuda.gpuarray as gpuarray
+    import pycuda.driver as cuda
+    import pycuda.autoinit
+    cuda_can_help = True
+    import gpu as geo
+    print "<< using CUDA cores >>"
+except Exception:
+    cuda_can_help = False
+    import cpu as geo
