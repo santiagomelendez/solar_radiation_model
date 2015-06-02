@@ -168,6 +168,8 @@ class OutputCache(AlgorithmCache):
         with nc.loader(self.filenames) as images:
             map(algorithm.create_1px_dimensions, self.root.roots)
             self.root.getvar('time', source=images.getvar('time'))
+            self.root.getvar('cloudindex',
+                             'f4', source=images.getvar('data'))
             self.root.getvar('globalradiation',
                              'f4', source=images.getvar('data'))
 
