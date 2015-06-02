@@ -45,13 +45,13 @@ class Heliosat2(object):
         self.create_temporal(loader, cache, strategy)
 
     def create_temporal(self, loader, cache, strategy):
+        create_f = lambda name, source: cache.getvar(name, 'f4', source=source)
         create = lambda name, source: cache.getvar(name, source=source)
-        strategy.declination = cache.getvar('declination', source=strategy.slots)
-        strategy.solarangle = cache.getvar('solarangle', 'f4',
-                                           source=loader.ref_data)
+        strategy.declination = create_f('declination', strategy.slots)
+        strategy.solarangle = create_f('solarangle', loader.ref_data)
         nc.sync(cache)
         strategy.solarelevation = create('solarelevation', strategy.solarangle)
-        strategy.excentricity = create('excentricity', strategy.slots)
+        strategy.excentricity = create_f('excentricity', strategy.slots)
         strategy.gc = create('gc', strategy.solarangle)
         strategy.atmosphericalbedo = create('atmosphericalbedo',
                                             strategy.solarangle)
