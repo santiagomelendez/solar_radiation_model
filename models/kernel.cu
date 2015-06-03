@@ -124,7 +124,7 @@ float *linke, float *dem, float *HEIGHT)
     float corrected = getcorrectedelevation(solarelevation);
     float opticalpath = getopticalpath(corrected, dem,
                                        HEIGHT);
-    float opticaldepth = getopticaldepth(opticalpath);  
+    float opticaldepth = getopticaldepth(opticalpath);
     return gethorizontalirradiance(EXT_RAD,
                                    excentricity, zenithangle) *
            getbeamtransmission(linke, opticalpath,
@@ -211,7 +211,7 @@ float *i0met, float diffuseclearsky, float satellitalzenithangle)
 {
     float anglerelation = pow(0.5f / cos(satellitalzenithangle * DEG2RAD),
                               0.8f);
-    return ((i0met[0] * diffuseclearsky * anglerelation) / 
+    return ((i0met[0] * diffuseclearsky * anglerelation) /
             (PI * EXT_RAD[0]));
 }
 
@@ -224,7 +224,7 @@ float secondalbedo, float t_earth, float t_sat)
 __device__ void getalbedo(float *albedo, float radiance,
 float *i0met, float *excentricity, float zenithangle)
 {
-    albedo[i_dxyt] = ((PI * radiance) / 
+    albedo[i_dxyt] = ((PI * radiance) /
             (i0met[0] * excentricity[i_dt] *
             cos(zenithangle * DEG2RAD)));
 }
@@ -265,7 +265,7 @@ float *i0met, float *EXT_RAD, float *HEIGHT)
     excentricity[i_dt] = getexcentricity(gamma);
     bc = getbeamirradiance(EXT_RAD, excentricity, solarangle,
                            solarelevation[i_dxyt], linke, dem, HEIGHT);
-    
+
     dc = getdiffuseirradiance(EXT_RAD, excentricity,
                               solarelevation[i_dxyt], linke);
     getglobalirradiance(gc, bc, dc);
