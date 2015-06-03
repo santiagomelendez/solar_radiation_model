@@ -17,11 +17,9 @@ def radiance(filename):
         radiance[:] = radiation[:]*30.*60.*10**-6
 
 
-decimalhour = lambda t: t.hour + t.minute/60. + t.second/3600.
-
-
 def generate_radiance_filename(filename):
     prefix = short(filename, 0, 3)
+    decimalhour = lambda t: t.hour + t.minute/60. + t.second/3600.
     slot = int(round(decimalhour(to_datetime(filename))*2))
     suffix = short(filename, 4, 6)
     if not os.path.exists('products/radiance'):
