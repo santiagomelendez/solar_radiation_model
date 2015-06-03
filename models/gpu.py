@@ -43,8 +43,8 @@ class GPUStrategy(CPUStrategy):
 
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
-        inputs = [loader.lat,
-                  loader.lon,
+        inputs = [loader.lat[0],
+                  loader.lon[0],
                   self.decimalhour,
                   self.gamma,
                   loader.dem,
@@ -68,10 +68,11 @@ class GPUStrategy(CPUStrategy):
         print "----"
         maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
         for mm in zip(range(len(maxmin)), maxmin):
-            print mm[0], ': ', mm[1]
+            name = outputs[mm[0]].name if hasattr(outputs[mm[0]], 'name') else mm[0]
+            print name, ': ', mm[1]
         print "----"
         nc.sync(cache)
-        super(GPUStrategy, self).update_temporalcache(loader, cache)
+        # super(GPUStrategy, self).update_temporalcache(loader, cache)
 
 
 strategy = GPUStrategy
