@@ -9,32 +9,25 @@ import os
 
 
 def radiance(filename):
-    prefix = short(filename, 0, 3)
-    slot = int(round(decimalhour(to_datetime(filename))*2))
-    suffix = short(filename, 4, 6)
-    output_filename = create_output_path(prefix, slot, suffix)
+    radiance_filename = generate_radiance_filename(filename)
     root, is_new = nc.open(filename)
     radiation = nc.getvar(root, 'globalradiation')
-    with nc.loader(output_filename) as radiance_root:
-        dims_names = list(reversed(radiation.dimensions.keys()))
-        dims_values = list(reversed(radiation.dimensions.values()))
-        create_dims = (lambda name, dimension:
-                       radiance_root.create_dimension(name, len(dimension)))
-        (map(lambda name, dimension: create_dims(name, dimension),
-             dims_names, dims_values))
-        radiance = (nc.getvar(radiance_root, 'radiance', vtype='f4',
-                              dimensions=tuple(dims_names)))
+    with nc.loader(radiance_filename) as radiance_root:
+	radiance = nc.getvar(radiance_root, 'radiance', source=radiation)
         radiance[:] = radiation[:]*30.*60.*10**-6
 
 
 decimalhour = lambda t: t.hour + t.minute/60. + t.second/3600.
 
 
-def create_output_path(prefix, slot, suffix):
+def generate_radiance_filename(filename):
+    prefix = short(filename, 0, 3)
+    slot = int(round(decimalhour(to_datetime(filename))*2))
+    suffix = short(filename, 4, 6)
     if not os.path.exists('products/radiance'):
         os.makedirs('products/radiance')
-    output_path = 'products/radiance/rad.%s.S%s.%s' % (prefix, slot, suffix)
-    return output_path
+    output_filename = 'products/radiance/rad.%s.S%s.%s' % (prefix, slot, suffix)
+    return output_filename
 
 
 def workwith(path='products/estimated/*.nc'):
