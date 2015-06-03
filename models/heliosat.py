@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from core import geo, pmap
 import numpy as np
 from datetime import timedelta
 import glob
@@ -9,11 +10,6 @@ from cache import Cache, Loader
 from helpers import to_datetime, short, show
 import pytz
 from collections import defaultdict
-from core import cuda_can_help, pmap
-if cuda_can_help:
-    import gpu as geo
-else:
-    import cpu as geo
 # import processgroundstations as pgs
 
 
@@ -49,13 +45,13 @@ class Heliosat2(object):
         self.create_temporal(loader, cache, strategy)
 
     def create_temporal(self, loader, cache, strategy):
+        create_f = lambda name, source: cache.getvar(name, 'f4', source=source)
         create = lambda name, source: cache.getvar(name, source=source)
-        strategy.declination = create('declination', strategy.slots)
-        strategy.solarangle = cache.getvar('solarangle', 'f4',
-                                           source=loader.ref_data)
+        strategy.declination = create_f('declination', strategy.slots)
+        strategy.solarangle = create_f('solarangle', loader.ref_data)
         nc.sync(cache)
         strategy.solarelevation = create('solarelevation', strategy.solarangle)
-        strategy.excentricity = create('excentricity', strategy.slots)
+        strategy.excentricity = create_f('excentricity', strategy.slots)
         strategy.gc = create('gc', strategy.solarangle)
         strategy.atmosphericalbedo = create('atmosphericalbedo',
                                             strategy.solarangle)
@@ -75,6 +71,8 @@ class Heliosat2(object):
             show("Obtaining the global radiation... ")
             output = OutputCache(self)
             self.strategy.estimate_globalradiation(loader, cache, output)
+            output.dump()
+        cache.dump()
 
     def process_validate(self, root):
         from libs.statistics import error
@@ -144,6 +142,7 @@ class TemporalCache(AlgorithmCache):
             new_files = pmap(self.get_cached_file, not_cached)
             with nc.loader(new_files) as cache:
                 self.algorithm.update_temporalcache(loader, cache)
+            loader.dump()
 
     def clean_cache(self, exceptions):
         cached_files = glob.glob('%s/*.nc' % self.temporal_path)
@@ -169,6 +168,8 @@ class OutputCache(AlgorithmCache):
         with nc.loader(self.filenames) as images:
             map(algorithm.create_1px_dimensions, self.root.roots)
             self.root.getvar('time', source=images.getvar('time'))
+            self.root.getvar('cloudindex',
+                             'f4', source=images.getvar('data'))
             self.root.getvar('globalradiation',
                              'f4', source=images.getvar('data'))
 
@@ -222,4 +223,5 @@ def workwith(filename="data/goes13.*.BAND_01.nc"):
         loader = Loader(filenames)
         algorithm = Heliosat2(filenames, geo.strategy)
         algorithm.run_with(loader)
+        loader.dump()
         show("Process finished.\n")

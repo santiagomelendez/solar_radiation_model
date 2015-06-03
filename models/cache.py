@@ -23,6 +23,9 @@ class Cache(object):
             self._attrs[var_name] = var[:]
         return self._attrs[name]
 
+    def dump(self):
+        nc.close(self.root)
+
 
 class StaticCacheConstructor(object):
 

@@ -433,6 +433,7 @@ class CPUStrategy(ProcessingStrategy):
         i = output.ref_globalradiation.shape[0]
         cloudindex = getcloudindex(apparentalbedo[-i:], groundminimumalbedo,
                                    cache.cloudalbedo[-i:])
+        output.ref_cloudindex[:] = cloudindex
         output.ref_globalradiation[:] = (getclearsky(cloudindex) *
                                          cache.gc[-i:,:])
         nc.sync(output.root)
