@@ -4,4 +4,4 @@ pytz==2012j
 netcdf==0.0.32
 linketurbidity==0.0.4
 noaadem==0.0.13
-goesdownloader==0.0.5
+goesdownloader==0.0.6
