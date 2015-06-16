@@ -23,7 +23,8 @@ class TestHeliosat(unittest.TestCase):
             with nc.loader('products/estimated/*.nc') as new_root:
                 valid = nc.getvar(old_root, 'globalradiation')
                 calculated = nc.getvar(new_root, 'globalradiation')
-                self.assertTrue((np.abs(calculated[:] - valid[:]) < 2.5).all())
+                gtz = lambda m: m[calculated[:] >= 0]
+                self.assertTrue((np.abs(gtz(calculated[:]) - gtz(valid[:])) < 2.5).all())
 
     def test_main(self):
         begin = datetime.now()
