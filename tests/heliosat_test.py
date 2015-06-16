@@ -22,9 +22,16 @@ class TestHeliosat(unittest.TestCase):
         with nc.loader('tests/products/estimated/*.nc') as old_root:
             with nc.loader('products/estimated/*.nc') as new_root:
                 valid = nc.getvar(old_root, 'globalradiation')
+                max_vaild = valid[:].max()
+                # It allow a 1% of the maximum value as the maximum error
+                # threshold.
+                threshold = max_vaild * 0.01
                 calculated = nc.getvar(new_root, 'globalradiation')
                 gtz = lambda m: m[calculated[:] >= 0]
-                self.assertTrue((np.abs(gtz(calculated[:]) - gtz(valid[:])) < 2.5).all())
+                diff = gtz(calculated[:] - valid[:])
+                print 'min: ', gtz(calculated[:]).min(), '(', gtz(valid[:]).min(), ')'
+                print 'max: ', gtz(calculated[:]).max(), '(', gtz(valid[:]).max(), ')'
+                self.assertTrue((diff < threshold).all())
 
     def test_main(self):
         begin = datetime.now()
