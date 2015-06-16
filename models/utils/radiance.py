@@ -30,7 +30,7 @@ def interpolate_radiance(radiance_filename):
     radiation = nc.getvar(root, 'globalradiation')
     with nc.loader(radiance_filename) as radiance_root:
         radiance = nc.getvar(radiance_root, 'radiance', source=radiation)
-        radiance[:] = np.zeros(radiation.shape)
+        radiance[:] = 0.001
 
 
 def generate_radiance_filename(filename):
