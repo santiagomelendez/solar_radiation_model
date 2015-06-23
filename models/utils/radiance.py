@@ -7,29 +7,50 @@ from models.helpers import to_datetime, short
 from glob import glob
 from itertools import groupby
 import os
+from functools import partial
 
 
 rev_key = {}
 
 
-def radiance(radiance_filename):
+def initialize(radiance_filename, radiation_filename, callback=lambda r: r):
+    ref, _ = nc.open(radiation_filename)
+    ref_radiation = nc.getvar(ref, 'globalradiation')
+    with nc.loader(radiance_filename) as radiance_root:
+        radiance = nc.getvar(radiance_root, 'radiance', source=ref_radiation)
+        radiance[0, :] = callback(radiance[0, :])
+    nc.close(ref)
+
+
+def radiance(radiance_files, radiance_filename):
     if radiance_filename in rev_key:
         filename = rev_key[radiance_filename]
-        root, is_new = nc.open(filename)
-        radiation = nc.getvar(root, 'globalradiation')
-        with nc.loader(radiance_filename) as radiance_root:
-            radiance = nc.getvar(radiance_root, 'radiance', source=radiation)
-            radiance[:] = radiation[:]*30.*60.*10**-6
+        initialize(radiance_filename, filename,
+                   lambda r: r * 30. * 60. * 10 ** -6)
     else:
-        interpolate_radiance(radiance_filename)
+        interpolate_radiance(radiance_files, radiance_filename)
 
 
-def interpolate_radiance(radiance_filename):
-    root, is_new = nc.open(rev_key.values()[0])
-    radiation = nc.getvar(root, 'globalradiation')
-    with nc.loader(radiance_filename) as radiance_root:
-        radiance = nc.getvar(radiance_root, 'radiance', source=radiation)
-        radiance[:] = 0.001
+def search_closest(list_items, filename, step):
+    index = list_items.index(filename)
+    max_index = len(list_items) - 1
+    check = lambda i: 0 <= i <= max_index
+    while check(index) and list_items[index] not in rev_key:
+        index = step(index)
+    return list_items[index] if check(index) else None
+
+
+def interpolate_radiance(radiance_files, radiance_filename):
+    before = search_closest(radiance_files, radiance_filename, lambda s: s - 1)
+    after = search_closest(radiance_files, radiance_filename, lambda s: s + 1)
+    extrems = filter(lambda x: x, [before, after])
+    if extrems:
+        ref_filename = max(extrems)
+        root, is_new = nc.open(map(lambda e: rev_key[e], extrems))
+        radiation = nc.getvar(root, 'globalradiation')
+        initialize(radiance_filename, rev_key[ref_filename],
+                   lambda r: radiation[:].mean(axis=0) * 30. * 60. * 10 ** -6)
+        nc.close(root)
 
 
 def generate_radiance_filename(filename):
@@ -68,7 +89,7 @@ def workwith(path='products/estimated/*.nc'):
     radiance_files = map(generate_radiance_filename, estimated_files)
     rev_key.update(dict(zip(radiance_files, estimated_files)))
     radiance_files = complete(radiance_files)
-    map(radiance, radiance_files)
+    map(partial(radiance, radiance_files), radiance_files)
 
 
 if __name__ == '__main__':
