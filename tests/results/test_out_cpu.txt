@@ -1,0 +1,20 @@
+Found 16 DEM files.
+Force CPU
+
+=======================
+Months: ['5/2015']
+Dataset: 4 files.
+-----------------------
+
+Updating temporal cache... 
+ --- UPDATE TEMPORAL CACHE TIME -> 0:26:26.740432
+
+
+Process finished.
+.
+----------------------------------------------------------------------
+Ran 1 test in 1630.264s
+
+OK
+Scaling total time to 330.52 hours.
+Efficiency achieved: 1.06%
