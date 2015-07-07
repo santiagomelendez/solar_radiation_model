@@ -8,9 +8,14 @@ from glob import glob
 from itertools import groupby
 import os
 from functools import partial
+from datetime import datetime
+import numpy as np
 
 
 rev_key = {}
+TO_RAD = 30. * 60.
+TO_MJ = 10 ** -6
+TO_MJRAD = TO_RAD * TO_MJ
 
 
 def initialize(radiance_filename, radiation_filename, callback=lambda r: r):
@@ -26,7 +31,7 @@ def radiance(radiance_files, radiance_filename):
     if radiance_filename in rev_key:
         filename = rev_key[radiance_filename]
         initialize(radiance_filename, filename,
-                   lambda r: r * 30. * 60. * 10 ** -6)
+                   lambda r: r * TO_MJRAD)
     else:
         interpolate_radiance(radiance_files, radiance_filename)
 
@@ -40,16 +45,38 @@ def search_closest(list_items, filename, step):
     return list_items[index] if check(index) else None
 
 
+def calculate_weights(for_file, files):
+    day = short(for_file, 2, 4)
+    slot = int(short(for_file, 4, 5)[1:])
+    hour = slot / 2.
+    minute = 60 * (hour % 1)
+    itime = datetime.strptime('%s %i:%i' % (day, int(hour), minute),
+                              '%Y.%j %H:%M')
+    times = map(to_datetime, files)
+    diff_t = (times[0] - times[1]).total_seconds()
+    weights = map(lambda t:
+                  1 - abs((itime - t).total_seconds() / diff_t),
+                  times)
+    return weights
+
+
 def interpolate_radiance(radiance_files, radiance_filename):
     before = search_closest(radiance_files, radiance_filename, lambda s: s - 1)
     after = search_closest(radiance_files, radiance_filename, lambda s: s + 1)
     extrems = filter(lambda x: x, [before, after])
     if extrems:
         ref_filename = max(extrems)
-        root, is_new = nc.open(map(lambda e: rev_key[e], extrems))
+        files = map(lambda e: rev_key[e], extrems)
+        root, is_new = nc.open(files)
         radiation = nc.getvar(root, 'globalradiation')
+        if len(extrems) > 1:
+            radiation = np.average(radiation[:], axis=0,
+                                   weights=calculate_weights(radiance_filename,
+                                                             files))
+        else:
+            radiation = radiation[:].mean()
         initialize(radiance_filename, rev_key[ref_filename],
-                   lambda r: radiation[:].mean(axis=0) * 30. * 60. * 10 ** -6)
+                   lambda r: radiation * TO_MJRAD)
         nc.close(root)
 
 
