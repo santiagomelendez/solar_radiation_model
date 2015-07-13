@@ -6,7 +6,7 @@ from datetime import timedelta
 import glob
 import os
 from netcdf import netcdf as nc
-from cache import Cache, Loader
+from cache import Cache, Loader, DIMS
 from helpers import to_datetime, short, show
 import pytz
 from collections import defaultdict
@@ -140,7 +140,7 @@ class TemporalCache(AlgorithmCache):
         if not_cached:
             loader = Loader(not_cached)
             new_files = pmap(self.get_cached_file, not_cached)
-            with nc.loader(new_files) as cache:
+            with nc.loader(new_files, dimensions=DIMS) as cache:
                 self.algorithm.update_temporalcache(loader, cache)
             loader.dump()
 
@@ -165,7 +165,7 @@ class OutputCache(AlgorithmCache):
         super(OutputCache, self).__init__(algorithm)
         self.output = Loader(pmap(self.get_output_file, self.filenames))
         self.root = self.output.root
-        with nc.loader(self.filenames) as images:
+        with nc.loader(self.filenames, dimensions=DIMS) as images:
             map(algorithm.create_1px_dimensions, self.root.roots)
             self.root.getvar('time', source=images.getvar('time'))
             self.root.getvar('cloudindex',

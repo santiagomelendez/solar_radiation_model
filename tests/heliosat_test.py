@@ -3,6 +3,7 @@ from models import heliosat
 import numpy as np
 from netcdf import netcdf as nc
 from datetime import datetime
+from models.cache import DIMS
 import os
 import glob
 
@@ -19,8 +20,8 @@ class TestHeliosat(unittest.TestCase):
         os.system('rm -rf mock_data')
 
     def verify_output(self):
-        with nc.loader('tests/products/estimated/*.nc') as old_root:
-            with nc.loader('products/estimated/*.nc') as new_root:
+        with nc.loader('tests/products/estimated/*.nc', DIMS) as old_root:
+            with nc.loader('products/estimated/*.nc', DIMS) as new_root:
                 valid = nc.getvar(old_root, 'globalradiation')
                 max_vaild = valid[:].max()
                 # It allow a 1% of the maximum value as the maximum error

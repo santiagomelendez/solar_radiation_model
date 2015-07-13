@@ -5,6 +5,11 @@ from helpers import to_datetime
 from helpers import show
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
+import json
+
+
+with open('models/config.json') as tile_config:
+    DIMS = json.load(tile_config)["tails"]["1"]["dimensions"]
 
 
 class Cache(object):
@@ -43,6 +48,7 @@ class StaticCacheConstructor(object):
                 self.project_linke()
                 nc.sync(self.root)
             show("-----------------------\n")
+        self.root = nc.tailor(self.root, dimensions=DIMS)
 
     def project_dem(self):
         show("Projecting DEM's map... ")
@@ -67,7 +73,7 @@ class Loader(Cache):
     def __init__(self, filenames):
         super(Loader, self).__init__()
         self.filenames = filenames
-        self.root = nc.open(filenames)[0]
+        self.root = nc.tailor(filenames, dimensions=DIMS)
         self.static = StaticCacheConstructor(filenames)
         self.static_cached = self.static.root
 
@@ -81,9 +87,9 @@ class Loader(Cache):
     def linke(self):
         if not hasattr(self, '_cached_linke'):
             self._linke = nc.getvar(self.static_cached, 'linke')
-            self._cached_linke = np.vstack([
-                map(lambda dt: self._linke[0, dt.month - 1],
-                    map(to_datetime, self.filenames))])
+            linke_list = map(lambda dt: self._linke[0,dt.month - 1,:][0,:],
+                             map(to_datetime, self.filenames))
+            self._cached_linke = np.vstack(linke_list)
         return self._cached_linke
 
     @property
