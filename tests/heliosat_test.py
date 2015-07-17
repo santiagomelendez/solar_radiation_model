@@ -4,6 +4,7 @@ import numpy as np
 from netcdf import netcdf as nc
 from datetime import datetime
 from models.cache import DIMS
+from models import JobDescription, helpers
 import os
 import glob
 
@@ -35,13 +36,21 @@ class TestHeliosat(unittest.TestCase):
                 self.assertTrue((diff < threshold).all())
 
     def test_main(self):
+        config = {
+            'algorithm': 'heliosat',
+            'data': 'mock_data/goes13.2015.*.BAND_01.nc',
+            'temporal_cache': 'temporal_cache',
+            'product': 'products/estimated'
+        }
+        job = JobDescription(**config)
         begin = datetime.now()
-        heliosat.workwith('mock_data/goes13.2015.*.BAND_01.nc')
+        job.run()
+        # heliosat.workwith(**config)
         end = datetime.now()
         self.verify_output()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
-        to_dt = heliosat.to_datetime
+        to_dt = helpers.to_datetime
         processed = (to_dt(last) - to_dt(first)).total_seconds()
         processed_days = processed / 3600. / 24
         scale_shapes = (2245. / 86) * (3515. / 180) * (30. / processed_days)
