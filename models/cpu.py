@@ -36,74 +36,9 @@ def gettotaldays(times):
     return result
 
 
-def getdailyangle(julianday, totaldays):
-    return np.rad2deg(2 * np.pi * (julianday - 1) / totaldays)
 
 
-def getexcentricity(gamma):
-    gamma = np.deg2rad(gamma)
-    result = (1.000110 + 0.034221 * np.cos(gamma) +
-              0.001280 * np.sin(gamma) +
-              0.000719 * np.cos(2 * gamma) +
-              0.000077 * np.sin(2 * gamma))
-    return result
 
-
-def getdeclination(gamma):
-    gamma = np.deg2rad(gamma)
-    result = np.rad2deg(0.006918 - 0.399912 * np.cos(gamma) +
-                        0.070257 * np.sin(gamma) -
-                        0.006758 * np.cos(2 * gamma) +
-                        0.000907 * np.sin(2 * gamma) -
-                        0.002697 * np.cos(3 * gamma) +
-                        0.00148 * np.sin(3 * gamma))
-    return result
-
-
-def gettimeequation(gamma):
-    gamma = np.deg2rad(gamma)
-    return np.rad2deg((0.000075 + 0.001868 * np.cos(gamma) -
-                       0.032077 * np.sin(gamma) -
-                       0.014615 * np.cos(2 * gamma) -
-                       0.04089 * np.sin(2 * gamma)) * (12 / np.pi))
-
-
-def gettsthour(hour, d_ref, d, timeequation):
-    timeequation = np.deg2rad(timeequation)
-    lon_diff = np.deg2rad(d_ref - d)
-    return hour - lon_diff * (12 / np.pi) + timeequation
-
-
-def gethourlyangle(lat, lon, decimalhour, gamma):
-    latitud_sign = lat / abs(lat)
-    tst_hour = gettsthour(decimalhour,
-                          GREENWICH_LON, lon,
-                          gettimeequation(gamma))
-    return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
-
-
-def getzenithangle(declination, latitude, hourlyangle):
-    hourlyangle = np.deg2rad(hourlyangle)
-    lat = np.deg2rad(latitude)
-    dec = np.deg2rad(declination)
-    result = np.rad2deg(np.arccos(np.sin(dec) * np.sin(lat) +
-                                  np.cos(dec) * np.cos(lat) *
-                                  np.cos(hourlyangle)))
-    return result
-
-
-def getelevation(zenithangle):
-    zenithangle = np.deg2rad(zenithangle)
-    return np.rad2deg((np.pi / 2) - zenithangle)
-
-
-def getcorrectedelevation(elevation):
-    elevation = np.deg2rad(elevation)
-    return np.rad2deg(elevation
-                      + 0.061359 * ((0.1594 + 1.1230 * elevation +
-                                     0.065656 * np.power(elevation, 2)) /
-                                    (1 + 28.9344 * elevation +
-                                     277.3971 * np.power(elevation, 2))))
 
 
 def getopticalpath(correctedelevation, terrainheight,
@@ -143,16 +78,6 @@ def gethorizontalirradiance(extraterrestrialirradiance, excentricity,
     return extraterrestrialirradiance * excentricity * np.cos(zenitangle)
 
 
-def getbeamirradiance(extraterrestrialirradiance, excentricity, zenitangle,
-                      solarelevation, linketurbidity, terrainheight):
-    correctedsolarelevation = getcorrectedelevation(solarelevation)
-    # TODO: Meteosat is at 8434.5 mts
-    opticalpath = getopticalpath(correctedsolarelevation, terrainheight,
-                                 8434.5)
-    opticaldepth = getopticaldepth(opticalpath)
-    return (gethorizontalirradiance(extraterrestrialirradiance,
-                                    excentricity, zenitangle)
-            * getbeamtransmission(linketurbidity, opticalpath, opticaldepth))
 
 
 def getzenithdiffusetransmitance(linketurbidity):
@@ -193,33 +118,6 @@ def getdiffuseirradiance(extraterrestrialirradiance, excentricity,
 
 def getglobalirradiance(beamirradiance, diffuseirradiance):
     return beamirradiance + diffuseirradiance
-
-
-def getalbedo(radiance, totalirradiance, excentricity, zenitangle):
-    zenitangle = np.deg2rad(zenitangle)
-    result = (np.pi * radiance) / (totalirradiance * excentricity
-                                   * np.cos(zenitangle))
-    return result
-
-
-def getsatellitalzenithangle(lat, lon, sub_lon):
-    result = None
-    rpol = 6356.5838
-    req = 6378.1690
-    h = 42166.55637  # 42164.0
-    lat = np.deg2rad(lat)
-    lon_diff = np.deg2rad(lon - sub_lon)
-    lat_cos_only = np.cos(lat)
-    re = (rpol / (np.sqrt(1 - (req ** 2 - rpol ** 2) / (req ** 2) *
-                          np.power(lat_cos_only, 2))))
-    lat_cos = re * lat_cos_only
-    r1 = h - lat_cos * np.cos(lon_diff)
-    r2 = - lat_cos * np.sin(lon_diff)
-    r3 = re * np.sin(lat)
-    rs = np.sqrt(r1 ** 2 + r2 ** 2 + r3 ** 2)
-    result = np.rad2deg(np.pi - np.arccos((h ** 2 - re ** 2 - rs ** 2) /
-                                          (-2 * re * rs)))
-    return result
 
 
 def getatmosphericradiance(extraterrestrialirradiance, i0met,
@@ -309,29 +207,101 @@ def gettstdatetime(timestamp, tst_hour):
 class CPUStrategy(ProcessingStrategy):
 
     def getexcentricity(self, gamma):
-        return getexcentricity(gamma)
+        gamma = np.deg2rad(gamma)
+        return (1.000110 + 0.034221 * np.cos(gamma) +
+                0.001280 * np.sin(gamma) +
+                0.000719 * np.cos(2 * gamma) +
+                0.000077 * np.sin(2 * gamma))
 
     def getdeclination(self, gamma):
-        return getdeclination(gamma)
+        gamma = np.deg2rad(gamma)
+        return np.rad2deg(0.006918 - 0.399912 * np.cos(gamma) +
+                          0.070257 * np.sin(gamma) -
+                          0.006758 * np.cos(2 * gamma) +
+                          0.000907 * np.sin(2 * gamma) -
+                          0.002697 * np.cos(3 * gamma) +
+                          0.00148 * np.sin(3 * gamma))
+
+    def gettimeequation(self, gamma):
+        gamma = np.deg2rad(gamma)
+        return np.rad2deg((0.000075 + 0.001868 * np.cos(gamma) -
+                           0.032077 * np.sin(gamma) -
+                           0.014615 * np.cos(2 * gamma) -
+                           0.04089 * np.sin(2 * gamma)) * (12 / np.pi))
+
+    def gettsthour(self, hour, d_ref, d, timeequation):
+        timeequation = np.deg2rad(timeequation)
+        lon_diff = np.deg2rad(d_ref - d)
+        return hour - lon_diff * (12 / np.pi) + timeequation
 
     def gethourlyangle(self, lat, lon, decimalhour, gamma):
-        return gethourlyangle(lat, lon, decimalhour, gamma)
+        latitud_sign = lat / abs(lat)
+        tst_hour = self.gettsthour(decimalhour,
+                              GREENWICH_LON, lon,
+                              self.gettimeequation(gamma))
+        return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
 
     def getzenithangle(self, declination, latitude, hourlyangle):
-        return getzenithangle(declination, latitude, hourlyangle)
+        hourlyangle = np.deg2rad(hourlyangle)
+        lat = np.deg2rad(latitude)
+        dec = np.deg2rad(declination)
+        return np.rad2deg(np.arccos(np.sin(dec) * np.sin(lat) +
+                          np.cos(dec) * np.cos(lat) *
+                          np.cos(hourlyangle)))
 
-    def getalbedo(self, radiance, totalirradiance, excentricity, zenitangle):
-        return getalbedo(radiance, totalirradiance, excentricity,
-                         zenitangle)
+    def getalbedo(self, radiance, totalirradiance, excentricity, zenithangle):
+        zenithangle = np.deg2rad(zenithangle)
+        return (np.pi * radiance) / (totalirradiance * excentricity
+                                     * np.cos(zenithangle))
 
     def getsatellitalzenithangle(self, lat, lon, sub_lon):
-        return getsatellitalzenithangle(lat, lon, sub_lon)
+        rpol = 6356.5838
+        req = 6378.1690
+        h = 42166.55637  # 42164.0
+        lat = np.deg2rad(lat)
+        lon_diff = np.deg2rad(lon - sub_lon)
+        lat_cos_only = np.cos(lat)
+        re = (rpol / (np.sqrt(1 - (req ** 2 - rpol ** 2) / (req ** 2) *
+                              np.power(lat_cos_only, 2))))
+        lat_cos = re * lat_cos_only
+        r1 = h - lat_cos * np.cos(lon_diff)
+        r2 = - lat_cos * np.sin(lon_diff)
+        r3 = re * np.sin(lat)
+        rs = np.sqrt(r1 ** 2 + r2 ** 2 + r3 ** 2)
+        return np.rad2deg(np.pi - np.arccos((h ** 2 - re ** 2 - rs ** 2) /
+                                            (-2 * re * rs)))
+
+    def getcorrectedelevation(self, elevation):
+        elevation = np.deg2rad(elevation)
+        return np.rad2deg(elevation
+                          + 0.061359 * ((0.1594 + 1.1230 * elevation +
+                                         0.065656 * np.power(elevation, 2)) /
+                                        (1 + 28.9344 * elevation +
+                                         277.3971 * np.power(elevation, 2))))
+
+    def getbeamirradiance(self, extraterrestrialirradiance, excentricity, zenitangle,
+                          solarelevation, linketurbidity, terrainheight):
+        correctedsolarelevation = self.getcorrectedelevation(solarelevation)
+        # TODO: Meteosat is at 8434.5 mts
+        opticalpath = getopticalpath(correctedsolarelevation, terrainheight,
+                                     8434.5)
+        opticaldepth = getopticaldepth(opticalpath)
+        return (gethorizontalirradiance(extraterrestrialirradiance,
+                                        excentricity, zenitangle)
+                * getbeamtransmission(linketurbidity, opticalpath, opticaldepth))
+
+    def getdailyangle(self, julianday, totaldays):
+        return np.rad2deg(2 * np.pi * (julianday - 1) / totaldays)
+
+    def getelevation(self, zenithangle):
+        zenithangle = np.deg2rad(zenithangle)
+        return np.rad2deg((np.pi / 2) - zenithangle)
 
     @property
     @memoize
     def gamma(self):
-        return getdailyangle(getjulianday(self.times),
-                             gettotaldays(self.times))
+        return self.getdailyangle(getjulianday(self.times),
+                                  gettotaldays(self.times))
 
     def update_temporalcache(self, loader, cache):
         lat, lon = loader.lat[0], loader.lon[0]
@@ -344,11 +314,11 @@ class CPUStrategy(ProcessingStrategy):
                                                  loader.lat,
                                                  hourlyangle)
         # FIXME: This rewrite the value of the solarelevations setted before.
-        self.solarelevation[:] = getelevation(self.solarangle[:])
+        self.solarelevation[:] = self.getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
-        bc = getbeamirradiance(1367.0, self.excentricity[:],
+        bc = self.getbeamirradiance(1367.0, self.excentricity[:],
                                self.solarangle[:], self.solarelevation[:],
                                loader.linke, loader.dem)
         dc = getdiffuseirradiance(1367.0, self.excentricity[:],
@@ -365,15 +335,15 @@ class CPUStrategy(ProcessingStrategy):
                                                    self.algorithm.i0met,
                                                    self.excentricity[:],
                                                    satellitalzenithangle)
-        satellitalelevation = getelevation(satellitalzenithangle)
+        satellitalelevation = self.getelevation(satellitalzenithangle)
         satellital_opticalpath = getopticalpath(
-            getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
+            self.getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
         satellital_opticaldepth = getopticaldepth(satellital_opticalpath)
         self.t_sat[:] = gettransmitance(loader.linke, satellital_opticalpath,
                                         satellital_opticaldepth,
                                         satellitalelevation)
         solar_opticalpath = getopticalpath(
-            getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
+            self.getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
         solar_opticaldepth = getopticaldepth(solar_opticalpath)
         self.t_earth[:] = gettransmitance(loader.linke, solar_opticalpath,
                                           solar_opticaldepth,
@@ -390,8 +360,8 @@ class CPUStrategy(ProcessingStrategy):
         atmosphericalbedo = cache.atmosphericalbedo
         t_earth = cache.t_earth
         t_sat = cache.t_sat
-        observedalbedo = getalbedo(loader.calibrated_data, self.algorithm.i0met,
-                                   excentricity, solarangle)
+        observedalbedo = self.getalbedo(loader.calibrated_data, self.algorithm.i0met,
+                                        excentricity, solarangle)
         apparentalbedo = getapparentalbedo(observedalbedo, atmosphericalbedo,
                                            t_earth, t_sat)
         declination = cache.declination[:]
