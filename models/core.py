@@ -14,6 +14,20 @@ class ProcessingStrategy(object):
         self.algorithm = algorithm
         self.algorithm.create_variables(loader, cache, self)
 
+    def int_to_dt(self, time):
+        return datetime.utcfromtimestamp(int(time))
+
+    @property
+    @memoize
+    def gamma(self):
+        to_julianday = lambda time: self.int_to_dt(time).timetuple().tm_yday
+        days_of_year = lambda time: to_julianday(
+            (datetime(self.int_to_dt(time).year, 12, 31)).timetuple()[7])
+        times = self.times
+        total_days = np.array(pmap(days_of_year, times)).reshape(times.shape)
+        julian_day = np.array(pmap(to_julianday, times)).reshape(times.shape)
+        return self.getdailyangle(julian_day, total_days)
+
     @property
     @memoize
     def decimalhour(self):

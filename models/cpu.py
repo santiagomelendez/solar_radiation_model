@@ -10,32 +10,6 @@ import logging
 GREENWICH_LON = 0.0
 
 
-def int_to_dt(time):
-    return datetime.utcfromtimestamp(int(time))
-
-
-def dt_to_int(dt):
-    return dt.timetuple()[7]
-
-
-int_to_julianday = lambda time: int_to_dt(time).timetuple().tm_yday
-
-
-def getjulianday(times):
-    result = np.array(pmap(int_to_julianday, times)).reshape(times.shape)
-    return result
-
-
-days_of_year = lambda time: int_to_julianday(
-    dt_to_int(datetime(int_to_dt(time).year, 12, 31)))
-
-
-def gettotaldays(times):
-    result = pmap(days_of_year, times)
-    result = np.array(result).reshape(times.shape)
-    return result
-
-
 class CPUStrategy(ProcessingStrategy):
 
     def getexcentricity(self, gamma):
@@ -192,12 +166,6 @@ class CPUStrategy(ProcessingStrategy):
     def getelevation(self, zenithangle):
         zenithangle = np.deg2rad(zenithangle)
         return np.rad2deg((np.pi / 2) - zenithangle)
-
-    @property
-    @memoize
-    def gamma(self):
-        return self.getdailyangle(getjulianday(self.times),
-                                  gettotaldays(self.times))
 
     def getglobalirradiance(self, beamirradiance, diffuseirradiance):
         return beamirradiance + diffuseirradiance
