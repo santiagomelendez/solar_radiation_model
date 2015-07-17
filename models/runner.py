@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 import importlib
 import glob
 import pytz
-from helpers import to_datetime, show
+from helpers import to_datetime
 from collections import defaultdict
 from core import pmap
+import logging
 
 
 class JobDescription(object):
@@ -63,16 +64,19 @@ class JobDescription(object):
         if self.config['data']:
             months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
                                    pmap(to_datetime, self.config['data']))))
-            show("=======================")
-            show("Months: ", months)
-            show("Dataset: ", len(self.config['data']), " files.")
-            show("-----------------------\n")
+            map(lambda (k, o): logging.debug('%s: %s' % (k, str(o))),
+                self.config.items())
+            logging.info("Months: %s", str(months))
+            logging.info("Dataset: %i files.", len(self.config['data']))
             algorithm = importlib.import_module(self.config['algorithm'])
             algorithm.run(**self.config)
-            show("Process finished.\n")
+            logging.info("Process finished.")
 
 
-def run():
+logging.basicConfig(level=logging.INFO)
+
+
+def run(**config):
     diff = lambda dt, h: (dt - timedelta(hours=h))
     decimal = lambda dt, h: diff(dt, h).hour + diff(dt, h).minute / 60. + diff(dt, h).second / 3600.
     should_download = lambda dt: decimal(dt, 4) >= 5 and decimal(dt, 4) <= 20

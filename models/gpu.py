@@ -1,7 +1,7 @@
 import numpy as np
 from netcdf import netcdf as nc
 import stats
-from helpers import show
+import logging
 from models.core import gpuarray, cuda, SourceModule
 from cpu import CPUStrategy, GREENWICH_LON
 import itertools
@@ -30,7 +30,7 @@ def gpu_exec(func_name, results, *matrixs):
     max_blocks = max(map(size, blocks))
     blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks, blocks)[0]))
     threads = max(map(lambda ms: ms[0], m_shapes))
-    show('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
+    logging.info('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
     func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
     list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results]))
     for i in range(results):

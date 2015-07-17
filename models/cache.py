@@ -2,7 +2,7 @@ from datetime import datetime
 import numpy as np
 from netcdf import netcdf as nc
 from helpers import to_datetime
-from helpers import show
+import logging
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 import json
@@ -38,7 +38,7 @@ class StaticCacheConstructor(object):
         # At first it should have: lat, lon, dem, linke
         self.root, is_new = nc.open('static.nc')
         if is_new:
-            show("This is the first execution from the deployment... ")
+            logging.info("This is the first execution from the deployment... ")
             with nc.loader(filenames[0]) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
@@ -47,16 +47,15 @@ class StaticCacheConstructor(object):
                 self.project_dem()
                 self.project_linke()
                 nc.sync(self.root)
-            show("-----------------------\n")
         self.root = nc.tailor(self.root, dimensions=DIMS)
 
     def project_dem(self):
-        show("Projecting DEM's map... ")
+        logging.info("Projecting DEM's map... ")
         dem_var = nc.getvar(self.root, 'dem', 'f4', source=self.lon)
         dem_var[:] = dem.obtain(self.lat[0], self.lon[0])
 
     def project_linke(self):
-        show("Projecting Linke's turbidity index... ")
+        logging.info("Projecting Linke's turbidity index... ")
         dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
         linkes = map(lambda dt: linke.obtain(dt, compressed=True), dts)
         linkes = map(lambda l: linke.transform_data(l, self.lat[0],

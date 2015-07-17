@@ -7,8 +7,8 @@ import glob
 import os
 from netcdf import netcdf as nc
 from cache import Cache, Loader, DIMS
-from helpers import short, show
-# import processgroundstations as pgs
+from helpers import short
+import logging
 
 
 class Heliosat2(object):
@@ -60,44 +60,21 @@ class Heliosat2(object):
         nc.sync(cache)
 
     def update_temporalcache(self, loader, cache):
-        show("Updating temporal cache... ")
+        logging.info("Updating temporal cache... ")
         self.strategy = self.strategy_type(self, loader, cache)
         self.strategy.update_temporalcache(loader, cache)
 
     def estimate_globalradiation(self, loader, cache):
         # There is nothing to do, if there isn't new cache and strategy setted.
         if hasattr(self, 'strategy'):
-            show("Obtaining the global radiation... ")
+            logging.info("Obtaining the global radiation... ")
             output = OutputCache(self)
             self.strategy.estimate_globalradiation(loader, cache, output)
             output.dump()
         cache.dump()
 
-    def process_validate(self, root):
-        from libs.statistics import error
-        estimated = nc.getvar(root, 'globalradiation')
-        measured = nc.getvar(root, 'measurements')
-        stations = [0]
-        for s in stations:
-            show("==========\n")
-            show("Station %i (%i slots)" % (s,  measured[:, s, 0].size))
-            show("----------")
-            show("mean (measured):\t", error.ghi_mean(measured, s))
-            show("mean (estimated):\t", estimated[:, s, 0].mean())
-            ghi_ratio = error.ghi_ratio(measured, s)
-            bias = error.bias(estimated, measured, s)
-            show("BIAS:\t%.5f\t( %.5f %%)" % (bias, bias * ghi_ratio))
-            rmse = error.rmse_es(estimated, measured, s)
-            show("RMSE:\t%.5f\t( %.5f %%)" % (rmse, rmse * ghi_ratio))
-            mae = error.mae(estimated, measured, s)
-            show("MAE:\t%.5f\t( %.5f %%)" % (mae, mae * ghi_ratio))
-            show("----------\n")
-            error.rmse(root, s)
-
     def run_with(self, loader):
         self.estimate_globalradiation(loader, self.cache)
-        #    process_validate(root)
-        # draw.getpng(draw.matrixtogrey(data[15]),'prueba.png')
 
 
 class AlgorithmCache(Cache):

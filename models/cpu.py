@@ -2,9 +2,9 @@ import numpy as np
 from datetime import datetime
 from netcdf import netcdf as nc
 import stats
-from helpers import show
 from core import pmap, ProcessingStrategy
 from cache import memoize
+import logging
 
 
 GREENWICH_LON = 0.0
@@ -395,7 +395,7 @@ class CPUStrategy(ProcessingStrategy):
         apparentalbedo = getapparentalbedo(observedalbedo, atmosphericalbedo,
                                            t_earth, t_sat)
         declination = cache.declination[:]
-        show("Calculating the noon window... ")
+        logging.info("Calculating the noon window... ")
         slot_window_in_hours = 4
         image_per_day = 24 * self.algorithm.IMAGE_PER_HOUR
         noon_slot = image_per_day / 2
@@ -408,18 +408,18 @@ class CPUStrategy(ProcessingStrategy):
                  (self.algorithm.i0met / np.pi) * 0.03)
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory
-        show("Calculating the ground reference albedo... ")
+        logging.info("Calculating the ground reference albedo... ")
         mask2 = m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5)
         p5_apparentalbedo = np.ma.masked_array(m_apparentalbedo, mask2)
         groundreferencealbedo = getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
-        show("Calculating solar elevation... ")
+        logging.info("Calculating solar elevation... ")
         r_alphanoon = getsolarelevation(declination, loader.lat[0], 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
         solarelevation = cache.solarelevation[:]
-        show("Calculating the ground minimum albedo... ")
+        logging.info("Calculating the ground minimum albedo... ")
         groundminimumalbedo = getsecondmin(
             np.ma.masked_array(apparentalbedo[condition],
                                solarelevation[condition] < r_alphanoon[condition]))
@@ -429,7 +429,7 @@ class CPUStrategy(ProcessingStrategy):
         condition_05g0 = groundminimumalbedo < aux_05g0
         groundminimumalbedo[condition_2g0] = aux_2g0[condition_2g0]
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
-        show("Calculating the cloud index... ")
+        logging.info("Calculating the cloud index... ")
         i = output.ref_globalradiation.shape[0]
         cloudindex = getcloudindex(apparentalbedo[-i:], groundminimumalbedo,
                                    cache.cloudalbedo[-i:])
