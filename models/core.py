@@ -19,6 +19,11 @@ class ProcessingStrategy(object):
 
     @property
     @memoize
+    def months(self):
+        return map(lambda t: self.int_to_dt(t).month, self.times)
+
+    @property
+    @memoize
     def gamma(self):
         to_julianday = lambda time: self.int_to_dt(time).timetuple().tm_yday
         days_of_year = lambda time: to_julianday(

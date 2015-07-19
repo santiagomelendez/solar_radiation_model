@@ -84,12 +84,9 @@ class Loader(Cache):
 
     @property
     def linke(self):
-        if not hasattr(self, '_cached_linke'):
-            self._linke = nc.getvar(self.static_cached, 'linke')
-            linke_list = map(lambda dt: self._linke[0,dt.month - 1,:][0,:],
-                             map(to_datetime, self.filenames))
-            self._cached_linke = np.vstack(linke_list)
-        return self._cached_linke
+        if not hasattr(self, '_linke'):
+            self._linke = nc.getvar(self.static_cached, 'linke')[:]
+        return self._linke
 
     @property
     def calibrated_data(self):

@@ -43,12 +43,14 @@ class GPUStrategy(CPUStrategy):
 
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
+        linke = np.vstack(map(lambda m: loader.linke[0,m - 1,:],
+                              self.months))[0,:]
         inputs = [loader.lat[0],
                   loader.lon[0],
                   self.decimalhour,
                   self.gamma,
                   loader.dem,
-                  loader.linke,
+                  linke,
                   const(self.algorithm.SAT_LON),
                   const(self.algorithm.i0met),
                   const(1367.0),

@@ -213,13 +213,15 @@ class CPUStrategy(ProcessingStrategy):
         # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = self.getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
+        linke = np.vstack(map(lambda m: loader.linke[0,m - 1,:],
+                              self.months))[0,:]
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = self.getbeamirradiance(1367.0, self.excentricity[:],
                                     self.solarangle[:], self.solarelevation[:],
-                                    loader.linke, loader.dem)
+                                    linke, loader.dem)
         dc = self.getdiffuseirradiance(1367.0, self.excentricity[:],
-                                       self.solarelevation[:], loader.linke)
+                                       self.solarelevation[:], linke)
         self.gc[:] = self.getglobalirradiance(bc, dc)
         satellitalzenithangle = self.getsatellitalzenithangle(loader.lat,
                                                               loader.lon,
@@ -236,13 +238,13 @@ class CPUStrategy(ProcessingStrategy):
         satellital_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
         satellital_opticaldepth = self.getopticaldepth(satellital_opticalpath)
-        self.t_sat[:] = self.gettransmitance(loader.linke, satellital_opticalpath,
+        self.t_sat[:] = self.gettransmitance(linke, satellital_opticalpath,
                                              satellital_opticaldepth,
                                              satellitalelevation)
         solar_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
         solar_opticaldepth = self.getopticaldepth(solar_opticalpath)
-        self.t_earth[:] = self.gettransmitance(loader.linke, solar_opticalpath,
+        self.t_earth[:] = self.gettransmitance(linke, solar_opticalpath,
                                                solar_opticaldepth,
                                                self.solarelevation[:])
         effectivealbedo = self.geteffectivealbedo(self.solarangle[:])
