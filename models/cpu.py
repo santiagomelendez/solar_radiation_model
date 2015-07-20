@@ -40,9 +40,8 @@ class CPUStrategy(ProcessingStrategy):
 
     def gethourlyangle(self, lat, lon, decimalhour, gamma):
         latitud_sign = lat / abs(lat)
-        tst_hour = self.gettsthour(decimalhour,
-                              GREENWICH_LON, lon,
-                              self.gettimeequation(gamma))
+        tst_hour = self.gettsthour(decimalhour, GREENWICH_LON, lon,
+                                   self.gettimeequation(gamma))
         return np.rad2deg((tst_hour - 12) * latitud_sign * np.pi / 12)
 
     def getzenithangle(self, declination, latitude, hourlyangle):
@@ -100,7 +99,8 @@ class CPUStrategy(ProcessingStrategy):
               0.011161 * np.power(linketurbidity, 2))
         a2 = (-1.3025 + 0.039231 * linketurbidity +
               0.0085079 * np.power(linketurbidity, 2))
-        zenitdiffusetransmitance = self.getzenithdiffusetransmitance(linketurbidity)
+        zenitdiffusetransmitance = self.getzenithdiffusetransmitance(
+            linketurbidity)
         c = a0*zenitdiffusetransmitance < 0.002
         a0[c] = 0.002 / zenitdiffusetransmitance[c]
         return (a0 + a1 * np.sin(solarelevation)
@@ -108,8 +108,8 @@ class CPUStrategy(ProcessingStrategy):
 
     def getopticalpath(self, correctedelevation, terrainheight,
                        atmosphere_theoretical_height):
-        # It set all the negative correctedelevation's values to zero to avoid the
-        # use of complex numbers.
+        # It set all the negative correctedelevation's values to zero to
+        # avoid the use of complex numbers.
         correctedelevation[correctedelevation < 0] = 0
         # In the next line the correctedelevation is used over a degree base.
         power = np.power(correctedelevation + 6.07995,
@@ -123,10 +123,11 @@ class CPUStrategy(ProcessingStrategy):
         tmp = np.zeros(opticalpath.shape) + 1.0
         highslopebeam = opticalpath <= 20
         lowslopebeam = opticalpath > 20
+        opticalpath_power = lambda p: np.power(opticalpath[highslopebeam], p)
         tmp[highslopebeam] = (6.6296 + 1.7513 * opticalpath[highslopebeam] -
-                              0.1202 * np.power(opticalpath[highslopebeam], 2) +
-                              0.0065 * np.power(opticalpath[highslopebeam], 3) -
-                              0.00013 * np.power(opticalpath[highslopebeam], 4))
+                              0.1202 * opticalpath_power(2) +
+                              0.0065 * opticalpath_power(3) -
+                              0.00013 * opticalpath_power(4))
         tmp[highslopebeam] = 1 / tmp[highslopebeam]
         tmp[lowslopebeam] = 1 / (10.4 + 0.718 * opticalpath[lowslopebeam])
         return tmp
@@ -143,20 +144,24 @@ class CPUStrategy(ProcessingStrategy):
         return (extraterrestrialirradiance * excentricity *
                 self.getdiffusetransmitance(linketurbidity, solarelevation))
 
-    def gettransmitance(self, linketurbidity, opticalpath, opticaldepth, solarelevation):
-        return (self.getbeamtransmission(linketurbidity, opticalpath, opticaldepth) +
+    def gettransmitance(self, linketurbidity, opticalpath, opticaldepth,
+                        solarelevation):
+        return (self.getbeamtransmission(linketurbidity, opticalpath,
+                                         opticaldepth) +
                 self.getdiffusetransmitance(linketurbidity, solarelevation))
 
-    def getbeamirradiance(self, extraterrestrialirradiance, excentricity, zenitangle,
+    def getbeamirradiance(self, extraterrestrialirradiance, excentricity,
+                          zenitangle,
                           solarelevation, linketurbidity, terrainheight):
         correctedsolarelevation = self.getcorrectedelevation(solarelevation)
         # TODO: Meteosat is at 8434.5 mts
-        opticalpath = self.getopticalpath(correctedsolarelevation, terrainheight,
-                                          8434.5)
+        opticalpath = self.getopticalpath(correctedsolarelevation,
+                                          terrainheight, 8434.5)
         opticaldepth = self.getopticaldepth(opticalpath)
         return (self.gethorizontalirradiance(extraterrestrialirradiance,
                                              excentricity, zenitangle)
-                * self.getbeamtransmission(linketurbidity, opticalpath, opticaldepth))
+                * self.getbeamtransmission(linketurbidity, opticalpath,
+                                           opticaldepth))
 
     def getdailyangle(self, julianday, totaldays):
         return np.rad2deg(2 * np.pi * (julianday - 1) / totaldays)
@@ -178,9 +183,10 @@ class CPUStrategy(ProcessingStrategy):
     def getdifferentialalbedo(self, firstalbedo, secondalbedo, t_earth, t_sat):
         return (firstalbedo - secondalbedo) / (t_earth * t_sat)
 
-
-    def getapparentalbedo(self, observedalbedo, atmosphericalbedo, t_earth, t_sat):
-        apparentalbedo = self.getdifferentialalbedo(observedalbedo, atmosphericalbedo,
+    def getapparentalbedo(self, observedalbedo, atmosphericalbedo, t_earth,
+                          t_sat):
+        apparentalbedo = self.getdifferentialalbedo(observedalbedo,
+                                                    atmosphericalbedo,
                                                     t_earth, t_sat)
         apparentalbedo[apparentalbedo < 0] = 0.0
         return apparentalbedo
@@ -189,8 +195,10 @@ class CPUStrategy(ProcessingStrategy):
         solarangle = np.deg2rad(solarangle)
         return 0.78 - 0.13 * (1 - np.exp(-4 * np.power(np.cos(solarangle), 5)))
 
-    def getcloudalbedo(self, effectivealbedo, atmosphericalbedo, t_earth, t_sat):
-        cloudalbedo = self.getdifferentialalbedo(effectivealbedo, atmosphericalbedo,
+    def getcloudalbedo(self, effectivealbedo, atmosphericalbedo,
+                       t_earth, t_sat):
+        cloudalbedo = self.getdifferentialalbedo(effectivealbedo,
+                                                 atmosphericalbedo,
                                                  t_earth, t_sat)
         cloudalbedo[cloudalbedo < 0.2] = 0.2
         effectiveproportion = 2.24 * effectivealbedo
@@ -212,7 +220,7 @@ class CPUStrategy(ProcessingStrategy):
         self.solarelevation[:] = self.getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
         linke = np.vstack(pmap(lambda m: loader.linke[0, m-1, :],
-                               self.months))[0,:]
+                               self.months))[0, :]
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = self.getbeamirradiance(1367.0, self.excentricity[:],
@@ -221,26 +229,25 @@ class CPUStrategy(ProcessingStrategy):
         dc = self.getdiffuseirradiance(1367.0, self.excentricity[:],
                                        self.solarelevation[:], linke)
         self.gc[:] = self.getglobalirradiance(bc, dc)
-        satellitalzenithangle = self.getsatellitalzenithangle(loader.lat,
-                                                              loader.lon,
-                                                              self.algorithm.SAT_LON)
-        atmosphericradiance = self.getatmosphericradiance(1367.0,
-                                                     self.algorithm.i0met,
-                                                     dc,
-                                                     satellitalzenithangle)
+        satellitalzenithangle = self.getsatellitalzenithangle(
+            loader.lat, loader.lon, self.algorithm.SAT_LON)
+        atmosphericradiance = self.getatmosphericradiance(
+            1367.0, self.algorithm.i0met, dc, satellitalzenithangle)
         self.atmosphericalbedo[:] = self.getalbedo(atmosphericradiance,
                                                    self.algorithm.i0met,
                                                    self.excentricity[:],
                                                    satellitalzenithangle)
         satellitalelevation = self.getelevation(satellitalzenithangle)
         satellital_opticalpath = self.getopticalpath(
-            self.getcorrectedelevation(satellitalelevation), loader.dem, 8434.5)
+            self.getcorrectedelevation(satellitalelevation),
+            loader.dem, 8434.5)
         satellital_opticaldepth = self.getopticaldepth(satellital_opticalpath)
         self.t_sat[:] = self.gettransmitance(linke, satellital_opticalpath,
                                              satellital_opticaldepth,
                                              satellitalelevation)
         solar_opticalpath = self.getopticalpath(
-            self.getcorrectedelevation(self.solarelevation[:]), loader.dem, 8434.5)
+            self.getcorrectedelevation(self.solarelevation[:]),
+            loader.dem, 8434.5)
         solar_opticaldepth = self.getopticaldepth(solar_opticalpath)
         self.t_earth[:] = self.gettransmitance(linke, solar_opticalpath,
                                                solar_opticaldepth,
@@ -248,11 +255,13 @@ class CPUStrategy(ProcessingStrategy):
         effectivealbedo = self.geteffectivealbedo(self.solarangle[:])
         self.cloudalbedo[:] = self.getcloudalbedo(effectivealbedo,
                                                   self.atmosphericalbedo[:],
-                                                  self.t_earth[:], self.t_sat[:])
+                                                  self.t_earth[:],
+                                                  self.t_sat[:])
         nc.sync(cache)
 
     def getsecondmin(self, albedo):
-        min1_albedo = np.ma.masked_array(albedo, albedo == np.amin(albedo, axis=0))
+        min1_albedo = np.ma.masked_array(albedo,
+                                         albedo == np.amin(albedo, axis=0))
         return np.amin(min1_albedo, axis=0)
 
     def getsolarelevation(self, declination, lat, omega):
@@ -279,16 +288,17 @@ class CPUStrategy(ProcessingStrategy):
         clearsky[cond] = 0.05
         return clearsky
 
-
     def estimate_globalradiation(self, loader, cache, output):
         excentricity = cache.excentricity
         solarangle = cache.solarangle
         atmosphericalbedo = cache.atmosphericalbedo
         t_earth = cache.t_earth
         t_sat = cache.t_sat
-        observedalbedo = self.getalbedo(loader.calibrated_data, self.algorithm.i0met,
+        observedalbedo = self.getalbedo(loader.calibrated_data,
+                                        self.algorithm.i0met,
                                         excentricity, solarangle)
-        apparentalbedo = self.getapparentalbedo(observedalbedo, atmosphericalbedo,
+        apparentalbedo = self.getapparentalbedo(observedalbedo,
+                                                atmosphericalbedo,
                                                 t_earth, t_sat)
         declination = cache.declination[:]
         logging.info("Calculating the noon window... ")
@@ -317,8 +327,9 @@ class CPUStrategy(ProcessingStrategy):
         solarelevation = cache.solarelevation[:]
         logging.info("Calculating the ground minimum albedo... ")
         groundminimumalbedo = self.getsecondmin(
-            np.ma.masked_array(apparentalbedo[condition],
-                               solarelevation[condition] < r_alphanoon[condition]))
+            np.ma.masked_array(
+                apparentalbedo[condition],
+                solarelevation[condition] < r_alphanoon[condition]))
         aux_2g0 = 2 * groundreferencealbedo
         aux_05g0 = 0.5 * groundreferencealbedo
         condition_2g0 = groundminimumalbedo > aux_2g0
@@ -327,11 +338,12 @@ class CPUStrategy(ProcessingStrategy):
         groundminimumalbedo[condition_05g0] = aux_05g0[condition_05g0]
         logging.info("Calculating the cloud index... ")
         i = output.ref_globalradiation.shape[0]
-        cloudindex = self.getcloudindex(apparentalbedo[-i:], groundminimumalbedo,
-                                   cache.cloudalbedo[-i:])
+        cloudindex = self.getcloudindex(apparentalbedo[-i:],
+                                        groundminimumalbedo,
+                                        cache.cloudalbedo[-i:])
         output.ref_cloudindex[:] = cloudindex
         output.ref_globalradiation[:] = (self.getclearsky(cloudindex) *
-                                         cache.gc[-i:,:])
+                                         cache.gc[-i:, :])
         nc.sync(output.root)
 
 
