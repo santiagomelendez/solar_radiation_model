@@ -64,7 +64,7 @@ class JobDescription(object):
         if self.config['data']:
             months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
                                    pmap(to_datetime, self.config['data']))))
-            map(lambda (k, o): logging.debug('%s: %s' % (k, str(o))),
+            pmap(lambda (k, o): logging.debug('%s: %s' % (k, str(o))),
                 self.config.items())
             logging.info("Months: %s", str(months))
             logging.info("Dataset: %i files.", len(self.config['data']))

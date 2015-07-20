@@ -63,7 +63,7 @@ def mp_map(f, X):
     return [p.recv() for (p, c) in pipe]
 
 
-pmap = map  # map if 'armv6l' in list(os.uname()) else mp_map
+pmap = map if 'armv6l' in list(os.uname()) else mp_map
 
 try:
     # raise Exception('Force CPU')
