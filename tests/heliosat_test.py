@@ -34,6 +34,8 @@ class TestHeliosat(unittest.TestCase):
                 print 'min: ', gtz(calculated[:]).min(), '(', gtz(valid[:]).min(), ')'
                 print 'max: ', gtz(calculated[:]).max(), '(', gtz(valid[:]).max(), ')'
                 self.assertTrue((diff < threshold).all())
+                shape = valid.shape
+        return shape
 
     def test_main(self):
         config = {
@@ -47,13 +49,13 @@ class TestHeliosat(unittest.TestCase):
         job.run()
         # heliosat.workwith(**config)
         end = datetime.now()
-        self.verify_output()
+        shape = self.verify_output()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
         to_dt = helpers.to_datetime
         processed = (to_dt(last) - to_dt(first)).total_seconds()
         processed_days = processed / 3600. / 24
-        scale_shapes = (2245. / 86) * (3515. / 180) * (30. / processed_days)
+        scale_shapes = (2245. / shape[1]) * (3515. / shape[2]) * (shape[0] / processed_days)
         estimated = elapsed * scale_shapes / 3600.
         print "Scaling total time to %.2f hours." % estimated
         print "Efficiency achieved: %.2f%%" % (3.5 / estimated * 100.)
