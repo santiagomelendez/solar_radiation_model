@@ -1,9 +1,8 @@
 import numpy as np
 from netcdf import netcdf as nc
-import stats
 import logging
-from models.core import gpuarray, cuda, SourceModule
-from cpu import CPUStrategy, GREENWICH_LON
+from models.core import cuda, SourceModule
+from cpu import CPUStrategy
 import itertools
 
 with open('models/kernel.cu') as f:
@@ -28,11 +27,14 @@ def gpu_exec(func_name, results, *matrixs):
     blocks = map(lambda ms: ms[1:3], m_shapes)
     size = lambda m: m[0] * m[1]
     max_blocks = max(map(size, blocks))
-    blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks, blocks)[0]))
+    blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks,
+                                  blocks)[0]))
     threads = max(map(lambda ms: ms[0], m_shapes))
-    logging.info('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
+    logging.info('-> block by grid: %s, threads by block: %s\n' %
+                 (str(blocks), str(threads)))
     func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
-    list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results]))
+    list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu),
+             transferences[:results]))
     for i in range(results):
         matrixs[i][:] = matrixs_ram[i]
         matrixs_gpu[i].free()
@@ -43,14 +45,15 @@ class GPUStrategy(CPUStrategy):
 
     def update_temporalcache(self, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
-        linke = np.vstack(map(lambda m: loader.linke[0,m - 1,:],
-                              self.months))[0,:]
+        # linke = np.vstack(map(lambda m: loader.linke[0, m-1, :],
+        #                       self.months))[0, :]
         inputs = [loader.lat[0],
                   loader.lon[0],
                   self.decimalhour,
+                  self.months,
                   self.gamma,
                   loader.dem,
-                  linke,
+                  loader.linke,
                   const(self.algorithm.SAT_LON),
                   const(self.algorithm.i0met),
                   const(1367.0),
@@ -70,7 +73,8 @@ class GPUStrategy(CPUStrategy):
         print "----"
         maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
         for mm in zip(range(len(maxmin)), maxmin):
-            name = outputs[mm[0]].name if hasattr(outputs[mm[0]], 'name') else mm[0]
+            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
+                                                  'name') else mm[0]
             print name, ': ', mm[1]
         print "----"
         nc.sync(cache)

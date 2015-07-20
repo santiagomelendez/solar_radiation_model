@@ -66,7 +66,7 @@ def mp_map(f, X):
 pmap = map  # map if 'armv6l' in list(os.uname()) else mp_map
 
 try:
-    raise Exception('Force CPU')
+    # raise Exception('Force CPU')
     from pycuda.compiler import SourceModule
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as cuda
