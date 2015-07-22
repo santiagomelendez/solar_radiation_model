@@ -1,15 +1,9 @@
 from datetime import datetime
 import numpy as np
 from netcdf import netcdf as nc
-from helpers import to_datetime
 import logging
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
-import json
-
-
-with open('models/config.json') as tile_config:
-    DIMS = json.load(tile_config)["tails"]["1"]["dimensions"]
 
 
 class Cache(object):
@@ -34,7 +28,7 @@ class Cache(object):
 
 class StaticCacheConstructor(object):
 
-    def __init__(self, filenames):
+    def __init__(self, filenames, tile_cut={}):
         # At first it should have: lat, lon, dem, linke
         self.root, is_new = nc.open('static.nc')
         if is_new:
@@ -47,7 +41,7 @@ class StaticCacheConstructor(object):
                 self.project_dem()
                 self.project_linke()
                 nc.sync(self.root)
-        self.root = nc.tailor(self.root, dimensions=DIMS)
+        self.root = nc.tailor(self.root, dimensions=tile_cut)
 
     def project_dem(self):
         logging.info("Projecting DEM's map... ")
@@ -69,11 +63,11 @@ class StaticCacheConstructor(object):
 
 class Loader(Cache):
 
-    def __init__(self, filenames):
+    def __init__(self, filenames, tile_cut={}):
         super(Loader, self).__init__()
         self.filenames = filenames
-        self.root = nc.tailor(filenames, dimensions=DIMS)
-        self.static = StaticCacheConstructor(filenames)
+        self.root = nc.tailor(filenames, dimensions=tile_cut)
+        self.static = StaticCacheConstructor(filenames, tile_cut)
         self.static_cached = self.static.root
 
     @property

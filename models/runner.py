@@ -1,8 +1,6 @@
-import heliosat
 from goesdownloader import instrument as goes
 import os
-import requests
-from datetime import datetime, timedelta
+from datetime import timedelta
 import importlib
 import glob
 import pytz
@@ -15,12 +13,12 @@ import logging
 class JobDescription(object):
 
     def __init__(self,
-                 algorithm = 'heliosat',
+                 algorithm='heliosat',
                  data='data/*.nc',
-                 static_file = 'static.nc',
-                 temporal_cache = 'temporal_cache',
-                 product = 'product/estimated',
-                 tile_cut = {}):
+                 static_file='static.nc',
+                 temporal_cache='temporal_cache',
+                 product='product/estimated',
+                 tile_cut={}):
         self.config = {
             'algorithm': 'models.%s' % algorithm,
             'data': data,
@@ -53,7 +51,8 @@ class JobDescription(object):
         in_the_last_month = lambda f: to_datetime(f).date() >= a_month_ago
         files = filter(in_the_last_month, files)
         files = self.filter_wrong_sized_data(files)
-        daylight = lambda dt: localize(dt).hour >= 6 and localize(dt).hour <= 20
+        daylight = (lambda dt: localize(dt).hour >= 6
+                    and localize(dt).hour <= 20)
         files = filter(lambda f: daylight(to_datetime(f)), files)
         return files
 
@@ -65,7 +64,7 @@ class JobDescription(object):
             months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
                                    pmap(to_datetime, self.config['data']))))
             pmap(lambda (k, o): logging.debug('%s: %s' % (k, str(o))),
-                self.config.items())
+                 self.config.items())
             logging.info("Months: %s", str(months))
             logging.info("Dataset: %i files.", len(self.config['data']))
             algorithm = importlib.import_module(self.config['algorithm'])
@@ -78,10 +77,12 @@ logging.basicConfig(level=logging.INFO)
 
 def run(**config):
     diff = lambda dt, h: (dt - timedelta(hours=h))
-    decimal = lambda dt, h: diff(dt, h).hour + diff(dt, h).minute / 60. + diff(dt, h).second / 3600.
+    decimal = (lambda dt, h: diff(dt, h).hour + diff(dt, h).minute / 60. +
+               diff(dt, h).second / 3600.)
     should_download = lambda dt: decimal(dt, 4) >= 5 and decimal(dt, 4) <= 20
     filenames = goes.download('noaa.gvarim', 'noaaadmin', 'data_argentina',
-                              name='Argentina', datetime_filter=should_download)
+                              name='Argentina',
+                              datetime_filter=should_download)
     print filenames
     # if filenames:
     #     work = JobDescription(data='data/goes13.*.BAND_01.nc')

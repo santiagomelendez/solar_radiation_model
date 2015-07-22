@@ -6,7 +6,7 @@ from datetime import timedelta
 import glob
 import os
 from netcdf import netcdf as nc
-from cache import Cache, Loader, DIMS
+from cache import Cache, Loader
 from helpers import short
 import logging
 
@@ -82,6 +82,7 @@ class AlgorithmCache(Cache):
     def __init__(self, algorithm):
         super(AlgorithmCache, self).__init__()
         self.algorithm = algorithm
+        self.tile_config = self.algorithm.config['tile_cut']
         self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
 
@@ -91,7 +92,8 @@ class TemporalCache(AlgorithmCache):
     def __init__(self, algorithm):
         super(TemporalCache, self).__init__(algorithm)
         self.update_cache(self.filenames)
-        self.cache = Loader(pmap(self.get_cached_file, self.filenames))
+        self.cache = Loader(pmap(self.get_cached_file, self.filenames),
+                            tile_cut=self.tile_config)
         self.root = self.cache.root
 
     def initialize_path(self, filenames):
@@ -114,9 +116,9 @@ class TemporalCache(AlgorithmCache):
                             not in cached_files,
                             filenames)
         if not_cached:
-            loader = Loader(not_cached)
+            loader = Loader(not_cached, self.tile_config)
             new_files = pmap(self.get_cached_file, not_cached)
-            with nc.loader(new_files, dimensions=DIMS) as cache:
+            with nc.loader(new_files, dimensions=self.tile_config) as cache:
                 self.algorithm.update_temporalcache(loader, cache)
             loader.dump()
 
@@ -139,9 +141,10 @@ class OutputCache(AlgorithmCache):
 
     def __init__(self, algorithm):
         super(OutputCache, self).__init__(algorithm)
-        self.output = Loader(pmap(self.get_output_file, self.filenames))
+        self.output = Loader(pmap(self.get_output_file, self.filenames),
+                             tile_cut=self.tile_config)
         self.root = self.output.root
-        with nc.loader(self.filenames, dimensions=DIMS) as images:
+        with nc.loader(self.filenames, dimensions=self.tile_config) as images:
             map(algorithm.create_1px_dimensions, self.root.roots)
             self.root.getvar('time', source=images.getvar('time'))
             self.root.getvar('cloudindex',
@@ -161,7 +164,7 @@ class OutputCache(AlgorithmCache):
 
 
 def run(**config):
-        loader = Loader(config['data'])
+        loader = Loader(config['data'], tile_cut=config['tile_cut'])
         algorithm = Heliosat2(config, geo.strategy)
         algorithm.run_with(loader)
         loader.dump()
