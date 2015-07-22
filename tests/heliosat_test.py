@@ -31,6 +31,7 @@ class TestHeliosat(unittest.TestCase):
                 calculated = nc.getvar(new_root, 'globalradiation')
                 gtz = lambda m: m[calculated[:] >= 0]
                 diff = gtz(calculated[:] - valid[:])
+                print 'thr: ', threshold
                 print 'min: ', gtz(calculated[:]).min(), '(', gtz(valid[:]).min(), ')'
                 print 'max: ', gtz(calculated[:]).max(), '(', gtz(valid[:]).max(), ')'
                 self.assertTrue((diff < threshold).all())
@@ -51,11 +52,8 @@ class TestHeliosat(unittest.TestCase):
         end = datetime.now()
         shape = self.verify_output()
         elapsed = (end - begin).total_seconds()
-        first, last = min(self.files), max(self.files)
-        to_dt = helpers.to_datetime
-        processed = (to_dt(last) - to_dt(first)).total_seconds()
-        processed_days = processed / 3600. / 24
-        scale_shapes = (2245. / shape[1]) * (3515. / shape[2]) * (shape[0] / processed_days)
+        image_ratio = (30. * 14 * 2 / shape[0])
+        scale_shapes = (2245. / shape[1]) * (3515. / shape[2]) * (image_ratio)
         estimated = elapsed * scale_shapes / 3600.
         print "Scaling total time to %.2f hours." % estimated
         print "Efficiency achieved: %.2f%%" % (3.5 / estimated * 100.)
