@@ -6,6 +6,7 @@ from itertools import izip
 from cache import memoize
 import multiprocessing as mp
 import os
+import logging
 
 
 class ProcessingStrategy(object):
@@ -20,7 +21,8 @@ class ProcessingStrategy(object):
     @property
     @memoize
     def months(self):
-        return map(lambda t: self.int_to_dt(t).month, self.times)
+        months = pmap(lambda t: self.int_to_dt(t).month, self.times)
+        return np.array(months).reshape(self.times.shape)
 
     @property
     @memoize
@@ -63,10 +65,10 @@ def mp_map(f, X):
     return [p.recv() for (p, c) in pipe]
 
 
-pmap = map if 'armv6l' in list(os.uname()) else mp_map
+pmap = map  # if 'armv6l' in list(os.uname()) else mp_map
 
 try:
-    # raise Exception('Force CPU')
+    raise Exception('Force CPU')
     from pycuda.compiler import SourceModule
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as cuda
@@ -74,6 +76,8 @@ try:
     cuda_can_help = True
     import gpu as geo
     print "<< using CUDA cores >>"
-except Exception:
+except Exception, e:
+    if e.message != 'Force CPU':
+        logging.warn(e)
     cuda_can_help = False
     import cpu as geo

@@ -1,7 +1,7 @@
 import numpy as np
 from netcdf import netcdf as nc
 import logging
-from models.core import cuda, SourceModule
+from models.core import cuda, SourceModule, pmap
 from cpu import CPUStrategy
 import itertools
 
@@ -68,6 +68,7 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
+        """
         print "----"
         maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
         for mm in zip(range(len(maxmin)), maxmin):
@@ -75,8 +76,44 @@ class GPUStrategy(CPUStrategy):
                                                   'name') else mm[0]
             print name, ': ', mm[1]
         print "----"
+        """
         nc.sync(cache)
         # super(GPUStrategy, self).update_temporalcache(loader, cache)
+
+    """
+    def estimate_globalradiation(self, loader, cache, output):
+        print "Estimate!"
+        const = lambda c: np.array(c).reshape(1, 1, 1)
+        inputs = [cache.slots,
+                  cache.declination,
+                  cache.solarangle,
+                  cache.solarelevation,
+                  cache.excentricity,
+                  loader.lat[0],
+                  loader.calibrated_data,
+                  cache.gc,
+                  cache.t_sat,
+                  cache.t_earth,
+                  cache.atmosphericalbedo,
+                  cache.cloudalbedo,
+                  const(self.algorithm.i0met),
+                  const(self.algorithm.IMAGE_PER_HOUR)]
+        outputs = [output.ref_cloudindex,
+                   output.ref_globalradiation]
+        matrixs = list(itertools.chain(*[outputs, inputs]))
+        gpu_exec("estimate_globalradiation", len(outputs),
+                 *matrixs)
+        print "----"
+        maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
+        for mm in zip(range(len(maxmin)), maxmin):
+            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
+                                                  'name') else mm[0]
+            print name, ': ', mm[1]
+        print "----"
+        nc.sync(output.root)
+        super(GPUStrategy, self).estimate_globalradiation(loader, cache,
+                                                          output)
+                                                          """
 
 
 strategy = GPUStrategy

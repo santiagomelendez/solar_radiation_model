@@ -219,8 +219,8 @@ class CPUStrategy(ProcessingStrategy):
         # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = self.getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
-        linke = np.vstack(map(lambda m: loader.linke[0, m-1, :],
-                               self.months))[0, :]
+        linke = np.vstack([pmap(lambda m: loader.linke[0, m[0][0] - 1, :],
+                                self.months.tolist())])
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = self.getbeamirradiance(1367.0, self.excentricity[:],
