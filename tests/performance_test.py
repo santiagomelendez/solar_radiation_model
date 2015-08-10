@@ -12,6 +12,7 @@ class TestPerformance(unittest.TestCase):
     def setUp(self):
         # os.system('rm -rf static.nc temporal_cache products')
         os.system('rm -rf temporal_cache products/estimated')
+        os.system('rm -rf temporal_cache')
         os.system('cp -rf data_argentina mock_data')
         self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')
 
@@ -20,7 +21,7 @@ class TestPerformance(unittest.TestCase):
 
     def test_main(self):
         begin = datetime.now()
-        heliosat.workwith('mock_data/goes13.2015.143.*.BAND_01.nc')
+        heliosat.workwith('mock_data/goes13.2015.*.BAND_01.nc', 32)
         end = datetime.now()
         elapsed = (end - begin).total_seconds()
         first, last = min(self.files), max(self.files)
