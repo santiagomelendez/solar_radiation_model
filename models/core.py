@@ -6,6 +6,7 @@ from itertools import izip
 from cache import memoize
 import multiprocessing as mp
 import os
+import logging
 
 
 class ProcessingStrategy(object):
@@ -13,6 +14,26 @@ class ProcessingStrategy(object):
     def __init__(self, algorithm, loader, cache):
         self.algorithm = algorithm
         self.algorithm.create_variables(loader, cache, self)
+
+    def int_to_dt(self, time):
+        return datetime.utcfromtimestamp(int(time))
+
+    @property
+    @memoize
+    def months(self):
+        months = pmap(lambda t: self.int_to_dt(t).month, self.times)
+        return np.array(months).reshape(self.times.shape)
+
+    @property
+    @memoize
+    def gamma(self):
+        to_julianday = lambda time: self.int_to_dt(time).timetuple().tm_yday
+        days_of_year = lambda time: to_julianday(
+            (datetime(self.int_to_dt(time).year, 12, 31)).timetuple()[7])
+        times = self.times
+        total_days = np.array(pmap(days_of_year, times)).reshape(times.shape)
+        julian_day = np.array(pmap(to_julianday, times)).reshape(times.shape)
+        return self.getdailyangle(julian_day, total_days)
 
     @property
     @memoize
@@ -44,7 +65,7 @@ def mp_map(f, X):
     return [p.recv() for (p, c) in pipe]
 
 
-pmap = map  # map if 'armv6l' in list(os.uname()) else mp_map
+pmap = map  # if 'armv6l' in list(os.uname()) else mp_map
 
 try:
     raise Exception('Force CPU')
@@ -55,6 +76,8 @@ try:
     cuda_can_help = True
     import gpu as geo
     print "<< using CUDA cores >>"
-except Exception:
+except Exception, e:
+    if e.message != 'Force CPU':
+        logging.warn(e)
     cuda_can_help = False
     import cpu as geo

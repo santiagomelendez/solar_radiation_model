@@ -1,8 +1,7 @@
 from datetime import datetime
 import numpy as np
 from netcdf import netcdf as nc
-from helpers import to_datetime
-from helpers import show
+import logging
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
 
@@ -29,11 +28,11 @@ class Cache(object):
 
 class StaticCacheConstructor(object):
 
-    def __init__(self, filenames):
+    def __init__(self, filenames, tile_cut={}):
         # At first it should have: lat, lon, dem, linke
         self.root, is_new = nc.open('static.nc')
         if is_new:
-            show("This is the first execution from the deployment... ")
+            logging.info("This is the first execution from the deployment... ")
             with nc.loader(filenames[0]) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
@@ -42,15 +41,15 @@ class StaticCacheConstructor(object):
                 self.project_dem()
                 self.project_linke()
                 nc.sync(self.root)
-            show("-----------------------\n")
+        self.root = nc.tailor(self.root, dimensions=tile_cut)
 
     def project_dem(self):
-        show("Projecting DEM's map... ")
+        logging.info("Projecting DEM's map... ")
         dem_var = nc.getvar(self.root, 'dem', 'f4', source=self.lon)
         dem_var[:] = dem.obtain(self.lat[0], self.lon[0])
 
     def project_linke(self):
-        show("Projecting Linke's turbidity index... ")
+        logging.info("Projecting Linke's turbidity index... ")
         dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
         linkes = map(lambda dt: linke.obtain(dt, compressed=True), dts)
         linkes = map(lambda l: linke.transform_data(l, self.lat[0],
@@ -64,11 +63,11 @@ class StaticCacheConstructor(object):
 
 class Loader(Cache):
 
-    def __init__(self, filenames):
+    def __init__(self, filenames, tile_cut={}):
         super(Loader, self).__init__()
         self.filenames = filenames
-        self.root = nc.open(filenames)[0]
-        self.static = StaticCacheConstructor(filenames)
+        self.root = nc.tailor(filenames, dimensions=tile_cut)
+        self.static = StaticCacheConstructor(filenames, tile_cut)
         self.static_cached = self.static.root
 
     @property
@@ -79,12 +78,9 @@ class Loader(Cache):
 
     @property
     def linke(self):
-        if not hasattr(self, '_cached_linke'):
-            self._linke = nc.getvar(self.static_cached, 'linke')
-            self._cached_linke = np.vstack([
-                map(lambda dt: self._linke[0, dt.month - 1],
-                    map(to_datetime, self.filenames))])
-        return self._cached_linke
+        if not hasattr(self, '_linke'):
+            self._linke = nc.getvar(self.static_cached, 'linke')[:]
+        return self._linke
 
     @property
     def calibrated_data(self):

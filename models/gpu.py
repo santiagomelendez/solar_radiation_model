@@ -1,9 +1,8 @@
 import numpy as np
 from netcdf import netcdf as nc
-import stats
-from helpers import show
-from models.core import gpuarray, cuda, SourceModule
-from cpu import CPUStrategy, GREENWICH_LON
+import logging
+from models.core import cuda, SourceModule, pmap
+from cpu import CPUStrategy
 import itertools
 
 with open('models/kernel.cu') as f:
@@ -28,11 +27,14 @@ def gpu_exec(func_name, results, *matrixs):
     blocks = map(lambda ms: ms[1:3], m_shapes)
     size = lambda m: m[0] * m[1]
     max_blocks = max(map(size, blocks))
-    blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks, blocks)[0]))
+    blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks,
+                                  blocks)[0]))
     threads = max(map(lambda ms: ms[0], m_shapes))
-    show('-> block by grid: %s, threads by block: %s\n' % (str(blocks), str(threads)))
+    logging.info('-> block by grid: %s, threads by block: %s\n' %
+                 (str(blocks), str(threads)))
     func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
-    list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu), transferences[:results]))
+    list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu),
+             transferences[:results]))
     for i in range(results):
         matrixs[i][:] = matrixs_ram[i]
         matrixs_gpu[i].free()
@@ -46,6 +48,7 @@ class GPUStrategy(CPUStrategy):
         inputs = [loader.lat[0],
                   loader.lon[0],
                   self.decimalhour,
+                  self.months,
                   self.gamma,
                   loader.dem,
                   loader.linke,
@@ -65,14 +68,52 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
+        """
         print "----"
         maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
         for mm in zip(range(len(maxmin)), maxmin):
-            name = outputs[mm[0]].name if hasattr(outputs[mm[0]], 'name') else mm[0]
+            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
+                                                  'name') else mm[0]
             print name, ': ', mm[1]
         print "----"
+        """
         nc.sync(cache)
         # super(GPUStrategy, self).update_temporalcache(loader, cache)
+
+    """
+    def estimate_globalradiation(self, loader, cache, output):
+        print "Estimate!"
+        const = lambda c: np.array(c).reshape(1, 1, 1)
+        inputs = [cache.slots,
+                  cache.declination,
+                  cache.solarangle,
+                  cache.solarelevation,
+                  cache.excentricity,
+                  loader.lat[0],
+                  loader.calibrated_data,
+                  cache.gc,
+                  cache.t_sat,
+                  cache.t_earth,
+                  cache.atmosphericalbedo,
+                  cache.cloudalbedo,
+                  const(self.algorithm.i0met),
+                  const(self.algorithm.IMAGE_PER_HOUR)]
+        outputs = [output.ref_cloudindex,
+                   output.ref_globalradiation]
+        matrixs = list(itertools.chain(*[outputs, inputs]))
+        gpu_exec("estimate_globalradiation", len(outputs),
+                 *matrixs)
+        print "----"
+        maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
+        for mm in zip(range(len(maxmin)), maxmin):
+            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
+                                                  'name') else mm[0]
+            print name, ': ', mm[1]
+        print "----"
+        nc.sync(output.root)
+        super(GPUStrategy, self).estimate_globalradiation(loader, cache,
+                                                          output)
+                                                          """
 
 
 strategy = GPUStrategy
