@@ -1,14 +1,16 @@
 #include <stdio.h>
 
 #define GREENWICH_LON (0.0f)
-#define PI (3.141592653589793f)
+#define PI (3.1415927f)
 #define DEG2RAD (PI / 180.0f)
 #define RAD2DEG (180.0f / PI)
 
 #define i_dt (threadIdx.z)
-#define i_dxy (blockIdx.x + (blockIdx.y * gridDim.x))
+#define i_dxy (threadIdx.x \
+               + (blockIdx.x * blockDim.x) \
+               + ((threadIdx.y + (blockIdx.y * blockDim.y)) * (gridDim.x * blockDim.x))) 
+#define i_dxyt (i_dxy + (gridDim.x * blockDim.x) * (gridDim.y * blockDim.y) * i_dt)
 #define s_dxy (gridDim.x * gridDim.y)
-#define i_dxyt (i_dxy + gridDim.x * gridDim.y * i_dt)
 
 
 __device__ void getdeclination(float *declination, float *gamma)
@@ -188,7 +190,6 @@ float diffuseirradiance)
 #define rpol 6356.5838f
 #define req  6378.1690f
 #define h    42166.55637f
-//define h    42164.0f
 
 __device__ float getsatellitalzenithangle(float *lat,
 float *lon, float *sub_lon)

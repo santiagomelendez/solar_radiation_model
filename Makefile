@@ -50,7 +50,7 @@ ra_run:
 	@ ($(PROXYENV) $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run()" 2>&1) >> status.txt
 
 test:
-	@ $(SOURCE_ACTIVATE) CUDA_PROFILE=1 $(PYTHON) tests
+	@ $(SOURCE_ACTIVATE) CUDA_PROFILE=1 CUDA_PROFILE_CSV=1 CUDA_PROFILE_CONFIG='cuda_profiler.conf' $(PYTHON) tests
 
 test_gdb:
 	@ $(SOURCE_ACTIVATE) cuda-gdb --args $(PYTHON) -m pycuda.debug tests/heliosat_test.py

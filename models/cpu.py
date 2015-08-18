@@ -342,7 +342,11 @@ class CPUStrategy(ProcessingStrategy):
                                         groundminimumalbedo,
                                         cache.cloudalbedo[-i:])
         output.ref_cloudindex[:] = cloudindex
+<<<<<<< Updated upstream
         output.ref_globalradiation[:] = (self.getclearsky(cloudindex) *
+=======
+        output.ref_globalradiation[:] = (getclearsky(cloudindex) *
+>>>>>>> Stashed changes
                                          cache.gc[-i:, :])
         nc.sync(output.root)
 
