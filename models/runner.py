@@ -40,7 +40,7 @@ class JobDescription(object):
         return filter(lambda f: size(f) == right_size, files)
 
     def filter_data(self, filename):
-        files = glob.glob(filename) if isinstance(filename, str) else filename
+        files = glob.glob(filename) if isinstance(filename, basestring) else filename
         if not files:
             return []
         last_dt = to_datetime(max(files))
