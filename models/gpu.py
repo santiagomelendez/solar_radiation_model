@@ -1,13 +1,11 @@
 import numpy as np
 from netcdf import netcdf as nc
 import logging
-from models.core import cuda, SourceModule, pmap
+from models.core import cuda, SourceModule
 from cpu import CPUStrategy
 import itertools
 import math
-import os
-import signal
-import subprocess
+
 
 with open('models/kernel.cu') as f:
     mod_sourcecode = SourceModule(f.read())
@@ -75,7 +73,6 @@ def cartesianproduct(x, y):
 class GPUStrategy(CPUStrategy):
 
     def update_temporalcache(self, loader, cache):
-        smi_proccess = subprocess.Popen("LD_LIBRARY_PATH=/usr/lib nvidia-smi --query-gpu=utilization.gpu,utilization.memory,memory.total,memory.free,memory.used,temperature.gpu,timestamp --format=csv -l 2 -f smi-results.csv", shell=True, preexec_fn=os.setsid)
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [loader.lat[0],
                   loader.lon[0],
@@ -100,18 +97,7 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
-        """
-        print "----"
-        maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
-        for mm in zip(range(len(maxmin)), maxmin):
-            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
-                                                  'name') else mm[0]
-            print name, ': ', mm[1]
-        print "----"
-        """
         nc.sync(cache)
-        os.killpg(smi_proccess.pid, signal.SIGTERM)
-        # super(GPUStrategy, self).update_temporalcache(loader, cache)
 
     """
     def estimate_globalradiation(self, loader, cache, output):

@@ -8,10 +8,9 @@
 #define i_dt (threadIdx.z)
 #define i_dxy (threadIdx.x \
                + (blockIdx.x * blockDim.x) \
-               + ((threadIdx.y + (blockIdx.y * blockDim.y)) * (gridDim.x * blockDim.x))) 
-#define i_dxyt (i_dxy + (gridDim.x * blockDim.x) * (gridDim.y * blockDim.y) * i_dt)
-#define s_dxy (gridDim.x * gridDim.y)
-
+               + ((threadIdx.y + (blockIdx.y * blockDim.y)) * (gridDim.x * blockDim.x)))
+#define s_dxy ((gridDim.x * blockDim.x) * (gridDim.y * blockDim.y))
+#define i_dxyt (i_dxy + s_dxy * i_dt)
 
 __device__ void getdeclination(float *declination, float *gamma)
 {
