@@ -19,6 +19,9 @@ def gpu_exec(func_name, results, *matrixs):
     matrixs_ram = map(lambda m: adapt(m).astype(np.float32,
                                                 casting='same_kind'),
                       matrixs)
+    shape_size = np.median(np.array(map(lambda m: len(m.shape), matrixs_ram)))
+    reshape = lambda m: m.reshape(m.shape[-int(shape_size):])
+    matrixs_ram = map(reshape, matrixs_ram)
     matrixs_gpu = map(lambda m: cuda.mem_alloc(m.nbytes), matrixs_ram)
     transferences = zip(matrixs_ram, matrixs_gpu)
     list(map(lambda (m, m_gpu): cuda.memcpy_htod(m_gpu, m), transferences))
