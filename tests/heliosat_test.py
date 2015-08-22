@@ -9,9 +9,7 @@ import glob
 class TestHeliosat(unittest.TestCase):
 
     def setUp(self):
-        # os.system('rm -rf static.nc temporal_cache product')
-        os.system('rm -rf temporal_cache product/estimated')
-        os.system('rm -rf temporal_cache')
+        os.system('rm -rf static.nc temporal_cache product')
         os.system('cp -rf data mock_data')
         self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')
         self.tile_cut = {
@@ -51,7 +49,6 @@ class TestHeliosat(unittest.TestCase):
         job = JobDescription(**config)
         begin = datetime.now()
         job.run()
-        # heliosat.workwith(**config)
         end = datetime.now()
         shape = self.verify_output()
         elapsed = (end - begin).total_seconds()
