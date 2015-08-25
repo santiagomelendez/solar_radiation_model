@@ -164,7 +164,7 @@ class OutputCache(AlgorithmCache):
 
 
 def run(**config):
-        loader = Loader(config['data'], tile_cut=config['tile_cut'])
-        algorithm = Heliosat2(config, geo.strategy)
-        algorithm.run_with(loader)
-        loader.dump()
+    loader = Loader(config['data'], tile_cut=config['tile_cut'])
+    algorithm = Heliosat2(config, geo.strategy)
+    algorithm.run_with(loader)
+    loader.dump()

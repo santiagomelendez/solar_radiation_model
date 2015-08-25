@@ -1,9 +1,10 @@
 import numpy as np
 from netcdf import netcdf as nc
 import logging
-from models.core import cuda, SourceModule, pmap
+from models.core import cuda, SourceModule
 from cpu import CPUStrategy
 import itertools
+
 
 with open('models/kernel.cu') as f:
     mod_sourcecode = SourceModule(f.read())
@@ -71,17 +72,7 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
-        """
-        print "----"
-        maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
-        for mm in zip(range(len(maxmin)), maxmin):
-            name = outputs[mm[0]].name if hasattr(outputs[mm[0]],
-                                                  'name') else mm[0]
-            print name, ': ', mm[1]
-        print "----"
-        """
         nc.sync(cache)
-        # super(GPUStrategy, self).update_temporalcache(loader, cache)
 
     """
     def estimate_globalradiation(self, loader, cache, output):
