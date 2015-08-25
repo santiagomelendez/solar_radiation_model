@@ -4,7 +4,6 @@ import logging
 from models.core import cuda, SourceModule
 from cpu import CPUStrategy
 import itertools
-import math
 
 
 with open('models/kernel.cu') as f:
@@ -35,42 +34,15 @@ def gpu_exec(func_name, results, *matrixs):
     blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks,
                                   blocks)[0]))
     threads = max(map(lambda ms: ms[0], m_shapes))
-    max_dims = getblockmaxdims(blocks[0], blocks[1], threads)
-    blocks[0] = blocks[0] / max_dims[0]
-    blocks[1] = blocks[1] / max_dims[1]
-    logging.info('-> grid dims: %s, block dims: %s, threads per block: %s\n' %
-                 (str(blocks), str([max_dims[0], max_dims[1], threads]),
-                  str(max_dims[0]*max_dims[1]*threads)))
-    func(*matrixs_gpu, grid=tuple(blocks),
-         block=tuple([max_dims[0], max_dims[1], threads]))
+    logging.info('-> block by grid: %s, threads by block: %s\n' %
+                 (str(blocks), str(threads)))
+    func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
     list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu),
              transferences[:results]))
     for i in range(results):
         matrixs[i][:] = matrixs_ram[i]
         matrixs_gpu[i].free()
     return matrixs_ram[:results]
-
-
-def getblockmaxdims(dimx, dimy, dimz):
-    max_threads_per_block = 1024
-    squares = cartesianproduct(list(divisors(dimx)), list(divisors(dimy)))
-    validdims = filter(lambda x: x[0]*x[1]*dimz <= max_threads_per_block, squares)
-    return max(validdims, key=lambda x: x[0]*x[1])
-
-
-def divisors(n):
-    large_divisors = []
-    for i in xrange(1, int(math.sqrt(n) + 1)):
-        if n % i is 0:
-            yield i
-            if i is not n / i:
-                large_divisors.insert(0, n / i)
-    for divisor in large_divisors:
-        yield divisor
-
-
-def cartesianproduct(x, y):
-    return np.dstack(np.meshgrid(x, y)).reshape(-1, 2)
 
 
 class GPUStrategy(CPUStrategy):

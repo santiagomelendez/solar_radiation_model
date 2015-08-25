@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #define GREENWICH_LON (0.0f)
-#define PI (3.1415927f)
+#define PI (3.141592653589793f)
 #define DEG2RAD (PI / 180.0f)
 #define RAD2DEG (180.0f / PI)
 
@@ -189,6 +189,7 @@ float diffuseirradiance)
 #define rpol 6356.5838f
 #define req  6378.1690f
 #define h    42166.55637f
+//define h    42164.0f
 
 __device__ float getsatellitalzenithangle(float *lat,
 float *lon, float *sub_lon)

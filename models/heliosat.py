@@ -2,7 +2,7 @@
 
 from core import geo, pmap
 import numpy as np
-from datetime import timedelta, datetime
+from datetime import timedelta
 import glob
 import os
 from netcdf import netcdf as nc
