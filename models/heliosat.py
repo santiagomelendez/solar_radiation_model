@@ -2,7 +2,6 @@
 import core
 from core import pmap
 import numpy as np
-from datetime import timedelta
 import glob
 import os
 from netcdf import netcdf as nc
@@ -110,8 +109,17 @@ class TemporalCache(AlgorithmCache):
         self.clean_cache(filenames)
         self.extend_cache(filenames)
 
+    def get_processed_files(self):
+        files = glob.glob('%s/*.nc' % self.temporal_path)
+        if files:
+            with nc.loader(files, dimensions=self.tile_config) as cache:
+                gc = nc.getvar(cache, 'gc')[:]
+                files = filter(lambda f: np.any(gc[files.index(f), :] != 0),
+                               files)
+        return files
+
     def extend_cache(self, filenames):
-        cached_files = glob.glob('%s/*.nc' % self.temporal_path)
+        cached_files = self.get_processed_files()
         not_cached = filter(lambda f: self.get_cached_file(f)
                             not in cached_files,
                             filenames)
