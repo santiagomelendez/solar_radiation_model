@@ -18,14 +18,16 @@ class JobDescription(object):
                  static_file='static.nc',
                  temporal_cache='temporal_cache',
                  product='product/estimated',
-                 tile_cut={}):
+                 tile_cut={},
+                 hard='cpu'):
         self.config = {
             'algorithm': 'models.%s' % algorithm,
             'data': data,
             'static_file': static_file,
             'temporal_cache': temporal_cache,
             'product': product,
-            'tile_cut': tile_cut
+            'tile_cut': tile_cut,
+            'hard': hard
         }
         self.check_data()
 

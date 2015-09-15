@@ -44,7 +44,8 @@ class TestHeliosat(unittest.TestCase):
             'data': 'mock_data/goes13.2015.*.BAND_01.nc',
             'temporal_cache': 'temporal_cache',
             'product': 'products/estimated',
-            'tile_cut': self.tile_cut
+            'tile_cut': self.tile_cut,
+            'hard': 'cpu',
         }
         job = JobDescription(**config)
         begin = datetime.now()

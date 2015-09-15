@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-from core import geo, pmap
+import core
+from core import pmap
 import numpy as np
 from datetime import timedelta
 import glob
@@ -165,6 +165,8 @@ class OutputCache(AlgorithmCache):
 
 def run(**config):
     loader = Loader(config['data'], tile_cut=config['tile_cut'])
+    core.config = config
+    from core import geo
     algorithm = Heliosat2(config, geo.strategy)
     algorithm.run_with(loader)
     loader.dump()
