@@ -11,7 +11,7 @@ class TestHeliosat(unittest.TestCase):
     def setUp(self):
         os.system('rm -rf static.nc temporal_cache product')
         os.system('cp -rf data mock_data')
-        self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')
+        self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')[:-1]
         self.tile_cut = {
             "xc": [20, 30],
             "yc": [10, 15]
@@ -20,9 +20,19 @@ class TestHeliosat(unittest.TestCase):
     def tearDown(self):
         os.system('rm -rf mock_data')
 
-    def verify_output(self):
-        with nc.loader('tests/products/estimated/*.nc', self.tile_cut) as old:
-            with nc.loader('products/estimated/*.nc', self.tile_cut) as new:
+    def translate_file(self, path, filename):
+        return '%s/%s' % (path, filename.split('/')[-1])
+
+    def verify_output(self, files):
+        tested = map(lambda f:
+                     self.translate_file('tests/products/estimated', f),
+                     files)
+        products = map(lambda f: self.translate_file('products/estimated', f),
+                       files)
+        with nc.loader(tested, self.tile_cut) as old:
+            with nc.loader(products, self.tile_cut) as new:
+                print old.files
+                print new.files
                 valid = nc.getvar(old, 'globalradiation')
                 max_vaild = valid[:].max()
                 # It allow a 1% of the maximum value as the maximum error
@@ -41,17 +51,18 @@ class TestHeliosat(unittest.TestCase):
     def test_main(self):
         config = {
             'algorithm': 'heliosat',
-            'data': 'mock_data/goes13.2015.*.BAND_01.nc',
+            'data': self.files,
             'temporal_cache': 'temporal_cache',
             'product': 'products/estimated',
             'tile_cut': self.tile_cut,
             'hard': 'cpu',
         }
         job = JobDescription(**config)
+        self.files = job.filter_data(self.files)
         begin = datetime.now()
         job.run()
         end = datetime.now()
-        shape = self.verify_output()
+        shape = self.verify_output(self.files)
         elapsed = (end - begin).total_seconds()
         image_ratio = (30. * 14 * 2 / shape[0])
         scale_shapes = (2245. / shape[1]) * (3515. / shape[2]) * (image_ratio)
