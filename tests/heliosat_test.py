@@ -31,8 +31,6 @@ class TestHeliosat(unittest.TestCase):
                        files)
         with nc.loader(tested, self.tile_cut) as old:
             with nc.loader(products, self.tile_cut) as new:
-                print old.files
-                print new.files
                 valid = nc.getvar(old, 'globalradiation')
                 max_vaild = valid[:].max()
                 # It allow a 1% of the maximum value as the maximum error
