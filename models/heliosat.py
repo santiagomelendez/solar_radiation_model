@@ -23,6 +23,9 @@ class Heliosat2(object):
         self.strategy_type = strategy_type
         self.cache = TemporalCache(self)
 
+    def __del__(self):
+        self.cache = None
+
     def create_1px_dimensions(self, root):
         nc.getdim(root, 'xc_k', 1)
         nc.getdim(root, 'yc_k', 1)
@@ -70,6 +73,7 @@ class Heliosat2(object):
             output = OutputCache(self)
             self.strategy.estimate_globalradiation(loader, cache, output)
             output.dump()
+            output = None
         cache.dump()
 
     def run_with(self, loader):
@@ -94,6 +98,9 @@ class TemporalCache(AlgorithmCache):
         self.cache = Loader(pmap(self.get_cached_file, self.filenames),
                             tile_cut=self.tile_config)
         self.root = self.cache.root
+
+    def __del__(self):
+        self.cache.dump()
 
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
@@ -160,6 +167,9 @@ class OutputCache(AlgorithmCache):
             self.root.getvar('globalradiation',
                              'f4', source=images.getvar('data'))
 
+    def __del__(self):
+        self.root = None
+
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
         self.output_path = self.algorithm.config['product']
@@ -177,4 +187,5 @@ def run(**config):
     from core import geo
     algorithm = Heliosat2(config, geo.strategy)
     algorithm.run_with(loader)
+    algorithm = None
     loader.dump()

@@ -24,6 +24,9 @@ class Cache(object):
 
     def dump(self):
         nc.close(self.root)
+        for k in self._attrs.keys():
+            del self._attrs[k]
+        del self._attrs
 
 
 class StaticCacheConstructor(object):
