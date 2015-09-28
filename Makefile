@@ -15,6 +15,10 @@ ubuntu:
 	@ (sudo apt-get -y install libzip-dev m4 python-dev zlibc libbz2-dev libssl1.0.0 python-gevent curl libxslt1-dev libxml2-dev 2>&1) >> tracking.log
 	@ echo "[ assume       ] ubuntu distribution"
 
+osx:
+	@ sudo port install libevent
+	@ echo "[ assume       ] osx system"
+
 unattended:
 	@ (sudo ls 2>&1) >> tracking.log
 
@@ -29,6 +33,7 @@ bin/activate: requirements.txt
 	@ echo "[ installing   ] $(PIP) requirements"
 	@ $(SOURCE_ACTIVATE) $(PIP) install --upgrade pip
 	@ $(SOURCE_ACTIVATE) $(PIP) install --upgrade distribute
+	@ CFLAGS='-std=c99' $(SOURCE_ACTIVATE) $(PIP) install gevent
 	@ $(SOURCE_ACTIVATE) $(PIP) install --no-cache-dir -e .
 	@ $(SOURCE_ACTIVATE) $(PIP) install --default-timeout=100 -r requirements.development.txt
 	@ touch bin/activate
