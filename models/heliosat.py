@@ -23,9 +23,6 @@ class Heliosat2(object):
         self.strategy_type = strategy_type
         self.cache = TemporalCache(self)
 
-    def __del__(self):
-        self.cache = None
-
     def create_1px_dimensions(self, root):
         nc.getdim(root, 'xc_k', 1)
         nc.getdim(root, 'yc_k', 1)
