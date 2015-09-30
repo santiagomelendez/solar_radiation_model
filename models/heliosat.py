@@ -86,10 +86,6 @@ class AlgorithmCache(Cache):
         self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
 
-    def __del__(self):
-        super(AlgorithmCache, self).__del__()
-        self.root = None
-
 
 class TemporalCache(AlgorithmCache):
 
