@@ -79,7 +79,7 @@ class Heliosat2(object):
             try:
                 self.estimate_globalradiation(loader, self.cache)
                 ready = True
-            except Exception as e:
+            except RuntimeError as e:
                 print e
 
 
