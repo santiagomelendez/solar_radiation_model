@@ -74,7 +74,13 @@ class Heliosat2(object):
         cache.dump()
 
     def run_with(self, loader):
-        self.estimate_globalradiation(loader, self.cache)
+        ready = False
+        while not ready:
+            try:
+                self.estimate_globalradiation(loader, self.cache)
+                ready = True
+            except Exception as e:
+                print e
 
 
 class AlgorithmCache(Cache):
