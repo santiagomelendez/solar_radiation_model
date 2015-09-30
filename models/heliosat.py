@@ -89,6 +89,10 @@ class AlgorithmCache(Cache):
         self.filenames = self.algorithm.filenames
         self.initialize_path(self.filenames)
 
+    def __del__(self):
+        super(AlgorithmCache, self).__del__()
+        self.root = None
+
 
 class TemporalCache(AlgorithmCache):
 
@@ -98,9 +102,6 @@ class TemporalCache(AlgorithmCache):
         self.cache = Loader(pmap(self.get_cached_file, self.filenames),
                             tile_cut=self.tile_config)
         self.root = self.cache.root
-
-    def __del__(self):
-        self.cache.dump()
 
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
@@ -166,9 +167,6 @@ class OutputCache(AlgorithmCache):
                              'f4', source=images.getvar('data'))
             self.root.getvar('globalradiation',
                              'f4', source=images.getvar('data'))
-
-    def __del__(self):
-        self.root = None
 
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
