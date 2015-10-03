@@ -8,6 +8,7 @@ from netcdf import netcdf as nc
 from cache import Cache, Loader
 from helpers import short
 import logging
+import importlib
 
 
 class Heliosat2(object):
@@ -180,8 +181,8 @@ class OutputCache(AlgorithmCache):
 
 def run(**config):
     loader = Loader(config['data'], tile_cut=config['tile_cut'])
-    core.config = config
-    from core import geo
+    config = core.check_hard(config)
+    geo = importlib.import_module('models.%s' % config['hard'])
     algorithm = Heliosat2(config, geo.strategy)
     algorithm.run_with(loader)
     algorithm = None

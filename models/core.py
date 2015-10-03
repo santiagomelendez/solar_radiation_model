@@ -66,20 +66,22 @@ def mp_map(f, X):
 
 
 pmap = map  # if 'armv6l' in list(os.uname()) else mp_map
-config = {'hard': 'cpu'}
 
-try:
-    if config['hard'] == 'cpu':
-        raise Exception('Force CPU')
+
+def init_gpu():
     from pycuda.compiler import SourceModule
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as cuda
     import pycuda.autoinit
-    cuda_can_help = True
-    import gpu as geo
-    print "<< using CUDA cores >>"
-except Exception, e:
-    if e.message != 'Force CPU':
+
+
+def check_hard(config):
+    if config['hard'] == 'cpu':
+        return config
+    try:
+        init_gpu()
+        print "<< using CUDA cores >>"
+    except Exception, e:
         logging.warn(e)
-    cuda_can_help = False
-    import cpu as geo
+        config['hard'] = 'cpu'
+    return config

@@ -53,7 +53,7 @@ class TestHeliosat(unittest.TestCase):
             'temporal_cache': 'temporal_cache',
             'product': 'products/estimated',
             'tile_cut': self.tile_cut,
-            'hard': 'cpu',
+            'hard': 'gpu',
         }
         job = JobDescription(**config)
         self.files = job.filter_data(self.files)
