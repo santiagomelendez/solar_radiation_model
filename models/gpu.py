@@ -1,11 +1,12 @@
 import numpy as np
 from netcdf import netcdf as nc
 import logging
-from models.core import cuda, SourceModule
+from models.core import helper
 from cpu import CPUStrategy
 import itertools
 
 
+cuda, SourceModule = helper['cuda'], helper['SourceModule']
 with open('models/kernel.cu') as f:
     mod_sourcecode = SourceModule(f.read())
 

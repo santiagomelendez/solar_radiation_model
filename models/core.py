@@ -66,13 +66,16 @@ def mp_map(f, X):
 
 
 pmap = map  # if 'armv6l' in list(os.uname()) else mp_map
+helper = {}
 
 
 def init_gpu():
-    from pycuda.compiler import SourceModule
-    import pycuda.gpuarray as gpuarray
-    import pycuda.driver as cuda
+    import pycuda.compiler
+    import pycuda.gpuarray
+    import pycuda.driver
     import pycuda.autoinit
+    helper['cuda'] = pycuda.driver
+    helper['SourceModule'] = pycuda.compiler.SourceModule
 
 
 def check_hard(config):
