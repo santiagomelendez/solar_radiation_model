@@ -114,11 +114,11 @@ class TemporalCache(AlgorithmCache):
         return '%s/%s' % (self.temporal_path, short(filename, None, None))
 
     def update_cache(self, filenames):
-        self.clean_cache(filenames)
         self.extend_cache(filenames)
 
-    def get_processed_files(self):
-        files = glob.glob('%s/*.nc' % self.temporal_path)
+    def get_processed_files(self, filenames):
+        files = filter(os.path.exists,
+                       map(self.get_cached_file, filenames))
         if files:
             with nc.loader(files, dimensions=self.tile_config) as cache:
                 gc = nc.getvar(cache, 'gc')[:]
@@ -127,7 +127,7 @@ class TemporalCache(AlgorithmCache):
         return files
 
     def extend_cache(self, filenames):
-        cached_files = self.get_processed_files()
+        cached_files = self.get_processed_files(filenames)
         not_cached = filter(lambda f: self.get_cached_file(f)
                             not in cached_files,
                             filenames)
@@ -137,12 +137,6 @@ class TemporalCache(AlgorithmCache):
             with nc.loader(new_files, dimensions=self.tile_config) as cache:
                 self.algorithm.update_temporalcache(loader, cache)
             loader.dump()
-
-    def clean_cache(self, exceptions):
-        cached_files = glob.glob('%s/*.nc' % self.temporal_path)
-        old_cache = filter(lambda f: self.index[f] not in exceptions,
-                           cached_files)
-        pmap(os.remove, old_cache)
 
     def getvar(self, *args, **kwargs):
         name = args[0]
