@@ -59,16 +59,18 @@ class StaticCacheConstructor(object):
         linkes = np.vstack([[linkes]])
         nc.getdim(self.root, 'months', 12)
         linke_var = nc.getvar(self.root, 'linke', 'f4', ('months', 'yc', 'xc'))
-        # The linkes / 20. uncompress the linke coefficients and save them as floats.
+        # The linkes / 20. uncompress the linke coefficients and save them as
+        # floats.
         linke_var[:] = linkes / 20.
 
 
 class Loader(Cache):
 
-    def __init__(self, filenames, tile_cut={}):
+    def __init__(self, filenames, tile_cut={}, read_only=False):
         super(Loader, self).__init__()
         self.filenames = filenames
-        self.root = nc.tailor(filenames, dimensions=tile_cut)
+        self.root = nc.tailor(filenames, dimensions=tile_cut,
+                              read_only=read_only)
         self.static = StaticCacheConstructor(filenames, tile_cut)
         self.static_cached = self.static.root
 

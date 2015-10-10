@@ -2,7 +2,6 @@
 import core
 from core import pmap
 import numpy as np
-import glob
 import os
 from netcdf import netcdf as nc
 from cache import Cache, Loader
@@ -174,7 +173,8 @@ class OutputCache(AlgorithmCache):
 
 
 def run(**config):
-    loader = Loader(config['data'], tile_cut=config['tile_cut'])
+    loader = Loader(config['data'], tile_cut=config['tile_cut'],
+                    read_only=True)
     config = core.check_hard(config)
     geo = importlib.import_module('models.%s' % config['hard'])
     algorithm = Heliosat2(config, geo.strategy)
