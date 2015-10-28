@@ -15,6 +15,10 @@ ubuntu:
 	@ (sudo apt-get -y install libzip-dev m4 python-dev zlibc libbz2-dev libssl1.0.0 curl libxslt1-dev libxml2-dev 2>&1) >> tracking.log
 	@ echo "[ assume       ] ubuntu distribution"
 
+osx:
+	@ (sudo port install geos 2>&1) >> tracking.log
+	@ echo "[ assume       ] osx system"
+
 unattended:
 	@ (sudo ls 2>&1) >> tracking.log
 
