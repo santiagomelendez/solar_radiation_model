@@ -1,5 +1,4 @@
 import numpy as np
-from netcdf import netcdf as nc
 import logging
 from models.core import helper
 from cpu import CPUStrategy
@@ -73,7 +72,6 @@ class GPUStrategy(CPUStrategy):
         matrixs = list(itertools.chain(*[outputs, inputs]))
         gpu_exec("update_temporalcache", len(outputs),
                  *matrixs)
-        nc.sync(cache)
 
     """
     def estimate_globalradiation(self, loader, cache, output):
@@ -105,7 +103,6 @@ class GPUStrategy(CPUStrategy):
                                                   'name') else mm[0]
             print name, ': ', mm[1]
         print "----"
-        nc.sync(output.root)
         super(GPUStrategy, self).estimate_globalradiation(loader, cache,
                                                           output)
                                                           """

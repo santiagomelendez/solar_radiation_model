@@ -62,6 +62,7 @@ class Heliosat2(object):
         logging.info("Updating temporal cache... ")
         self.strategy = self.strategy_type(self, loader, cache)
         self.strategy.update_temporalcache(loader, cache)
+        nc.sync(cache)
 
     def estimate_globalradiation(self, loader, cache):
         # There is nothing to do, if there isn't new cache and strategy setted.
@@ -69,6 +70,7 @@ class Heliosat2(object):
             logging.info("Obtaining the global radiation... ")
             output = OutputCache(self)
             self.strategy.estimate_globalradiation(loader, cache, output)
+            nc.sync(output.root)
             output.dump()
             output = None
         cache.dump()

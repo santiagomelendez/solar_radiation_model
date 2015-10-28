@@ -1,5 +1,4 @@
 import numpy as np
-from netcdf import netcdf as nc
 import stats
 from core import pmap, ProcessingStrategy
 import logging
@@ -257,7 +256,6 @@ class CPUStrategy(ProcessingStrategy):
                                                   self.atmosphericalbedo[:],
                                                   self.t_earth[:],
                                                   self.t_sat[:])
-        nc.sync(cache)
 
     def getsecondmin(self, albedo):
         min1_albedo = np.ma.masked_array(albedo,
@@ -344,7 +342,6 @@ class CPUStrategy(ProcessingStrategy):
         output.ref_cloudindex[:] = cloudindex
         output.ref_globalradiation[:] = (self.getclearsky(cloudindex) *
                                          cache.gc[-i:, :])
-        nc.sync(output.root)
 
 
 strategy = CPUStrategy
