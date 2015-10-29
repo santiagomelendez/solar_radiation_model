@@ -139,14 +139,6 @@ class TemporalCache(AlgorithmCache):
                 self.algorithm.update_temporalcache(loader, cache)
             loader.dump()
 
-    def getvar(self, *args, **kwargs):
-        name = args[0]
-        if name not in self._attrs.keys():
-            tmp = list(args)
-            tmp.insert(0, self.cache.root)
-            self._attrs[name] = nc.getvar(*tmp, **kwargs)
-        return self._attrs[name]
-
 
 class OutputCache(AlgorithmCache):
 
