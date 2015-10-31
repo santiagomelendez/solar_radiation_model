@@ -8,6 +8,7 @@ from cache import Cache, Loader
 from helpers import short
 import logging
 import importlib
+import tempfile
 
 
 class Heliosat2(object):
@@ -107,6 +108,9 @@ class TemporalCache(AlgorithmCache):
     def initialize_path(self, filenames):
         self.path = '/'.join(filenames[0].split('/')[0:-1])
         self.temporal_path = self.algorithm.config['temporal_cache']
+        if not self.temporal_path:
+            self.temporal_path = '%s/%s' % (tempfile.gettempdir(),
+                                            'temporal_cache')
         self.index = {self.get_cached_file(v): v for v in filenames}
         if not os.path.exists(self.temporal_path):
             os.makedirs(self.temporal_path)

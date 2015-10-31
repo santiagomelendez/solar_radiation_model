@@ -4,12 +4,15 @@ from datetime import datetime
 from models import JobDescription
 import os
 import glob
+import tempfile
 
 
 class TestHeliosat(unittest.TestCase):
 
     def setUp(self):
-        os.system('rm -rf static.nc temporal_cache product')
+        tmp = tempfile.gettempdir() + '/temporal_cache'
+        print tmp
+        os.system('rm -rf static.nc product %s' % tmp)
         os.system('cp -rf data mock_data')
         self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')[:-1]
         self.tile_cut = {
@@ -50,7 +53,7 @@ class TestHeliosat(unittest.TestCase):
         config = {
             'algorithm': 'heliosat',
             'data': self.files,
-            'temporal_cache': 'temporal_cache',
+            'temporal_cache': None,
             'product': 'products/estimated',
             'tile_cut': self.tile_cut,
             'hard': 'gpu',
