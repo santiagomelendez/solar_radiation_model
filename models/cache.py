@@ -13,14 +13,20 @@ class Cache(object):
 
     def __getattr__(self, name):
         if name not in self._attrs.keys():
-            var_name = name[4:] if name[0:4] == 'ref_' else name
-            if 'ref_%s' % var_name not in self._attrs.keys():
-                var = nc.getvar(self.root, var_name)
-                self._attrs['ref_%s' % var_name] = var
-            else:
-                var = self._attrs
-            self._attrs[var_name] = var[:]
+            self.load(name)
         return self._attrs[name]
+
+    def getvar(self, var_name):
+        return nc.getvar(self.root, var_name)
+
+    def load(self, name):
+        var_name = name[4:] if name[0:4] == 'ref_' else name
+        if 'ref_%s' % var_name not in self._attrs.keys():
+            var = self.getvar(var_name)
+            self._attrs['ref_%s' % var_name] = var
+        else:
+            var = self._attrs
+        self._attrs[var_name] = var[:]
 
     def dump(self):
         for k in self._attrs.keys():
