@@ -52,6 +52,7 @@ class TestHeliosat(unittest.TestCase):
     def test_main(self):
         config = {
             'algorithm': 'heliosat',
+            'static_file': 'static.nc',
             'data': self.files,
             'temporal_cache': None,
             'product': 'products/estimated',

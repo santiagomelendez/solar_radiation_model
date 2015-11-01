@@ -47,15 +47,15 @@ def gpu_exec(func_name, results, *matrixs):
 
 class GPUStrategy(CPUStrategy):
 
-    def update_temporalcache(self, loader, cache):
+    def update_temporalcache(self, static, loader, cache):
         const = lambda c: np.array(c).reshape(1, 1, 1)
-        inputs = [loader.lat[0],
-                  loader.lon[0],
+        inputs = [static.lat,
+                  static.lon,
                   self.decimalhour,
                   self.months,
                   self.gamma,
-                  loader.dem,
-                  loader.linke,
+                  static.dem,
+                  static.linke,
                   const(self.algorithm.SAT_LON),
                   const(self.algorithm.i0met),
                   const(1367.0),
@@ -74,7 +74,7 @@ class GPUStrategy(CPUStrategy):
                  *matrixs)
 
     """
-    def estimate_globalradiation(self, loader, cache, output):
+    def estimate_globalradiation(self, static, loader, cache, output):
         print "Estimate!"
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [cache.slots,
@@ -82,7 +82,7 @@ class GPUStrategy(CPUStrategy):
                   cache.solarangle,
                   cache.solarelevation,
                   cache.excentricity,
-                  loader.lat[0],
+                  static.lat,
                   loader.calibrated_data,
                   cache.gc,
                   cache.t_sat,

@@ -205,31 +205,31 @@ class CPUStrategy(ProcessingStrategy):
         cloudalbedo[condition] = effectiveproportion[condition]
         return cloudalbedo
 
-    def update_temporalcache(self, loader, cache):
-        lat, lon = loader.lat[0], loader.lon[0]
+    def update_temporalcache(self, static, loader, cache):
+        lat, lon = static.lat, static.lon
         self.declination[:] = self.getdeclination(self.gamma)
         # FIXME: There are two solar elevations.
         hourlyangle = self.gethourlyangle(lat, lon,
                                           self.decimalhour,
                                           self.gamma)
         self.solarangle[:] = self.getzenithangle(self.declination[:],
-                                                 loader.lat,
+                                                 lat,
                                                  hourlyangle)
         # FIXME: This rewrite the value of the solarelevations setted before.
         self.solarelevation[:] = self.getelevation(self.solarangle[:])
         self.excentricity[:] = self.getexcentricity(self.gamma)
-        linke = np.vstack([pmap(lambda m: loader.linke[0, m[0][0] - 1, :],
+        linke = np.vstack([pmap(lambda m: static.linke[0, m[0][0] - 1, :],
                                 self.months.tolist())])
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = self.getbeamirradiance(1367.0, self.excentricity[:],
                                     self.solarangle[:], self.solarelevation[:],
-                                    linke, loader.dem)
+                                    linke, static.dem)
         dc = self.getdiffuseirradiance(1367.0, self.excentricity[:],
                                        self.solarelevation[:], linke)
         self.gc[:] = self.getglobalirradiance(bc, dc)
         satellitalzenithangle = self.getsatellitalzenithangle(
-            loader.lat, loader.lon, self.algorithm.SAT_LON)
+            lat, lon, self.algorithm.SAT_LON)
         atmosphericradiance = self.getatmosphericradiance(
             1367.0, self.algorithm.i0met, dc, satellitalzenithangle)
         self.atmosphericalbedo[:] = self.getalbedo(atmosphericradiance,
@@ -239,14 +239,14 @@ class CPUStrategy(ProcessingStrategy):
         satellitalelevation = self.getelevation(satellitalzenithangle)
         satellital_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(satellitalelevation),
-            loader.dem, 8434.5)
+            static.dem, 8434.5)
         satellital_opticaldepth = self.getopticaldepth(satellital_opticalpath)
         self.t_sat[:] = self.gettransmitance(linke, satellital_opticalpath,
                                              satellital_opticaldepth,
                                              satellitalelevation)
         solar_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(self.solarelevation[:]),
-            loader.dem, 8434.5)
+            static.dem, 8434.5)
         solar_opticaldepth = self.getopticaldepth(solar_opticalpath)
         self.t_earth[:] = self.gettransmitance(linke, solar_opticalpath,
                                                solar_opticaldepth,
@@ -286,7 +286,7 @@ class CPUStrategy(ProcessingStrategy):
         clearsky[cond] = 0.05
         return clearsky
 
-    def estimate_globalradiation(self, loader, cache, output):
+    def estimate_globalradiation(self, static, loader, cache, output):
         excentricity = cache.excentricity
         solarangle = cache.solarangle
         atmosphericalbedo = cache.atmosphericalbedo
@@ -318,7 +318,7 @@ class CPUStrategy(ProcessingStrategy):
         groundreferencealbedo = self.getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
         logging.info("Calculating solar elevation... ")
-        r_alphanoon = self.getsolarelevation(declination, loader.lat[0], 0)
+        r_alphanoon = self.getsolarelevation(declination, static.lat, 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15

@@ -4,7 +4,7 @@ from core import pmap
 import numpy as np
 import os
 from netcdf import netcdf as nc
-from cache import Cache, Loader
+from cache import StaticCache, Cache, Loader
 from helpers import short
 import logging
 import importlib
@@ -22,6 +22,7 @@ class Heliosat2(object):
         self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
         self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
         self.strategy_type = strategy_type
+        self.static = StaticCache(self)
         self.cache = TemporalCache(self)
 
     def create_1px_dimensions(self, root):
@@ -62,7 +63,7 @@ class Heliosat2(object):
     def update_temporalcache(self, loader, cache):
         logging.info("Updating temporal cache... ")
         self.strategy = self.strategy_type(self, loader, cache)
-        self.strategy.update_temporalcache(loader, cache)
+        self.strategy.update_temporalcache(self.static, loader, cache)
         nc.sync(cache)
 
     def estimate_globalradiation(self, loader, cache):
@@ -70,7 +71,8 @@ class Heliosat2(object):
         if hasattr(self, 'strategy'):
             logging.info("Obtaining the global radiation... ")
             output = OutputCache(self)
-            self.strategy.estimate_globalradiation(loader, cache, output)
+            self.strategy.estimate_globalradiation(self.static,
+                                                   loader, cache, output)
             nc.sync(output.root)
             output.dump()
             output = None

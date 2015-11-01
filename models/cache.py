@@ -34,14 +34,16 @@ class Cache(object):
         nc.close(self.root)
 
 
-class StaticCacheConstructor(object):
+class StaticCache(Cache):
 
-    def __init__(self, filenames, tile_cut={}):
+    def __init__(self, algorithm):
+        ref_filename = algorithm.filenames[0]
+        tile_cut = algorithm.config['tile_cut']
         # At first it should have: lat, lon, dem, linke
-        self.root, is_new = nc.open('static.nc')
+        self.root, is_new = nc.open(algorithm.config['static_file'])
         if is_new:
             logging.info("This is the first execution from the deployment... ")
-            with nc.loader(filenames[0]) as root_ref:
+            with nc.loader(ref_filename) as root_ref:
                 self.lat = nc.getvar(root_ref, 'lat')
                 self.lon = nc.getvar(root_ref, 'lon')
                 nc.getvar(self.root, 'lat', source=self.lat)
@@ -50,6 +52,8 @@ class StaticCacheConstructor(object):
                 self.project_linke()
                 nc.sync(self.root)
         self.root = nc.tailor(self.root, dimensions=tile_cut)
+        self.lat = nc.getvar(self.root, 'lat')[:]
+        self.lon = nc.getvar(self.root, 'lon')[:]
 
     def project_dem(self):
         logging.info("Projecting DEM's map... ")
@@ -69,6 +73,18 @@ class StaticCacheConstructor(object):
         # floats.
         linke_var[:] = linkes / 20.
 
+    @property
+    def dem(self):
+        if not hasattr(self, '_cached_dem'):
+            self._cached_dem = nc.getvar(self.root, 'dem')[:]
+        return self._cached_dem
+
+    @property
+    def linke(self):
+        if not hasattr(self, '_linke'):
+            self._linke = nc.getvar(self.root, 'linke')[:]
+        return self._linke
+
 
 class Loader(Cache):
 
@@ -77,20 +93,6 @@ class Loader(Cache):
         self.filenames = filenames
         self.root = nc.tailor(filenames, dimensions=tile_cut,
                               read_only=read_only)
-        self.static = StaticCacheConstructor(filenames, tile_cut)
-        self.static_cached = self.static.root
-
-    @property
-    def dem(self):
-        if not hasattr(self, '_cached_dem'):
-            self._cached_dem = nc.getvar(self.static_cached, 'dem')[:]
-        return self._cached_dem
-
-    @property
-    def linke(self):
-        if not hasattr(self, '_linke'):
-            self._linke = nc.getvar(self.static_cached, 'linke')[:]
-        return self._linke
 
     @property
     def calibrated_data(self):
