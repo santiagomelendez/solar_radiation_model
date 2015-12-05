@@ -51,6 +51,21 @@ class CPUStrategy(ProcessingStrategy):
                           np.cos(dec) * np.cos(lat) *
                           np.cos(hourlyangle)))
 
+    def getcalibrateddata(self, loader):
+        if not hasattr(self, '_cached_calibrated_data'):
+            raw_data = loader.data[:]
+            counts_shift = loader.counts_shift[:]
+            space_measurement = loader.space_measurement[:]
+            prelaunch = loader.prelaunch_0[:]
+            # INFO: Without the postlaunch coefficient the RMSE go to 15%
+            postlaunch = loader.postlaunch[:]
+            normalized_data = (np.float32(raw_data) / counts_shift -
+                               space_measurement)
+            self._cached_calibrated_data = (normalized_data
+                                            * postlaunch
+                                            * prelaunch)
+        return self._cached_calibrated_data
+
     def getalbedo(self, radiance, totalirradiance, excentricity, zenithangle):
         zenithangle = np.deg2rad(zenithangle)
         return (np.pi * radiance) / (totalirradiance * excentricity
@@ -292,7 +307,7 @@ class CPUStrategy(ProcessingStrategy):
         atmosphericalbedo = cache.atmosphericalbedo
         t_earth = cache.t_earth
         t_sat = cache.t_sat
-        observedalbedo = self.getalbedo(loader.calibrated_data,
+        observedalbedo = self.getalbedo(self.getcalibrateddata(loader),
                                         self.algorithm.i0met,
                                         excentricity, solarangle)
         apparentalbedo = self.getapparentalbedo(observedalbedo,
@@ -308,7 +323,7 @@ class CPUStrategy(ProcessingStrategy):
         max_slot = noon_slot + half_window
         condition = ((cache.slots >= min_slot) & (cache.slots < max_slot))
         condition = np.reshape(condition, condition.shape[0])
-        mask1 = (loader.calibrated_data[condition] <=
+        mask1 = (self.getcalibrateddata(loader)[condition] <=
                  (self.algorithm.i0met / np.pi) * 0.03)
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory

@@ -90,25 +90,8 @@ class Loader(Cache):
 
     def __init__(self, filenames, tile_cut={}, read_only=False):
         super(Loader, self).__init__()
-        self.filenames = filenames
         self.root = nc.tailor(filenames, dimensions=tile_cut,
                               read_only=read_only)
-
-    @property
-    def calibrated_data(self):
-        if not hasattr(self, '_cached_calibrated_data'):
-            row_data = self.data[:]
-            counts_shift = self.counts_shift[:]
-            space_measurement = self.space_measurement[:]
-            prelaunch = self.prelaunch_0[:]
-            postlaunch = self.postlaunch[:]
-            # INFO: Without the postlaunch coefficient the RMSE go to 15%
-            normalized_data = (np.float32(row_data) / counts_shift -
-                               space_measurement)
-            self._cached_calibrated_data = (normalized_data
-                                            * postlaunch
-                                            * prelaunch)
-        return self._cached_calibrated_data
 
 
 class memoize(object):
