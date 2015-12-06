@@ -3,7 +3,6 @@
 from setuptools import setup
 import os
 import subprocess
-from urllib import urlretrieve
 
 
 def parse_requirements(filename):
@@ -57,8 +56,8 @@ setup(
     packages=['models', ],
     url='https://github.com/gersolar/solar_radiation_model',
     license='MIT',
-    description='A python script that estimates the solar radiation at the soil '
-                'level.',
+    description='A python script that estimates the solar radiation at the '
+                'soil level.',
     long_description=get_long_description(),
     zip_safe=True,
     install_requires=REQUIREMENTS,
