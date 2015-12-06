@@ -4,12 +4,17 @@ from netcdf import netcdf as nc
 import logging
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
+import os
 
 
 class Cache(object):
 
-    def __init__(self):
+    def __init__(self, filenames, tile_cut={}, read_only=False):
         self._attrs = {}
+        self.filenames = filenames
+        self.tile_cut = tile_cut
+        self.root = nc.tailor(filenames, dimensions=tile_cut,
+                              read_only=read_only)
 
     def __getattr__(self, name):
         if name not in self._attrs.keys():
@@ -36,42 +41,46 @@ class Cache(object):
 
 class StaticCache(Cache):
 
-    def __init__(self, algorithm):
-        ref_filename = algorithm.filenames[0]
-        tile_cut = algorithm.config['tile_cut']
-        # At first it should have: lat, lon, dem, linke
-        self.root, is_new = nc.open(algorithm.config['static_file'])
-        if is_new:
-            logging.info("This is the first execution from the deployment... ")
-            with nc.loader(ref_filename) as root_ref:
-                self.lat = nc.getvar(root_ref, 'lat')
-                self.lon = nc.getvar(root_ref, 'lon')
-                nc.getvar(self.root, 'lat', source=self.lat)
-                nc.getvar(self.root, 'lon', source=self.lon)
-                self.project_dem()
-                self.project_linke()
-                nc.sync(self.root)
-        self.root = nc.tailor(self.root, dimensions=tile_cut)
-        self.lat = nc.getvar(self.root, 'lat')[:]
-        self.lon = nc.getvar(self.root, 'lon')[:]
-
-    def project_dem(self):
+    @classmethod
+    def project_dem(cls, root, lat, lon):
         logging.info("Projecting DEM's map... ")
-        dem_var = nc.getvar(self.root, 'dem', 'f4', source=self.lon)
-        dem_var[:] = dem.obtain(self.lat[0], self.lon[0])
+        dem_var = nc.getvar(root, 'dem', 'f4', source=lon)
+        dem_var[:] = dem.obtain(lat[0], lon[0])
 
-    def project_linke(self):
+    @classmethod
+    def project_linke(cls, root, lat, lon):
         logging.info("Projecting Linke's turbidity index... ")
         dts = map(lambda m: datetime(2014, m, 15), range(1, 13))
         linkes = map(lambda dt: linke.obtain(dt, compressed=True), dts)
-        linkes = map(lambda l: linke.transform_data(l, self.lat[0],
-                                                    self.lon[0]), linkes)
+        linkes = map(lambda l: linke.transform_data(l, lat[0],
+                                                    lon[0]), linkes)
         linkes = np.vstack([[linkes]])
-        nc.getdim(self.root, 'months', 12)
-        linke_var = nc.getvar(self.root, 'linke', 'f4', ('months', 'yc', 'xc'))
+        nc.getdim(root, 'months', 12)
+        linke_var = nc.getvar(root, 'linke', 'f4', ('months', 'yc', 'xc'))
         # The linkes / 20. uncompress the linke coefficients and save them as
         # floats.
         linke_var[:] = linkes / 20.
+
+    @classmethod
+    def construct(cls, static_file, ref_filename):
+        # At first it should have: lat, lon, dem, linke
+        logging.info("This is the first execution from the deployment... ")
+        with nc.loader(ref_filename) as root_ref:
+            with nc.loader(static_file) as root:
+                lat = nc.getvar(root_ref, 'lat')
+                lon = nc.getvar(root_ref, 'lon')
+                nc.getvar(root, 'lat', source=lat)
+                nc.getvar(root, 'lon', source=lon)
+                cls.project_dem(root, lat, lon)
+                cls.project_linke(root, lat, lon)
+
+    def __init__(self, algorithm):
+        filename = algorithm.config['static_file']
+        if not os.path.exists(filename):
+            StaticCache.construct(algorithm.config['static_file'],
+                                  algorithm.filenames[0])
+        tile_cut = algorithm.config['tile_cut']
+        super(StaticCache, self).__init__(filename, tile_cut)
 
     @property
     def dem(self):
@@ -84,14 +93,6 @@ class StaticCache(Cache):
         if not hasattr(self, '_linke'):
             self._linke = nc.getvar(self.root, 'linke')[:]
         return self._linke
-
-
-class Loader(Cache):
-
-    def __init__(self, filenames, tile_cut={}, read_only=False):
-        super(Loader, self).__init__()
-        self.root = nc.tailor(filenames, dimensions=tile_cut,
-                              read_only=read_only)
 
 
 class memoize(object):
