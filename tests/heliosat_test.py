@@ -1,6 +1,5 @@
 import unittest
 from netcdf import netcdf as nc
-from datetime import datetime
 from models import JobDescription
 import os
 import glob
@@ -57,20 +56,14 @@ class TestHeliosat(unittest.TestCase):
         }
         job = JobDescription(**config)
         self.files = job.filter_data(self.files)
-        begin = datetime.now()
         intern_elapsed = job.run()
-        end = datetime.now()
         shape = self.verify_output(self.files)
-        elapsed = (end - begin).total_seconds()
-        image_ratio = (30. * 14 * 2 / shape[0])
+        image_ratio = (15. * 12. * 2. / shape[0])
         scale_shapes = (2260. / shape[1]) * (4360. / shape[2]) * (image_ratio)
-        estimated = elapsed * scale_shapes / 3600.
-        intern_estimated = intern_elapsed * scale_shapes / 3600.
+        cores = 24. * 7.
+        intern_estimated = intern_elapsed * (scale_shapes / cores) / 3600.
         print "Scaling intern time to %.2f hours." % intern_estimated
-        print "Internt efficiency achieved: %.2f%%" % (3.5 /
-                                                       intern_estimated * 100.)
-        print "Scaling total time to %.2f hours." % estimated
-        print "Efficiency achieved: %.2f%%" % (3.5 / estimated * 100.)
+        print "Internt efficiency achieved: %.2f%%" % (0.5 / intern_estimated * 100.)
 
 
 if __name__ == '__main__':
