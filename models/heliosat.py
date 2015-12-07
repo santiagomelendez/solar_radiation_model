@@ -13,17 +13,28 @@ from datetime import datetime
 
 class Heliosat2(object):
 
-    def __init__(self, config, strategy_type, loader):
+    def __init__(self, config, strategy_type):
         self.config = config
         self.filenames = config['data']
+        self.init_constants()
+        self.loader = config['data']
+        if isinstance(self.loader, (list, str)):
+            self.loader = Cache(config['data'], tile_cut=config['tile_cut'],
+                                read_only=True)
+        else:
+            self.filenames = self.loader.filenames
+        self.strategy = strategy_type(self, self.loader)
+        self.static = config['static_file']
+        if isinstance(self.static, str):
+            self.static = StaticCache(self.static, self.filenames,
+                                      config['tile_cut'])
+
+    def init_constants(self):
         self.SAT_LON = -75.113
         # -75.3305 # longitude of sub-satellite point in degrees
         self.IMAGE_PER_HOUR = 2
         self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
         self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
-        self.strategy = strategy_type(self, loader)
-        self.loader = loader
-        self.static = StaticCache(self)
 
     def estimate_globalradiation(self):
         logging.info("Obtaining the global radiation... ")
@@ -85,9 +96,7 @@ class OutputCache(Cache):
 
 
 def run(**config):
-    loader = Cache(config['data'], tile_cut=config['tile_cut'],
-                   read_only=True)
     config = core.check_hard(config)
     geo = importlib.import_module('models.{:s}'.format(config['hard']))
-    algorithm = Heliosat2(config, geo.strategy, loader)
+    algorithm = Heliosat2(config, geo.strategy)
     return algorithm.run_with()

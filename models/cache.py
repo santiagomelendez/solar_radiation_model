@@ -75,13 +75,11 @@ class StaticCache(Cache):
                 cls.project_dem(root, lat, lon)
                 cls.project_linke(root, lat, lon)
 
-    def __init__(self, algorithm):
-        filename = algorithm.config['static_file']
-        if not os.path.exists(filename):
-            StaticCache.construct(algorithm.config['static_file'],
-                                  algorithm.filenames[0])
-        tile_cut = algorithm.config['tile_cut']
-        super(StaticCache, self).__init__(filename, tile_cut)
+    def __init__(self, static_filename, data_filenames, tile_cut):
+        if not os.path.exists(static_filename):
+            StaticCache.construct(static_filename,
+                                  data_filenames[0])
+        super(StaticCache, self).__init__(static_filename, tile_cut)
 
     @property
     def dem(self):

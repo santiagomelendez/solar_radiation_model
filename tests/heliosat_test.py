@@ -2,6 +2,7 @@ from __future__ import print_function
 import unittest
 from netcdf import netcdf as nc
 from models import JobDescription
+from models.cache import Cache, StaticCache
 import os
 import glob
 
@@ -72,9 +73,26 @@ class TestHeliosat(unittest.TestCase):
         print("Needed efficiency achieved: {:.2f}%".format(
             0.5 / intern_estimated * 100.))
 
-
-if __name__ == '__main__':
-    unittest.run()
+    def test_with_loaded_files(self):
+        files = JobDescription.filter_data(self.files)
+        config = {
+            'algorithm': 'heliosat',
+            'static_file': StaticCache('static.nc', files, self.tile_cut),
+            'data': Cache(files, tile_cut=self.tile_cut),
+            'product': None,
+            'tile_cut': self.tile_cut,
+            'hard': 'gpu',
+        }
+        job = JobDescription(**config)
+        intern_elapsed, output = job.run()
+        shape = self.verify_output(files, output, config)
+        image_ratio = (15. * 12. * 2. / shape[0])
+        scale_shapes = (2260. / shape[1]) * (4360. / shape[2]) * (image_ratio)
+        cores = 24. * 7.
+        intern_estimated = intern_elapsed * (scale_shapes / cores) / 3600.
+        print("Scaling intern time to {:.2f} hours.".format(intern_estimated))
+        print("Needed efficiency achieved: {:.2f}%".format(
+            0.5 / intern_estimated * 100.))
 
 
 if __name__ == '__main__':
