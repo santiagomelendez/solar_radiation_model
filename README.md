@@ -52,7 +52,7 @@ To use the library, create a JobDescription instance using a config dictionary:
         'data': 'data/goes13.2015.*.nc',
         'tile_cut': {
             'xc': [10, 15],
-            'yc': [20, 45]
+            'yc': [20, 45]},
         'hard': 'gpu',
     }
     job = JobDescription(**config)
