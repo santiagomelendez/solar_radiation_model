@@ -220,7 +220,7 @@ class CPUStrategy(ProcessingStrategy):
         cloudalbedo[condition] = effectiveproportion[condition]
         return cloudalbedo
 
-    def update_temporalcache(self, static, loader):
+    def calculate_temporaldata(self, static, loader):
         lat, lon = static.lat, static.lon
         self.declination = self.getdeclination(self.gamma)
         hourlyangle = self.gethourlyangle(lat, lon,
@@ -299,7 +299,7 @@ class CPUStrategy(ProcessingStrategy):
         clearsky[cond] = 0.05
         return clearsky
 
-    def estimate_globalradiation(self, static, loader, output):
+    def calculate_imagedata(self, static, loader, output):
         excentricity = self.excentricity
         solarangle = self.solarangle
         atmosphericalbedo = self.atmosphericalbedo

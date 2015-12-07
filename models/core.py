@@ -12,7 +12,7 @@ class ProcessingStrategy(object):
 
     def __init__(self, algorithm, loader):
         self.algorithm = algorithm
-        self.algorithm.create_variables(loader, self)
+        self.initialize_slots(loader, self)
 
     def int_to_dt(self, time):
         return datetime.utcfromtimestamp(int(time))
@@ -46,6 +46,17 @@ class ProcessingStrategy(object):
 
     def calculate_slots(self, images_per_hour):
         return np.round(self.decimalhour * images_per_hour).astype(int)
+
+    def initialize_slots(self, loader, strategy):
+        time = loader.time
+        shape = list(time.shape)
+        shape.append(1)
+        self.times = time.reshape(tuple(shape))
+        self.slots = self.calculate_slots(self.algorithm.IMAGE_PER_HOUR)
+
+    def estimate_globalradiation(self, static, loader, output):
+        self.calculate_temporaldata(static, loader)
+        self.calculate_imagedata(static, loader, output)
 
 
 def spawn(f):

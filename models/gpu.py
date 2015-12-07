@@ -47,7 +47,7 @@ def gpu_exec(func_name, results, *matrixs):
 
 class GPUStrategy(CPUStrategy):
 
-    def update_temporalcache(self, static, loader):
+    def calculate_temporaldata(self, static, loader):
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [static.lat,
                   static.lon,
@@ -71,11 +71,11 @@ class GPUStrategy(CPUStrategy):
                    self.t_earth,
                    self.cloudalbedo]
         matrixs = list(itertools.chain(*[outputs, inputs]))
-        gpu_exec("update_temporalcache", len(outputs),
+        gpu_exec("calculate_temporaldata", len(outputs),
                  *matrixs)
 
     """
-    def estimate_globalradiation(self, static, loader, cache, output):
+    def calculate_imagedata(self, static, loader, cache, output):
         print "Estimate!"
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [cache.slots,
@@ -95,7 +95,7 @@ class GPUStrategy(CPUStrategy):
         outputs = [output.ref_cloudindex,
                    output.ref_globalradiation]
         matrixs = list(itertools.chain(*[outputs, inputs]))
-        gpu_exec("estimate_globalradiation", len(outputs),
+        gpu_exec("calculate_imagedata", len(outputs),
                  *matrixs)
         print "----"
         maxmin = map(lambda o: (o[:].min(), o[:].max()), outputs)
@@ -104,9 +104,9 @@ class GPUStrategy(CPUStrategy):
                                                   'name') else mm[0]
             print name, ': ', mm[1]
         print "----"
-        super(GPUStrategy, self).estimate_globalradiation(loader, cache,
-                                                          output)
-                                                          """
+        super(GPUStrategy, self).calculate_imagedata(loader, cache,
+                                                     output)
+                                                     """
 
 
 strategy = GPUStrategy

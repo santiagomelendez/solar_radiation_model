@@ -13,7 +13,7 @@ from datetime import datetime
 
 class Heliosat2(object):
 
-    def __init__(self, config, strategy_type):
+    def __init__(self, config, strategy_type, loader):
         self.config = config
         self.filenames = config['data']
         self.SAT_LON = -75.113
@@ -21,38 +21,23 @@ class Heliosat2(object):
         self.IMAGE_PER_HOUR = 2
         self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
         self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
-        self.strategy_type = strategy_type
+        self.strategy = strategy_type(self, loader)
+        self.loader = loader
         self.static = StaticCache(self)
 
-    def create_slots(self, loader, strategy):
-        time = loader.time
-        shape = list(time.shape)
-        shape.append(1)
-        strategy.times = time.reshape(tuple(shape))
-        strategy.slots = strategy.calculate_slots(self.IMAGE_PER_HOUR)
-
-    def create_variables(self, loader, strategy):
-        self.create_slots(loader, strategy)
-
-    def update_temporalcache(self, loader):
-        logging.info("Updating temporal cache... ")
-        self.strategy = self.strategy_type(self, loader)
-        self.strategy.update_temporalcache(self.static, loader)
-
-    def estimate_globalradiation(self, loader):
+    def estimate_globalradiation(self):
         logging.info("Obtaining the global radiation... ")
         output = OutputCache(self)
         self.strategy.estimate_globalradiation(self.static,
-                                               loader, output)
+                                               self.loader, output)
         nc.sync(output.root)
         output.dump()
         output = None
 
-    def run_with(self, loader):
+    def run_with(self):
         logging.info("Take begin time.")
         begin = datetime.now()
-        self.update_temporalcache(loader)
-        self.estimate_globalradiation(loader)
+        self.estimate_globalradiation()
         end = datetime.now()
         logging.info("Take end time.")
         return (end - begin).total_seconds()
@@ -97,5 +82,5 @@ def run(**config):
                    read_only=True)
     config = core.check_hard(config)
     geo = importlib.import_module('models.%s' % config['hard'])
-    algorithm = Heliosat2(config, geo.strategy)
-    return algorithm.run_with(loader)
+    algorithm = Heliosat2(config, geo.strategy, loader)
+    return algorithm.run_with()

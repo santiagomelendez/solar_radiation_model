@@ -249,7 +249,7 @@ float atmosphericalbedo, float t_earth, float t_sat)
     result[i_dxyt] = ca;
 }
 
-__global__ void update_temporalcache(float *declination,
+__global__ void calculate_temporaldata(float *declination,
 float *solarangle, float *solarelevation, float *excentricity,
 float *gc, float *atmosphericalbedo, float *t_sat, float *t_earth,
 float *cloudalbedo, float *lat, float *lon, float *decimalhour, float *months,
@@ -297,7 +297,7 @@ float *i0met, float *EXT_RAD, float *HEIGHT)
 }
 
 
-__global__ void estimate_globalradiation(float *cloudindex,
+__global__ void calculate_imagedata(float *cloudindex,
 float *globalradiation, float *slots, float *declination,
 float *solarangle, float *solarelevation, float *excentricity, float *lat,
 float *calibrated_data, float *gc, float *t_sat, float *t_earth,
