@@ -54,7 +54,6 @@ class TestHeliosat(unittest.TestCase):
             'algorithm': 'heliosat',
             'static_file': 'static.nc',
             'data': self.files,
-            'temporal_cache': None,
             'product': 'products/estimated',
             'tile_cut': self.tile_cut,
             'hard': 'gpu',
@@ -62,15 +61,23 @@ class TestHeliosat(unittest.TestCase):
         job = JobDescription(**config)
         self.files = job.filter_data(self.files)
         begin = datetime.now()
-        job.run()
+        intern_elapsed = job.run()
         end = datetime.now()
         shape = self.verify_output(self.files)
         elapsed = (end - begin).total_seconds()
         image_ratio = (30. * 14 * 2 / shape[0])
-        scale_shapes = (2245. / shape[1]) * (3515. / shape[2]) * (image_ratio)
+        scale_shapes = (2260. / shape[1]) * (4360. / shape[2]) * (image_ratio)
         estimated = elapsed * scale_shapes / 3600.
+        intern_estimated = intern_elapsed * scale_shapes / 3600.
+        print "Scaling intern time to %.2f hours." % intern_estimated
+        print "Internt efficiency achieved: %.2f%%" % (3.5 /
+                                                       intern_estimated * 100.)
         print "Scaling total time to %.2f hours." % estimated
         print "Efficiency achieved: %.2f%%" % (3.5 / estimated * 100.)
+
+
+if __name__ == '__main__':
+    unittest.run()
 
 
 if __name__ == '__main__':

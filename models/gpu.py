@@ -47,7 +47,7 @@ def gpu_exec(func_name, results, *matrixs):
 
 class GPUStrategy(CPUStrategy):
 
-    def update_temporalcache(self, static, loader, cache):
+    def update_temporalcache(self, static, loader):
         const = lambda c: np.array(c).reshape(1, 1, 1)
         inputs = [static.lat,
                   static.lon,
@@ -60,6 +60,7 @@ class GPUStrategy(CPUStrategy):
                   const(self.algorithm.i0met),
                   const(1367.0),
                   const(8434.5)]
+        # FIX: It should merge both methods calls.
         outputs = [self.declination,
                    self.solarangle,
                    self.solarelevation,

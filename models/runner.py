@@ -16,7 +16,6 @@ class JobDescription(object):
                  algorithm='heliosat',
                  data='data/*.nc',
                  static_file='static.nc',
-                 temporal_cache='temporal_cache',
                  product='product/estimated',
                  tile_cut={},
                  hard='cpu'):
@@ -24,7 +23,6 @@ class JobDescription(object):
             'algorithm': 'models.%s' % algorithm,
             'data': data,
             'static_file': static_file,
-            'temporal_cache': temporal_cache,
             'product': product,
             'tile_cut': tile_cut,
             'hard': hard
@@ -63,6 +61,7 @@ class JobDescription(object):
         self.config['data'] = self.filter_data(self.config['data'])
 
     def run(self):
+        estimated = 0
         if self.config['data']:
             months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
                                    pmap(to_datetime, self.config['data']))))
@@ -71,8 +70,9 @@ class JobDescription(object):
             logging.info("Months: %s", str(months))
             logging.info("Dataset: %i files.", len(self.config['data']))
             algorithm = importlib.import_module(self.config['algorithm'])
-            algorithm.run(**self.config)
+            estimated = algorithm.run(**self.config)
             logging.info("Process finished.")
+        return estimated
 
 
 logging.basicConfig(level=logging.INFO)

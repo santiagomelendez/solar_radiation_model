@@ -1,19 +1,18 @@
 from datetime import datetime
 import numpy as np
-from netcdf import netcdf as nc
 from multiprocessing import Process, Pipe
 from itertools import izip
 from cache import memoize
-import multiprocessing as mp
-import os
+# import multiprocessing as mp
+# import os
 import logging
 
 
 class ProcessingStrategy(object):
 
-    def __init__(self, algorithm, loader, cache):
+    def __init__(self, algorithm, loader):
         self.algorithm = algorithm
-        self.algorithm.create_variables(loader, cache, self)
+        self.algorithm.create_variables(loader, self)
 
     def int_to_dt(self, time):
         return datetime.utcfromtimestamp(int(time))
