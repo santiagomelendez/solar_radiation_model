@@ -20,7 +20,7 @@ class ProcessingStrategy(object):
     @property
     @memoize
     def months(self):
-        months = pmap(lambda t: self.int_to_dt(t).month, self.times)
+        months = map(lambda t: self.int_to_dt(t).month, self.times)
         return np.array(months).reshape(self.times.shape)
 
     @property
@@ -30,8 +30,8 @@ class ProcessingStrategy(object):
         days_of_year = lambda time: to_julianday(
             (datetime(self.int_to_dt(time).year, 12, 31)).timetuple()[7])
         times = self.times
-        total_days = np.array(pmap(days_of_year, times)).reshape(times.shape)
-        julian_day = np.array(pmap(to_julianday, times)).reshape(times.shape)
+        total_days = np.array(map(days_of_year, times)).reshape(times.shape)
+        julian_day = np.array(map(to_julianday, times)).reshape(times.shape)
         return self.getdailyangle(julian_day, total_days)
 
     @property
@@ -41,7 +41,7 @@ class ProcessingStrategy(object):
         int_to_decimalhour = (lambda time: int_to_dt(time).hour +
                               int_to_dt(time).minute/60.0 +
                               int_to_dt(time).second/3600.0)
-        result = pmap(int_to_decimalhour, self.times)
+        result = map(int_to_decimalhour, self.times)
         return np.array(result).reshape(self.times.shape)
 
     def calculate_slots(self, images_per_hour):
@@ -75,7 +75,6 @@ def mp_map(f, X):
     return [p.recv() for (p, c) in pipe]
 
 
-pmap = map  # if 'armv6l' in list(os.uname()) else mp_map
 helper = {}
 
 

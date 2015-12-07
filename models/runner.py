@@ -5,7 +5,7 @@ import importlib
 import glob
 import pytz
 from helpers import to_datetime
-from core import pmap
+from cache import StaticCache, Cache, OutputCache
 import logging
 
 
@@ -27,6 +27,22 @@ class JobDescription(object):
             'hard': hard
         }
         self.check_data()
+        self.load_data()
+
+    def load_data(self):
+        static = self.config['static_file']
+        if isinstance(self.config['data'], (list, str)):
+            self.config['data'] = Cache(self.config['data'],
+                                        tile_cut=self.config['tile_cut'],
+                                        read_only=True)
+        self.config['filenames'] = self.config['data'].filenames
+        if isinstance(static, str):
+            self.config['static_file'] = StaticCache(static,
+                                                     self.config['filenames'],
+                                                     self.config['tile_cut'])
+        self.config['product'] = OutputCache(self.config['product'],
+                                             self.config['tile_cut'],
+                                             self.config['filenames'])
 
     @classmethod
     def filter_data(cls, filename):
@@ -54,11 +70,11 @@ class JobDescription(object):
         estimated = 0
         if isinstance(self.config['data'], (str, list)):
             m_lamb = lambda dt: '{:d}/{:d}'.format(dt.month, dt.year)
-            months = list(set(pmap(m_lamb,
-                                   pmap(to_datetime,
-                                        self.config['data']))))
-            pmap(lambda (k, o): logging.debug(
-                 '{:s}: {:s}'.format(k, str(o))), self.config.items())
+            months = list(set(map(m_lamb,
+                                  map(to_datetime,
+                                      self.config['data']))))
+            map(lambda (k, o): logging.debug(
+                '{:s}: {:s}'.format(k, str(o))), self.config.items())
             logging.info("Months: {:s}".format(str(months)))
             logging.info("Dataset: {:d} files.".format(
                 len(self.config['data'])))

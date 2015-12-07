@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 import core
-from core import pmap
 import numpy as np
-import os
-from netcdf import netcdf as nc
-from cache import StaticCache, Cache
-from helpers import short
 import logging
 import importlib
 from datetime import datetime
@@ -15,19 +10,12 @@ class Heliosat2(object):
 
     def __init__(self, config, strategy_type):
         self.config = config
-        self.filenames = config['data']
+        self.filenames = config['filenames']
         self.init_constants()
         self.loader = config['data']
-        if isinstance(self.loader, (list, str)):
-            self.loader = Cache(config['data'], tile_cut=config['tile_cut'],
-                                read_only=True)
-        else:
-            self.filenames = self.loader.filenames
         self.strategy = strategy_type(self, self.loader)
         self.static = config['static_file']
-        if isinstance(self.static, str):
-            self.static = StaticCache(self.static, self.filenames,
-                                      config['tile_cut'])
+        self.output = config['product']
 
     def init_constants(self):
         self.SAT_LON = -75.113
@@ -38,10 +26,9 @@ class Heliosat2(object):
 
     def estimate_globalradiation(self):
         logging.info("Obtaining the global radiation... ")
-        output = OutputCache(self)
         self.strategy.estimate_globalradiation(self.static,
-                                               self.loader, output)
-        return output
+                                               self.loader, self.output)
+        return self.output
 
     def run_with(self):
         logging.info("Take begin time.")
@@ -50,49 +37,6 @@ class Heliosat2(object):
         end = datetime.now()
         logging.info("Take end time.")
         return (end - begin).total_seconds(), output
-
-
-class OutputCache(Cache):
-
-    def __init__(self, algorithm):
-        super(OutputCache, self).__init__(algorithm.filenames,
-                                          algorithm.config['tile_cut'])
-        self.algorithm = algorithm
-        self.initialize_variables(self.filenames)
-
-    def create_1px_dimensions(self, root):
-        nc.getdim(root, 'xc_k', 1)
-        nc.getdim(root, 'yc_k', 1)
-        nc.getdim(root, 'time', 1)
-
-    def initialize_path(self, filenames, images):
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
-        self.output = Cache(pmap(self.get_output_file, self.filenames),
-                            tile_cut=self.tile_cut)
-        self.root = self.output.root
-        map(self.create_1px_dimensions, self.root.roots)
-        self.root.getvar('time', source=images.getvar('time'))
-        self.root.getvar('cloudindex', 'f4', source=images.getvar('data'))
-        self.root.getvar('globalradiation', 'f4', source=images.getvar('data'))
-
-    def initialize_variables(self, filenames):
-        self.path = '/'.join(filenames[0].split('/')[0:-1])
-        self.output_path = self.algorithm.config['product']
-        with nc.loader(self.filenames, dimensions=self.tile_cut) as images:
-            if self.output_path:
-                self.initialize_path(filenames, images)
-            else:
-                data_shape = images.getvar('data').shape
-                self.time = np.zeros(images.getvar('time').shape)
-                self.ref_cloudindex = np.zeros(data_shape)
-                self.cloudindex = self.ref_cloudindex
-                self.ref_globalradiation = np.zeros(data_shape)
-                self.globalradiation = self.ref_globalradiation
-
-    def get_output_file(self, filename):
-        return '{:s}/{:s}'.format(self.output_path,
-                                  short(filename, None, None))
 
 
 def run(**config):

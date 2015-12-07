@@ -4,6 +4,7 @@ from netcdf import netcdf as nc
 import logging
 from linketurbidity import instrument as linke
 from noaadem import instrument as dem
+from helpers import short
 import os
 
 
@@ -92,6 +93,49 @@ class StaticCache(Cache):
         if not hasattr(self, '_linke'):
             self._linke = nc.getvar(self.root, 'linke')[:]
         return self._linke
+
+
+class OutputCache(Cache):
+
+    def __init__(self, product, tile_cut, ref_filenames):
+        super(OutputCache, self).__init__(ref_filenames,
+                                          tile_cut)
+        self.product = product
+        self.initialize_variables(self.filenames)
+
+    def create_1px_dimensions(self, root):
+        nc.getdim(root, 'xc_k', 1)
+        nc.getdim(root, 'yc_k', 1)
+        nc.getdim(root, 'time', 1)
+
+    def initialize_path(self, filenames, images):
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
+        self.output = Cache(map(self.get_output_file, self.filenames),
+                            tile_cut=self.tile_cut)
+        self.root = self.output.root
+        map(self.create_1px_dimensions, self.root.roots)
+        self.root.getvar('time', source=images.getvar('time'))
+        self.root.getvar('cloudindex', 'f4', source=images.getvar('data'))
+        self.root.getvar('globalradiation', 'f4', source=images.getvar('data'))
+
+    def initialize_variables(self, filenames):
+        self.path = '/'.join(filenames[0].split('/')[0:-1])
+        self.output_path = self.product
+        with nc.loader(self.filenames, dimensions=self.tile_cut) as images:
+            if self.output_path:
+                self.initialize_path(filenames, images)
+            else:
+                data_shape = images.getvar('data').shape
+                self.time = np.zeros(images.getvar('time').shape)
+                self.ref_cloudindex = np.zeros(data_shape)
+                self.cloudindex = self.ref_cloudindex
+                self.ref_globalradiation = np.zeros(data_shape)
+                self.globalradiation = self.ref_globalradiation
+
+    def get_output_file(self, filename):
+        return '{:s}/{:s}'.format(self.output_path,
+                                  short(filename, None, None))
 
 
 class memoize(object):
