@@ -21,7 +21,7 @@ class JobDescription(object):
                  tile_cut={},
                  hard='cpu'):
         self.config = {
-            'algorithm': 'models.%s' % algorithm,
+            'algorithm': 'models.{:s}'.format(algorithm),
             'data': data,
             'static_file': static_file,
             'product': product,
@@ -64,12 +64,14 @@ class JobDescription(object):
     def run(self):
         estimated = 0
         if self.config['data']:
-            months = list(set(pmap(lambda dt: '%i/%i' % (dt.month, dt.year),
+            m_lamb = lambda dt: '{:d}/{:d}'.format(dt.month, dt.year)
+            months = list(set(pmap(m_lamb,
                                    pmap(to_datetime, self.config['data']))))
-            pmap(lambda (k, o): logging.debug('%s: %s' % (k, str(o))),
+            pmap(lambda (k, o): logging.debug('{:s}: {:s}'.format(k, str(o))),
                  self.config.items())
-            logging.info("Months: %s", str(months))
-            logging.info("Dataset: %i files.", len(self.config['data']))
+            logging.info("Months: {:s}".format(str(months)))
+            logging.info("Dataset: {:d} files.".format(
+                len(self.config['data'])))
             algorithm = importlib.import_module(self.config['algorithm'])
             estimated, output = algorithm.run(**self.config)
             logging.info("Process finished.")

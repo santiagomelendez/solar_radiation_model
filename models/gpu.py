@@ -34,8 +34,8 @@ def gpu_exec(func_name, results, *matrixs):
     blocks = list(reversed(filter(lambda ms: size(ms) == max_blocks,
                                   blocks)[0]))
     threads = max(map(lambda ms: ms[0], m_shapes))
-    logging.info('-> block by grid: %s, threads by block: %s\n' %
-                 (str(blocks), str(threads)))
+    logging.info('-> block by grid: {:s}, threads by block: {:s}\n'.format(
+                 (str(blocks), str(threads))))
     func(*matrixs_gpu, grid=tuple(blocks), block=tuple([1, 1, threads]))
     list(map(lambda (m, m_gpu): cuda.memcpy_dtoh(m, m_gpu),
              transferences[:results]))

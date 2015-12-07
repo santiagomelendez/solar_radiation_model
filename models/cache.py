@@ -26,9 +26,10 @@ class Cache(object):
 
     def load(self, name):
         var_name = name[4:] if name[0:4] == 'ref_' else name
-        if 'ref_%s' % var_name not in self._attrs.keys():
+        key = 'ref_{:s}'.format(var_name)
+        if key not in self._attrs.keys():
             var = self.getvar(var_name)
-            self._attrs['ref_%s' % var_name] = var
+            self._attrs[key] = var
         else:
             var = self._attrs
         self._attrs[var_name] = var[:]

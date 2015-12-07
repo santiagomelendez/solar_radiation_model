@@ -80,13 +80,14 @@ class OutputCache(Cache):
                 self.globalradiation = self.ref_globalradiation
 
     def get_output_file(self, filename):
-        return '%s/%s' % (self.output_path, short(filename, None, None))
+        return '{:s}/{:s}'.format(self.output_path,
+                                  short(filename, None, None))
 
 
 def run(**config):
     loader = Cache(config['data'], tile_cut=config['tile_cut'],
                    read_only=True)
     config = core.check_hard(config)
-    geo = importlib.import_module('models.%s' % config['hard'])
+    geo = importlib.import_module('models.{:s}'.format(config['hard']))
     algorithm = Heliosat2(config, geo.strategy, loader)
     return algorithm.run_with()

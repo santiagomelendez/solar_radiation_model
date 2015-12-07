@@ -35,13 +35,13 @@ def rmse(root, index):
 	count[count == 0] = 1
 	diary_error[:, index,0] = np.sqrt(diary_error[:, index, 0] / count)
 	diary_error[:, index,1] = diary_error[:, index,0] /	max_value_in_day * 100
-	show("\rDiary RMS error: %.2f" % (diary_error[:, index, 1]).mean())
+    show("\rDiary RMS error: {:.2f}".format(diary_error[:, index, 1].mean()))
 	for i in range(len(days)):
 		d_i = days_index.index(days[i].day)
 		error[i,index,1] = error[i,index,1] / max_value_in_day[d_i] * 100
 	result = np.sum(error[:, index, 1] ** 2)
 	result = np.sqrt(result / error.shape[0])
-	show("Half-hour RMS error: %.2f \n" % result)
+    show("Half-hour RMS error: {:.2f} \n".format(result))
 	#diary_error[:, index,1] = diary_error[:, index,0]
 	nc.sync(root)
 	nc.close(root)
@@ -66,7 +66,7 @@ def dailyerrors(root, stations):
 	nc.sync(root)
 	for s in stations:
 		index = stations.index(s)
-		show('Station: %s \n' % stations[index])
+        show('Station: {:s} \n'.format(stations[index]))
 		error_diff[:, index, :] = measurements[:, index, :] - estimated[:, index, :]
 		nc.sync(root)
 		sum_value_in_day = np.zeros((days_amount))
@@ -85,7 +85,7 @@ def dailyerrors(root, stations):
 		print 'RMS :', RMS_daily_error[:, index, 0]
 		print 'BIAS', BIAS_daily_error[:, index, 0]
 		print 'sum value in day: ', sum_value_in_day[:]
-		show("\rDiary RMS daily error: %.2f\n" % (RMS_daily_error[:, index, 0]).mean())
+        show("\rDiary RMS daily error: {:.2f}\n".format((RMS_daily_error[:, index, 0]).mean()))
 
 	nc.sync(root)
 	nc.close(root)
