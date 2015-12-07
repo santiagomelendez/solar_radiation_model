@@ -16,7 +16,7 @@ class JobDescription(object):
                  algorithm='heliosat',
                  data='data/*.nc',
                  static_file='static.nc',
-                 product='product/estimated',
+                 product=None,
                  tile_cut={},
                  hard='cpu'):
         self.config = {
@@ -70,9 +70,9 @@ class JobDescription(object):
             logging.info("Months: %s", str(months))
             logging.info("Dataset: %i files.", len(self.config['data']))
             algorithm = importlib.import_module(self.config['algorithm'])
-            estimated = algorithm.run(**self.config)
+            estimated, output = algorithm.run(**self.config)
             logging.info("Process finished.")
-        return estimated
+        return estimated, output
 
 
 logging.basicConfig(level=logging.INFO)
