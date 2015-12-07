@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 from netcdf import netcdf as nc
 from models import JobDescription
@@ -41,9 +42,11 @@ class TestHeliosat(unittest.TestCase):
                     calculated = nc.getvar(new, 'globalradiation')
             gtz = lambda m: m[calculated[:] >= 0]
             diff = gtz(calculated[:] - valid[:])
-            print 'thr: ', threshold
-            print 'min: ', gtz(calculated[:]).min(), '(', gtz(valid[:]).min(), ')'
-            print 'max: ', gtz(calculated[:]).max(), '(', gtz(valid[:]).max(), ')'
+            print('thr: {:}'.format(threshold))
+            print('min: {:} ({:})'.format(gtz(calculated[:]).min(),
+                                          gtz(valid[:]).min()))
+            print('max: {:} ({:})'.format(gtz(calculated[:]).max(),
+                                          gtz(valid[:]).max()))
             self.assertTrue((diff < threshold).all())
             shape = valid.shape
         return shape
@@ -65,8 +68,9 @@ class TestHeliosat(unittest.TestCase):
         scale_shapes = (2260. / shape[1]) * (4360. / shape[2]) * (image_ratio)
         cores = 24. * 7.
         intern_estimated = intern_elapsed * (scale_shapes / cores) / 3600.
-        print "Scaling intern time to %.2f hours." % intern_estimated
-        print "Needed efficiency achieved: %.2f%%" % (0.5 / intern_estimated * 100.)
+        print("Scaling intern time to {:.2f} hours.".format(intern_estimated))
+        print("Needed efficiency achieved: {:.2f}%".format(
+            0.5 / intern_estimated * 100.))
 
 
 if __name__ == '__main__':

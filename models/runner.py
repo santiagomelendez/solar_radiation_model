@@ -1,3 +1,4 @@
+from __future__ import print_function
 from goesdownloader import instrument as goes
 import os
 from datetime import timedelta
@@ -86,7 +87,7 @@ def run(**config):
     filenames = goes.download('noaa.gvarim', 'noaaadmin', 'data_argentina',
                               name='Argentina',
                               datetime_filter=should_download)
-    print filenames
+    print(filenames)
     # if filenames:
     #     work = JobDescription(data='data/goes13.*.BAND_01.nc')
     #     heliosat.workwith('data/goes13.*.BAND_01.nc')
