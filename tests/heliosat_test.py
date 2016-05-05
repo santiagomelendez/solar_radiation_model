@@ -12,7 +12,7 @@ class TestHeliosat(unittest.TestCase):
     def setUp(self):
         os.system('rm -rf static.nc product')
         os.system('cp -rf data mock_data')
-        self.files = glob.glob('mock_data/goes13.*.BAND_01.nc')[:-1]
+        self.files = sorted(glob.glob('mock_data/goes13.*.BAND_01.nc'))[-1:]
         self.tile_cut = {
             "xc": [20, 30],
             "yc": [10, 15]

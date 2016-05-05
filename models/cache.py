@@ -114,12 +114,17 @@ class OutputCache(Cache):
         self.output = Cache(map(self.get_output_file, self.filenames),
                             tile_cut=self.tile_cut)
         self.root = self.output.root
-        map(self.create_1px_dimensions, self.root.roots)
+        if len(filenames) == 1:
+            map(self.create_1px_dimensions, [self.root.root])
+        else:
+            map(self.create_1px_dimensions, self.root.roots)
         self.root.getvar('time', source=images.getvar('time'))
         self.root.getvar('cloudindex', 'f4', source=images.getvar('data'))
         self.root.getvar('globalradiation', 'f4', source=images.getvar('data'))
 
     def initialize_variables(self, filenames):
+        filenames = ([filenames] if isinstance(filenames, str)
+                     else filenames)
         self.path = '/'.join(filenames[0].split('/')[0:-1])
         self.output_path = self.product
         with nc.loader(self.filenames, dimensions=self.tile_cut) as images:

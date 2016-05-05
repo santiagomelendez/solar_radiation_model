@@ -1,0 +1,23 @@
+Searching for virtualenv
+Best match: virtualenv 13.1.0
+Processing virtualenv-13.1.0-py2.7.egg
+virtualenv 13.1.0 is already the active version in easy-install.pth
+Installing virtualenv script to /usr/local/bin
+Installing virtualenv-2.7 script to /usr/local/bin
+
+Using /usr/local/lib/python2.7/dist-packages/virtualenv-13.1.0-py2.7.egg
+Processing dependencies for virtualenv
+Finished processing dependencies for virtualenv
+Already using interpreter /usr/bin/python
+New python executable in ./bin/python
+Installing setuptools, pip, wheel...done.
+Searching for pip
+Best match: pip 7.1.0
+Adding pip 7.1.0 to easy-install.pth file
+Installing pip script to /home/santiago/gersolar/git/solar_radiation_model/bin
+Installing pip3.4 script to /home/santiago/gersolar/git/solar_radiation_model/bin
+Installing pip3 script to /home/santiago/gersolar/git/solar_radiation_model/bin
+
+Using /home/santiago/gersolar/git/solar_radiation_model/lib/python2.7/site-packages
+Processing dependencies for pip
+Finished processing dependencies for pip
