@@ -52,7 +52,6 @@ class ProcessingStrategy(object):
         shape = list(time.shape)
         shape.append(1)
         self.times = time.reshape(tuple(shape))
-        print "self.times", self.times
         self.slots = self.calculate_slots(self.algorithm.IMAGE_PER_HOUR)
 
     def estimate_globalradiation(self, static, loader, output):
