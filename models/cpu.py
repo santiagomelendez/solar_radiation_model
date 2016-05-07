@@ -231,8 +231,6 @@ class CPUStrategy(ProcessingStrategy):
                                               hourlyangle)
         self.solarelevation = self.getelevation(self.solarangle)
         self.excentricity = self.getexcentricity(self.gamma)
-        print "months.tolist():", self.months.tolist()
-        import ipdb;ipdb.set_trace()
         linke = np.vstack([map(lambda m: static.linke[0, m[0][0] - 1, :],
                                self.months.tolist())])
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
