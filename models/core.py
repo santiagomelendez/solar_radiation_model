@@ -55,7 +55,7 @@ class ProcessingStrategy(object):
         self.slots = self.calculate_slots(self.algorithm.IMAGE_PER_HOUR)
 
     def estimate_globalradiation(self, static, loader, output):
-        self.calculate_temporaldata(static, loader)
+        self.calculate_temporaldata(static)
         self.calculate_imagedata(static, loader, output)
 
 

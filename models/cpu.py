@@ -220,7 +220,7 @@ class CPUStrategy(ProcessingStrategy):
         cloudalbedo[condition] = effectiveproportion[condition]
         return cloudalbedo
 
-    def calculate_temporaldata(self, static, loader):
+    def calculate_temporaldata(self, static):
         lat, lon = static.lat, static.lon
         self.declination = self.getdeclination(self.gamma)
         hourlyangle = self.gethourlyangle(lat, lon,
