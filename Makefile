@@ -50,6 +50,9 @@ show-version:
 run:
 	@ $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run()"
 
+run_heliosat:
+	@ $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run_heliosat()"
+
 ra_run:
 	@ ($(PROXYENV) $(SOURCE_ACTIVATE) $(PYTHON) -c "from models import runner; runner.run()" 2>&1) >> status.txt
 

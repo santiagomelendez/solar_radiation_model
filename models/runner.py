@@ -2,9 +2,8 @@ from __future__ import print_function
 from goesdownloader import instrument as goes
 from datetime import timedelta
 import importlib
-import glob
-import pytz
 from helpers import to_datetime
+from temporal_serie import TemporalSerie
 from cache import StaticCache, Cache, OutputCache
 import logging
 
@@ -46,21 +45,8 @@ class JobDescription(object):
 
     @classmethod
     def filter_data(cls, filename):
-        files = (glob.glob(filename)
-                 if isinstance(filename, basestring) else filename)
-        if not files:
-            return []
-        last_dt = to_datetime(max(files))
-        a_month_ago = (last_dt - timedelta(days=30)).date()
-        gmt = pytz.timezone('GMT')
-        local = pytz.timezone('America/Argentina/Buenos_Aires')
-        localize = lambda dt: (gmt.localize(dt)).astimezone(local)
-        in_the_last_month = lambda f: to_datetime(f).date() >= a_month_ago
-        files = filter(in_the_last_month, files)
-        daylight = (lambda dt: localize(dt).hour >= 6
-                    and localize(dt).hour <= 20)
-        files = filter(lambda f: daylight(to_datetime(f)), files)
-        return files
+        data = TemporalSerie(filename).get()
+        return data
 
     def check_data(self):
         if isinstance(self.config['data'], (str, list)):
@@ -96,6 +82,10 @@ def run(**config):
                               name='Argentina',
                               datetime_filter=should_download)
     print(filenames)
-    # if filenames:
-    #     work = JobDescription(data='data/goes13.*.BAND_01.nc')
-    #     heliosat.workwith('data/goes13.*.BAND_01.nc')
+
+
+def run_heliosat(**config):
+    job = JobDescription(data='data/goes13.2015.048.143733.BAND_01.nc',
+                         product='products/estimated',
+                         static_file='static.nc')
+    job.run()
