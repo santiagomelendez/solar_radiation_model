@@ -1,13 +1,65 @@
 import numpy as np
 import stats
-from core import ProcessingStrategy
+#from core import ProcessingStrategy
+from datetime import datetime
+from cache import memoize
 import logging
 
 
 GREENWICH_LON = 0.0
 
 
-class CPUStrategy(ProcessingStrategy):
+class CPUStrategy(object):
+
+    def __init__(self, time):
+        self.init_constants()
+        self.initialize_slots(time)
+
+    def init_constants(self):
+        self.SAT_LON = -75.113
+        # -75.3305 # longitude of sub-satellite point in degrees
+        self.IMAGE_PER_HOUR = 2
+        self.GOES_OBSERVED_ALBEDO_CALIBRATION = 1.89544 * (10 ** (-3))
+        self.i0met = np.pi / self.GOES_OBSERVED_ALBEDO_CALIBRATION
+
+    def int_to_dt(self, time):
+        return datetime.utcfromtimestamp(int(time))
+
+    @property
+    @memoize
+    def months(self):
+        months = map(lambda t: self.int_to_dt(t).month, self.times)
+        return np.array(months).reshape(self.times.shape)
+
+    @property
+    @memoize
+    def gamma(self):
+        to_julianday = lambda time: self.int_to_dt(time).timetuple().tm_yday
+        days_of_year = lambda time: to_julianday(
+            (datetime(self.int_to_dt(time).year, 12, 31)).timetuple()[7])
+        times = self.times
+        total_days = np.array(map(days_of_year, times)).reshape(times.shape)
+        julian_day = np.array(map(to_julianday, times)).reshape(times.shape)
+        return self.getdailyangle(julian_day, total_days)
+
+    @property
+    @memoize
+    def decimalhour(self):
+        int_to_dt = lambda t: datetime.utcfromtimestamp(t)
+        int_to_decimalhour = (lambda time: int_to_dt(time).hour +
+                              int_to_dt(time).minute/60.0 +
+                              int_to_dt(time).second/3600.0)
+        result = map(int_to_decimalhour, self.times)
+        return np.array(result).reshape(self.times.shape)
+
+    def calculate_slots(self, images_per_hour):
+        return np.round(self.decimalhour * images_per_hour).astype(int)
+
+    def initialize_slots(self, time):
+        shape = list(time.shape)
+        shape.append(1)
+        self.times = time.reshape(tuple(shape))
+        self.slots = self.calculate_slots(self.IMAGE_PER_HOUR)
 
     def getexcentricity(self, gamma):
         gamma = np.deg2rad(gamma)
@@ -220,8 +272,7 @@ class CPUStrategy(ProcessingStrategy):
         cloudalbedo[condition] = effectiveproportion[condition]
         return cloudalbedo
 
-    def calculate_temporaldata(self, static):
-        lat, lon = static.lat, static.lon
+    def calculate_temporaldata(self, lat, lon, dem, linke):
         self.declination = self.getdeclination(self.gamma)
         hourlyangle = self.gethourlyangle(lat, lon,
                                           self.decimalhour,
@@ -231,35 +282,35 @@ class CPUStrategy(ProcessingStrategy):
                                               hourlyangle)
         self.solarelevation = self.getelevation(self.solarangle)
         self.excentricity = self.getexcentricity(self.gamma)
-        linke = np.vstack([map(lambda m: static.linke[0, m[0][0] - 1, :],
+        linke = np.vstack([map(lambda m: linke[0, m[0][0] - 1, :],
                                self.months.tolist())])
         # The average extraterrestrial irradiance is 1367.0 Watts/meter^2
         # The maximum height of the non-transparent atmosphere is at 8434.5 mts
         bc = self.getbeamirradiance(1367.0, self.excentricity,
                                     self.solarangle, self.solarelevation,
-                                    linke, static.dem)
+                                    linke, dem)
         dc = self.getdiffuseirradiance(1367.0, self.excentricity,
                                        self.solarelevation, linke)
         self.gc = self.getglobalirradiance(bc, dc)
         satellitalzenithangle = self.getsatellitalzenithangle(
-            lat, lon, self.algorithm.SAT_LON)
+            lat, lon, self.SAT_LON)
         atmosphericradiance = self.getatmosphericradiance(
-            1367.0, self.algorithm.i0met, dc, satellitalzenithangle)
+            1367.0, self.i0met, dc, satellitalzenithangle)
         self.atmosphericalbedo = self.getalbedo(atmosphericradiance,
-                                                self.algorithm.i0met,
+                                                self.i0met,
                                                 self.excentricity,
                                                 satellitalzenithangle)
         satellitalelevation = self.getelevation(satellitalzenithangle)
         satellital_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(satellitalelevation),
-            static.dem, 8434.5)
+            dem, 8434.5)
         satellital_opticaldepth = self.getopticaldepth(satellital_opticalpath)
         self.t_sat = self.gettransmitance(linke, satellital_opticalpath,
                                           satellital_opticaldepth,
                                           satellitalelevation)
         solar_opticalpath = self.getopticalpath(
             self.getcorrectedelevation(self.solarelevation),
-            static.dem, 8434.5)
+            dem, 8434.5)
         solar_opticaldepth = self.getopticaldepth(solar_opticalpath)
         self.t_earth = self.gettransmitance(linke, solar_opticalpath,
                                             solar_opticaldepth,
@@ -299,14 +350,13 @@ class CPUStrategy(ProcessingStrategy):
         clearsky[cond] = 0.05
         return clearsky
 
-    def calculate_imagedata(self, static, loader, output):
+    def calculate_imagedata(self, lat, data):
         excentricity = self.excentricity
         solarangle = self.solarangle
         atmosphericalbedo = self.atmosphericalbedo
         t_earth = self.t_earth
         t_sat = self.t_sat
-        observedalbedo = self.getalbedo(self.getcalibrateddata(loader),
-                                        self.algorithm.i0met,
+        observedalbedo = self.getalbedo(data, self.i0met,
                                         excentricity, solarangle)
         apparentalbedo = self.getapparentalbedo(observedalbedo,
                                                 atmosphericalbedo,
@@ -314,15 +364,15 @@ class CPUStrategy(ProcessingStrategy):
         declination = self.declination
         logging.info("Calculating the noon window... ")
         slot_window_in_hours = 4
-        image_per_day = 24 * self.algorithm.IMAGE_PER_HOUR
+        image_per_day = 24 * self.IMAGE_PER_HOUR
         noon_slot = image_per_day / 2
-        half_window = self.algorithm.IMAGE_PER_HOUR * slot_window_in_hours/2
+        half_window = self.IMAGE_PER_HOUR * slot_window_in_hours/2
         min_slot = noon_slot - half_window
         max_slot = noon_slot + half_window
         condition = ((self.slots >= min_slot) & (self.slots < max_slot))
         condition = np.reshape(condition, condition.shape[0])
-        mask1 = (self.getcalibrateddata(loader)[condition] <=
-                 (self.algorithm.i0met / np.pi) * 0.03)
+        mask1 = (data[condition] <=
+                 (self.i0met / np.pi) * 0.03)
         m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
         # To do the nexts steps needs a lot of memory
         logging.info("Calculating the ground reference albedo... ")
@@ -331,7 +381,7 @@ class CPUStrategy(ProcessingStrategy):
         groundreferencealbedo = self.getsecondmin(p5_apparentalbedo)
         # Calculate the solar elevation using times, latitudes and omega
         logging.info("Calculating solar elevation... ")
-        r_alphanoon = self.getsolarelevation(declination, static.lat, 0)
+        r_alphanoon = self.getsolarelevation(declination, lat, 0)
         r_alphanoon = r_alphanoon * 2./3.
         r_alphanoon[r_alphanoon > 40] = 40
         r_alphanoon[r_alphanoon < 15] = 15
@@ -351,9 +401,11 @@ class CPUStrategy(ProcessingStrategy):
         cloudindex = self.getcloudindex(apparentalbedo,
                                         groundminimumalbedo,
                                         self.cloudalbedo)
-        output.ref_cloudindex[:] = cloudindex
-        output.ref_globalradiation[:] = (self.getclearsky(cloudindex) *
-                                         self.gc)
+        globalradiation = (self.getclearsky(cloudindex) * self.gc)
+        return cloudindex, globalradiation
 
+    def estimate_globalradiation(self, lat, lon, dem, linke, data):
+        self.calculate_temporaldata(lat, lon, dem, linke)
+        return self.calculate_imagedata(lat, data)
 
 strategy = CPUStrategy
