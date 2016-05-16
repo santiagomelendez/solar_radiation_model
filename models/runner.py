@@ -1,7 +1,7 @@
 from __future__ import print_function
 from goesdownloader import instrument as goes
-from datetime import timedelta
-import importlib
+from cpu import CPUStrategy
+from datetime import datetime, timedelta
 from helpers import to_datetime
 from temporal_serie import TemporalSerie
 from cache import StaticCache, Cache, OutputCache
@@ -53,7 +53,6 @@ class JobDescription(object):
             self.config['data'] = self.filter_data(self.config['data'])
 
     def run(self):
-        estimated = 0
         if isinstance(self.config['data'], (str, list)):
             m_lamb = lambda dt: '{:d}/{:d}'.format(dt.month, dt.year)
             months = list(set(map(m_lamb,
@@ -64,10 +63,23 @@ class JobDescription(object):
             logging.info("Months: {:s}".format(str(months)))
             logging.info("Dataset: {:d} files.".format(
                 len(self.config['data'])))
-        algorithm = importlib.import_module(self.config['algorithm'])
-        estimated, output = algorithm.run(**self.config)
+        time = self.config['data'].time
+        data = self.config['data'].data
+        lat = self.config['static_file'].lat
+        lon = self.config['static_file'].lon
+        dem = self.config['static_file'].dem
+        linke = self.config['static_file'].linke
+        start = datetime.now()
+        cpu = CPUStrategy(time)
+        cloudindex, globalradiation = cpu.estimate_globalradiation(lat, lon,
+                                                                   dem, linke,
+                                                                   data)
+        output = self.config['product']
+        output.ref_cloudindex[:] = cloudindex
+        output.ref_globalradiation[:] = globalradiation
         logging.info("Process finished.")
-        return estimated, output
+        end = datetime.now()
+        return (end - start).total_seconds, output
 
 
 logging.basicConfig(level=logging.INFO)
