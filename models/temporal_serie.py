@@ -33,7 +33,7 @@ class TemporalSerie(object):
         jdb = lambda jd: (dt - timedelta(days=jd)).strftime('%Y.%j')
         days_before = lambda day: a_month_ago.extend(
             glob(path + '/*.%s.*.nc' % jdb(day)))
-        days_before(1)
+        map(days_before, range(1, 32))
         return a_month_ago
 
     @property
