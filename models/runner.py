@@ -71,6 +71,7 @@ class JobDescription(object):
         linke = self.config['static_file'].linke
         start = datetime.now()
         cpu = CPUStrategy(time)
+        data = cpu.getcalibrateddata(self.config['data'])
         cloudindex, globalradiation = cpu.estimate_globalradiation(lat, lon,
                                                                    dem, linke,
                                                                    data)
@@ -79,7 +80,7 @@ class JobDescription(object):
         output.ref_globalradiation[:] = globalradiation
         logging.info("Process finished.")
         end = datetime.now()
-        return (end - start).total_seconds, output
+        return (end - start).total_seconds(), output
 
 
 logging.basicConfig(level=logging.INFO)
