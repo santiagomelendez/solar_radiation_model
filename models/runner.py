@@ -64,14 +64,13 @@ class JobDescription(object):
             logging.info("Dataset: {:d} files.".format(
                 len(self.config['data'])))
         time = self.config['data'].time
-        data = self.config['data'].data
+        cpu = CPUStrategy(time)
+        data = cpu.getcalibrateddata(self.config['data'])
         lat = self.config['static_file'].lat
         lon = self.config['static_file'].lon
         dem = self.config['static_file'].dem
         linke = self.config['static_file'].linke
         start = datetime.now()
-        cpu = CPUStrategy(time)
-        data = cpu.getcalibrateddata(self.config['data'])
         cloudindex, globalradiation = cpu.estimate_globalradiation(lat, lon,
                                                                    dem, linke,
                                                                    data)

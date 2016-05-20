@@ -362,18 +362,8 @@ class CPUStrategy(object):
                                                 atmosphericalbedo,
                                                 t_earth, t_sat)
         declination = self.declination
-        logging.info("Calculating the noon window... ")
-        slot_window_in_hours = 4
-        image_per_day = 24 * self.IMAGE_PER_HOUR
-        noon_slot = image_per_day / 2
-        half_window = self.IMAGE_PER_HOUR * slot_window_in_hours/2
-        min_slot = noon_slot - half_window
-        max_slot = noon_slot + half_window
-        condition = ((self.slots >= min_slot) & (self.slots < max_slot))
-        condition = np.reshape(condition, condition.shape[0])
-        mask1 = (data[condition] <=
-                 (self.i0met / np.pi) * 0.03)
-        m_apparentalbedo = np.ma.masked_array(apparentalbedo[condition], mask1)
+        mask1 = (data <= self.i0met / np.pi * 0.03)
+        m_apparentalbedo = np.ma.masked_array(apparentalbedo, mask1)
         # To do the nexts steps needs a lot of memory
         logging.info("Calculating the ground reference albedo... ")
         mask2 = m_apparentalbedo < stats.scoreatpercentile(m_apparentalbedo, 5)
@@ -388,9 +378,7 @@ class CPUStrategy(object):
         solarelevation = self.solarelevation
         logging.info("Calculating the ground minimum albedo... ")
         groundminimumalbedo = self.getsecondmin(
-            np.ma.masked_array(
-                apparentalbedo[condition],
-                solarelevation[condition] < r_alphanoon[condition]))
+            np.ma.masked_array(apparentalbedo, (solarelevation < r_alphanoon)))
         aux_2g0 = 2 * groundreferencealbedo
         aux_05g0 = 0.5 * groundreferencealbedo
         condition_2g0 = groundminimumalbedo > aux_2g0
