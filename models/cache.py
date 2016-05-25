@@ -121,7 +121,6 @@ class OutputCache(Cache):
         self.root.getvar('time', source=images.getvar('time'))
         self.root.getvar('cloudindex', 'f4', source=images.getvar('data'))
         self.root.getvar('globalradiation', 'f4', source=images.getvar('data'))
-        self.root.getvar('data_mix', 'f4', source=images.getvar('data'))
 
     def initialize_variables(self, filenames):
         filenames = ([filenames] if isinstance(filenames, str)
@@ -138,8 +137,6 @@ class OutputCache(Cache):
                 self.cloudindex = self.ref_cloudindex
                 self.ref_globalradiation = np.zeros(data_shape)
                 self.globalradiation = self.ref_globalradiation
-                self.ref_data_mix = np.zeros(data_shape)
-                self.data_mix = self.ref_data_mix
 
     def get_output_file(self, filename):
         return '{:s}/{:s}'.format(self.output_path,
