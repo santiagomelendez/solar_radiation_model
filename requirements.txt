@@ -5,3 +5,4 @@ netcdf>=0.1.7
 linketurbidity==0.0.6
 noaadem==0.0.16
 goesdownloader>=0.0.14
+mpi4py==2.0.0
