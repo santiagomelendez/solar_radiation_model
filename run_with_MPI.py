@@ -96,12 +96,11 @@ if comm.rank == 0:
         ci[:, pos:pos + rows, :] = r_ci
         pos = pos + rows
     output = job.config['product']
-    print ci.shape
+    output.ref_cloudindex[:] = ci[-1, :, :]
+    output.ref_globalradiation[:] = gr[-1, :, :]
 else:
     comm.Send([p_gr, MPI.DOUBLE], dest=0, tag=1)
     comm.Send([p_ci, MPI.DOUBLE], dest=0, tag=2)
     sys.exit(0)
 MPI.Finalize()
-output.ref_cloudindex[:] = ci
-output.ref_globalradiation[:] = gr
 print 'Process finish.'

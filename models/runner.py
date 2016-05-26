@@ -41,7 +41,7 @@ class JobDescription(object):
                                                      self.config['tile_cut'])
         self.config['product'] = OutputCache(self.config['product'],
                                              self.config['tile_cut'],
-                                             self.config['filenames'])
+                                             self.config['filenames'][-1:])
 
     @classmethod
     def filter_data(cls, filename):
@@ -75,8 +75,8 @@ class JobDescription(object):
                                                                    dem, linke,
                                                                    data)
         output = self.config['product']
-        output.ref_cloudindex[:] = cloudindex
-        output.ref_globalradiation[:] = globalradiation
+        output.ref_cloudindex[:] = cloudindex[-1, :, :]
+        output.ref_globalradiation[:] = globalradiation[-1, :, :]
         logging.info("Process finished.")
         end = datetime.now()
         return (end - start).total_seconds(), output
