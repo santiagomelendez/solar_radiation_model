@@ -16,6 +16,7 @@ def scatter_reshape(shape, size=comm.size, rank=comm.rank, dim=-2):
     lst_shape[dim] = tile
     return tuple(lst_shape)
 
+start = MPI.Wtime()
 shape = np.empty(3, dtype=np.int)
 notime_shape = np.empty(3, dtype=np.int)
 linke_shape = np.empty(4, dtype=np.int)
@@ -102,5 +103,7 @@ else:
     comm.Send([p_gr, MPI.DOUBLE], dest=0, tag=1)
     comm.Send([p_ci, MPI.DOUBLE], dest=0, tag=2)
     sys.exit(0)
+end = MPI.Wtime()
 MPI.Finalize()
+print 'total time: ', end - start
 print 'Process finish.'
