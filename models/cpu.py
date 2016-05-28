@@ -102,20 +102,12 @@ class CPUStrategy(object):
                           np.cos(dec) * np.cos(lat) *
                           np.cos(hourlyangle)))
 
-    def getcalibrateddata(self, loader):
-        if not hasattr(self, '_cached_calibrated_data'):
-            raw_data = loader.data[:]
-            counts_shift = loader.counts_shift[:]
-            space_measurement = loader.space_measurement[:]
-            prelaunch = loader.prelaunch_0[:]
-            # INFO: Without the postlaunch coefficient the RMSE go to 15%
-            postlaunch = loader.postlaunch[:]
-            normalized_data = (np.float32(raw_data) / counts_shift -
-                               space_measurement)
-            self._cached_calibrated_data = (normalized_data
-                                            * postlaunch
-                                            * prelaunch)
-        return self._cached_calibrated_data
+    def getcalibrateddata(self, raw_data, counts_shift,
+                          space_measurement, prelaunch, postlaunch):
+        normalized_data = (np.float32(raw_data) / counts_shift -
+                           space_measurement)
+        calibrated_data = (normalized_data * postlaunch * prelaunch)
+        return calibrated_data
 
     def getalbedo(self, radiance, totalirradiance, excentricity, zenithangle):
         zenithangle = np.deg2rad(zenithangle)
