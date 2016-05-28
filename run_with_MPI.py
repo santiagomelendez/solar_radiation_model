@@ -27,7 +27,9 @@ linke_shape = np.empty(4, dtype=np.int)
 
 if comm.rank == 0:
     start_p = datetime.now()
-    image = 'data/goes13.2015.048.143733.BAND_01.nc'
+    prefix = '/data/gersolar/solar_radiation_model/data_argentina'
+    image = 'goes13.2016.148.143733.BAND_01.nc'
+    image = '{:s}/{:s}'.format(prefix, image)
     product = 'mpi_results'
     data = TemporalSerie(image).get()
     root_data = nc.MFDataset(data, aggdim='time')
@@ -88,7 +90,7 @@ if comm.rank == 0:
     for x in xrange(1, comm.size):
         rows = scatter_reshape(notime_shape, rank=x)[dim]
         count = np.cumproduct(scatter_reshape(notime_shape, rank=x))[-1]
-        print'node 0: Sending the variables to node %x' % (x)
+        print'node 0: Sending the variables to node %x' % x
         comm.Send([np.array(lat[:, pos: pos + rows, :], dtype=np.float64),
                    MPI.DOUBLE], dest=x, tag=1)
         comm.Send([np.array(lon[:, pos: pos + rows, :], dtype=np.float64),
@@ -102,12 +104,15 @@ if comm.rank == 0:
         pos = pos + rows
 else:
     cpu = CPUStrategy(time)
-    print 'node %d: Reciving variables from node 0' % (comm.rank)
+    print 'node %d: Reciving variables from node 0' % comm.rank
     comm.Recv([p_lat, MPI.DOUBLE], source=0, tag=1)
     comm.Recv([p_lon, MPI.DOUBLE], source=0, tag=2)
     comm.Recv([p_dem, MPI.DOUBLE], source=0, tag=3)
     comm.Recv([p_linke, MPI.DOUBLE], source=0, tag=4)
     comm.Recv([p_data, MPI.DOUBLE], source=0, tag=5)
+print '-'*78
+print'node %d: estimating globalradiation' % comm.rank
+print '-'*78
 p_ci, p_gr = cpu.estimate_globalradiation(p_lat, p_lon, p_dem,
                                           p_linke, p_data)
 p_ci = np.array(p_ci, dtype=np.float64)
@@ -116,10 +121,11 @@ if comm.rank == 0:
     gr[:, 0:p_gr.shape[dim], :] = p_gr
     ci[:, 0:p_ci.shape[dim], :] = p_ci
     pos = p_gr.shape[dim]
+    print "waiting for the others node"
     for x in xrange(1, comm.size):
         r_gr = np.empty(scatter_reshape(shape, rank=x), dtype=np.float64)
         r_ci = np.empty(scatter_reshape(shape, rank=x), dtype=np.float64)
-        print'node 0: Reciving th calculate variables by node: %i' % (x)
+        print'node 0: Reciving the calculate variables by node: %i' % x
         comm.Recv([r_gr, MPI.DOUBLE], source=x, tag=1)
         comm.Recv([r_ci, MPI.DOUBLE], source=x, tag=2)
         rows = r_gr.shape[dim]
