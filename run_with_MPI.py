@@ -1,11 +1,13 @@
 from models.cpu import CPUStrategy
 from models.temporal_serie import TemporalSerie
-from models.cache import OutputCache
+from models.cache import StaticCache, OutputCache
+from goescalibration.instrument import calibrate
 from datetime import datetime, timedelta
 from mpi4py import MPI
 import numpy as np
 import netCDF4 as nc
 import sys
+import os
 
 comm = MPI.COMM_WORLD
 dim = -2
@@ -20,6 +22,16 @@ def scatter_reshape(shape, size=comm.size, rank=comm.rank, dim=dim):
     lst_shape[dim] = tile
     return tuple(lst_shape)
 
+def calibrate_data(data):
+    not_calibrate = []
+    for f in data:
+        root = nc.Dataset(f, 'r')
+        if not root.variables.has_key('postlaunch'):
+            not_calibrate.append(f)
+        root.close()
+    print 'calibrating data: ', not_calibrate
+    return map(lambda f: calibrate(f), not_calibrate)
+
 start = MPI.Wtime()
 shape = np.empty(3, dtype=np.int)
 notime_shape = np.empty(3, dtype=np.int)
@@ -27,12 +39,15 @@ linke_shape = np.empty(4, dtype=np.int)
 
 if comm.rank == 0:
     start_p = datetime.now()
-    prefix = '/data/gersolar/solar_radiation_model/data_argentina'
-    image = 'goes13.2016.148.143733.BAND_01.nc'
-    image = '{:s}/{:s}'.format(prefix, image)
-    product = 'mpi_results'
-    data = TemporalSerie(image).get()
-    root_data = nc.MFDataset(data, aggdim='time')
+    image= sys.argv[1]
+    print 'processing image: ', image.split('/')[-1]
+    product = 'products/estimated'
+    filenames = TemporalSerie(image).get()
+    try:
+        root_data = nc.MFDataset(filenames, aggdim='time')
+    except KeyError:
+        calibrate_data(filenames)
+        root_data = nc.MFDataset(filenames, aggdim='time')
     rdv = root_data.variables
     print '-'*20, 'Getting data to process', '-'*20
     data = rdv['data'][:]
@@ -45,6 +60,8 @@ if comm.rank == 0:
                                  rdv['prelaunch_0'][:],
                                  rdv['postlaunch'][:])
     root_data.close()
+    if not os.path.exists('static.nc'):
+        static = StaticCache('static.nc', filenames, {})
     root_static = nc.Dataset('static.nc', 'r')
     rdv = root_static.variables
     reshape_var = lambda var: var.reshape(tuple([1] + list(var.shape)))
@@ -64,7 +81,6 @@ if comm.rank == 0:
     notime_shape = np.array(lat.shape, dtype=np.int)
     end_p = datetime.now()
     print 'time to load the data model: ', (end_p - start_p).total_seconds()
-    print '-'*10, 'Broadcast the shape of matrix', '-'*10
 comm.Bcast([shape, MPI.INT], root=0)
 if not comm.rank == 0:
     time = np.empty((shape[0], 1), np.int32)
@@ -86,11 +102,11 @@ if comm.rank == 0:
     p_dem = dem[:, 0:p_dem.shape[dim], :]
     p_data = data[:, 0:p_data.shape[dim], :]
     p_linke = linke[:, :, 0:p_linke.shape[dim], :]
+    print'node 0: Sending the input variables to the other nodes'
     pos = p_lat.shape[dim]
     for x in xrange(1, comm.size):
         rows = scatter_reshape(notime_shape, rank=x)[dim]
         count = np.cumproduct(scatter_reshape(notime_shape, rank=x))[-1]
-        print'node 0: Sending the variables to node %x' % x
         comm.Send([np.array(lat[:, pos: pos + rows, :], dtype=np.float64),
                    MPI.DOUBLE], dest=x, tag=1)
         comm.Send([np.array(lon[:, pos: pos + rows, :], dtype=np.float64),
@@ -104,15 +120,11 @@ if comm.rank == 0:
         pos = pos + rows
 else:
     cpu = CPUStrategy(time)
-    print 'node %d: Reciving variables from node 0' % comm.rank
     comm.Recv([p_lat, MPI.DOUBLE], source=0, tag=1)
     comm.Recv([p_lon, MPI.DOUBLE], source=0, tag=2)
     comm.Recv([p_dem, MPI.DOUBLE], source=0, tag=3)
     comm.Recv([p_linke, MPI.DOUBLE], source=0, tag=4)
     comm.Recv([p_data, MPI.DOUBLE], source=0, tag=5)
-print '-'*78
-print'node %d: estimating globalradiation' % comm.rank
-print '-'*78
 p_ci, p_gr = cpu.estimate_globalradiation(p_lat, p_lon, p_dem,
                                           p_linke, p_data)
 p_ci = np.array(p_ci, dtype=np.float64)
@@ -121,11 +133,10 @@ if comm.rank == 0:
     gr[:, 0:p_gr.shape[dim], :] = p_gr
     ci[:, 0:p_ci.shape[dim], :] = p_ci
     pos = p_gr.shape[dim]
-    print "waiting for the others node"
+    print'node 0: Reciving the output variables from the other nodes.'
     for x in xrange(1, comm.size):
         r_gr = np.empty(scatter_reshape(shape, rank=x), dtype=np.float64)
         r_ci = np.empty(scatter_reshape(shape, rank=x), dtype=np.float64)
-        print'node 0: Reciving the calculate variables by node: %i' % x
         comm.Recv([r_gr, MPI.DOUBLE], source=x, tag=1)
         comm.Recv([r_ci, MPI.DOUBLE], source=x, tag=2)
         rows = r_gr.shape[dim]
@@ -143,3 +154,4 @@ end = MPI.Wtime()
 MPI.Finalize()
 print 'total time: ', end - start
 print 'Process finish.'
+sys.exit(0)
