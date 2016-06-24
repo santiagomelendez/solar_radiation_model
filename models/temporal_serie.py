@@ -28,26 +28,22 @@ class TemporalSerie(object):
     @property
     def filenames_from_a_month_ago(self):
         path = '/'.join(self.filename.split('/')[:-1])
+        files = glob(path + '/*.nc')
         dt = to_datetime(self.filename)
-        a_month_ago = []
-        jdb = lambda jd: (dt - timedelta(days=jd)).strftime('%Y.%j')
-        days_before = lambda day: a_month_ago.extend(
-            glob(path + '/*.%s.*.nc' % jdb(day)))
-        map(days_before, range(1, 32))
-        return a_month_ago
+        days_ago = (dt - timedelta(days=30))
+        files = filter(lambda f: days_ago < to_datetime(f) < dt, files)
+        return files
 
     @property
     def time(self):
-        with nc.loader(self.filenames_from_a_month_ago) as loader:
-            self.times = nc.getvar(loader, 'time')[:]
+        self.times = map(lambda s: to_datetime(s), self.filenames_from_a_month_ago) 
         return self.times
 
     @property
     def decimalhour(self):
-        int_to_dt = lambda t: datetime.utcfromtimestamp(t)
-        int_to_decimalhour = (lambda time: int_to_dt(time).hour +
-                              int_to_dt(time).minute/60.0 +
-                              int_to_dt(time).second/3600.0)
+        int_to_decimalhour = (lambda time: time.hour +
+                              time.minute/60.0 +
+                              time.second/3600.0)
         result = map(int_to_decimalhour, self.time)
         return np.array(result)
 
